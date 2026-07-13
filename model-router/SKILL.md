@@ -7,7 +7,7 @@ allowed-tools:
   - Bash(grok --permission-mode plan *)
   - Bash(gemini --approval-mode plan *)
 metadata:
-  version: "0.10.0"
+  version: "0.11.0"
   updated: "2026-07-12"
 ---
 
@@ -23,7 +23,7 @@ Available external CLI binaries: !`command -v codex grok gemini 2>/dev/null || e
 
 Calibration notes from `routing-notes.md` in the working folder — let them override the routing table's defaults where they conflict: !`cat routing-notes.md 2>/dev/null || echo "(no routing-notes.md)"`
 
-A binary missing from the list above kills that route for this session — use the fallback column without comment or retries. A present binary is only *provisionally* alive: auth or account tier can be broken server-side, and the first real call is the true probe (see "When a delegation fails"). Anthropic subagents (Agent tool) are always available; external CLIs are enhancements, never a hard dependency. Never stall because a CLI is missing.
+A binary missing from the list above kills that route for this session — use the fallback column without comment or retries. A present binary is only *provisionally* alive: auth or account tier can be broken server-side, and the first real call is the true probe (see "When a delegation fails"). Anthropic subagents (Agent tool) are normally available but can be killed mid-run by the account's session limit — treat that like any other dead route: reroute the leg to an external CLI (Luna/Terra for recon and standard work, Sol/Grok for heavy legs), note when the window resets, and don't re-spawn Claude subagents until it has. External CLIs are enhancements, never a hard dependency — but no route is guaranteed. Never stall because a CLI is missing.
 
 ## Routing table
 
@@ -39,7 +39,7 @@ Pick the cheapest row that fits the task well. Escalate only if review fails —
 | Standard coding, writing, tests, docs, balanced execution | Sonnet subagent (`model: sonnet`) | GPT-5.6 Terra (`medium`) | Reliable high-quality worker; Terra is the stretch-the-GPT-budget option when Sol is already burning the window |
 | Trivial (one-step, low-risk) | Yourself; or one Luna/Flash call if CLI present | — | No routing analysis; at most a one-line note |
 
-**Terra as budget option:** prefer Terra `medium` over a second Sol call when the work is standard engineering and Sol is already on the critical path (or the user is conserving limits).
+**Terra as budget option:** prefer Terra `medium` over a second Sol call when the work is standard engineering and Sol is already on the critical path (or the user is conserving limits). Proven on multi-file feature legs and security-constrained graft/integration work (2026-07-12, 3/3 clean legs); its one observed miss was language register — specify the repo's German form (du-form) explicitly in UI prompts.
 
 ## CLI invocation reference
 
@@ -79,17 +79,19 @@ Keep flags in exactly the order shown in the table (sandbox/permission flag righ
 - **Codex Ultra:** not a normal reasoning tier for this skill. Harness bugs can spawn too many nested subagents at too-high effort. Do not use unless the user explicitly requests it.
 - **Codex nested subagents:** Sol is eager to spawn children; in the Codex harness they tend to inherit the parent's model and effort, which multiplies burn. Prefer orchestrator-controlled fan-out (you spawn N separate CLI calls) over one Sol session that multi-agents itself.
 - **Codex fast mode:** 2.5× credits; avoid while Sol runs long end-to-end tasks.
+- **Grok plan-mode file access (2026-07-12):** in `--permission-mode plan`, grok silently produces NO final output (exit 0, narration only) when the prompt references files outside its working directory. `cd` into the folder containing the referenced files before invoking. Also avoid tight `--max-turns` on multi-file analysis tasks — turn exhaustion is silent too.
 
 ## How to delegate
 
 Spawn independent subtasks in parallel, in a single message. Sequential spawning wastes wall-clock time for no quality gain. Prefer **you** (the orchestrator) controlling that fan-out — not a single Sol worker spawning its own army.
 
-Every delegation prompt needs four things, because the worker has none of your context:
+Every delegation prompt needs five things, because the worker has none of your context:
 
 1. The task with all relevant constraints and context the worker lacks.
-2. Explicit success criteria — what "done well" looks like.
-3. **Clear stop points** — where to halt and return (Sol especially will keep going past useful bounds). Examples: "Write the plan only; stop and return the summary — do not implement." / "Implement and run tests until green. Stop after first PR review pass if asked to open a PR — do not keep babysitting." / "Do not expand scope beyond: …"
-4. Instruction to return a structured summary, not a transcript:
+2. **Hard constraints as an explicit MUST/NEVER list.** Security invariants especially — grant/REVOKE scope, RLS, auth checks — must be spelled out concretely ("the write RPC is executable by service_role ONLY"), never left implicit by reference to a pattern file ("guarded like X"). Implicit-by-reference is exactly where otherwise-strong workers deviate, and the rules must also bind objects the worker *invents* (helpers, wrappers), not just named deliverables. Put these in the Success criteria section — workers weight checklists hardest.
+3. Explicit success criteria — what "done well" looks like.
+4. **Clear stop points** — where to halt and return (Sol especially will keep going past useful bounds). Examples: "Write the plan only; stop and return the summary — do not implement." / "Implement and run tests until green. Stop after first PR review pass if asked to open a PR — do not keep babysitting." / "Do not expand scope beyond: …"
+5. Instruction to return a structured summary, not a transcript:
 
 ```json
 {
@@ -103,6 +105,8 @@ Every delegation prompt needs four things, because the worker has none of your c
 ```
 
 **Nested agents (Codex Sol):** unless the user explicitly asked for multi-agent work inside Codex, include in every Sol prompt: "Do the work yourself. Do not spawn subagents unless blocked." If nested agents *are* wanted, keep parent effort at `medium` or `high` — never start nested work at `xhigh` or `ultra`.
+
+**Delegating to Grok 4.5:** read `${CLAUDE_SKILL_DIR}/references/grok-delegation.md` before writing a Grok prompt for precise or security-critical coding — it captures Grok's self-reported instruction weighting and the steering rules that prevent its known failure modes.
 
 You review summaries and spot-check evidence, not full transcripts — that's what keeps your context lean and this pattern cheaper than doing everything yourself.
 
@@ -141,3 +145,5 @@ If the plan includes **≥2 Sol calls** or any Sol at **`xhigh`**, say so in the
 Model lineups and relative strengths shift every few months. When they do, edit the routing table and CLI reference — nothing else in this skill hardcodes model names or commands. Deliberately keep benchmark numbers and percentage claims out of this file: they go stale silently and lend false precision to what is a judgment call. Session-to-session calibration lives in `routing-notes.md`; durable, user-approved changes get promoted into this file via the self-improvement flow in `references/vs-mode.md`.
 
 **2026-07-12 (v0.10.0):** Sol default effort lowered `xhigh` → `high`; auto-`ultra` removed from the escalation ladder; stop points + no nested subagents in Sol prompts; Codex fast mode forbidden; Terra elevated as budget option for secondary legs.
+
+**2026-07-12 (v0.11.0, post-VS retrospective):** Anthropic subagents no longer described as "always available" (session-limit kill observed; reroute play added); delegation checklist gains explicit MUST/NEVER hard-constraints item (constraint explicitness beat model tier in the VS run); Terra note gains proven-legs evidence + du-form tip; Grok plan-mode file-access breakage documented; new `references/grok-delegation.md`; vs-mode.md: decisive evidence must cite file:line, orchestrator verifies at location, worktree isolation codified.

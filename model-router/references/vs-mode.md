@@ -8,7 +8,7 @@ Before running, state the overhead in relative terms (roughly N× the tokens of 
 
 ## How
 
-1. Pick 2–3 models from overlapping routing-table rows. Send each the identical prompt, success criteria, and summary format so outputs are directly comparable.
+1. Pick 2–3 models from overlapping routing-table rows. Send each the identical prompt, success criteria, and summary format so outputs are directly comparable. If candidates edit files, give each its own isolated git worktree with a fresh dependency install (e.g. `npm ci`) so tests run hermetically, and capture each result as a diff — diffs are what get blinded and reviewed.
 2. Have a reviewer from a different family (or a blinded fresh subagent, if only Claude is reachable) compare the outputs. Blind the reviewer: strip model names from filenames and content before it looks. The reviewer must return exactly this scorecard — standardization is what makes runs comparable across sessions:
 
 ```json
@@ -25,12 +25,12 @@ Before running, state the overhead in relative terms (roughly N× the tokens of 
   },
   "winner": "A|B|hybrid",
   "confidence": "high|medium|low",
-  "decisive_evidence": "<one concrete finding that settled it>",
+  "decisive_evidence": "<one concrete finding that settled it, cited as file:line in the candidate diffs so it can be re-checked without re-reading them>",
   "routing_implication": "<one line: what this suggests for the routing table>"
 }
 ```
 
-3. You make the final call (spot-check the reviewer's decisive evidence first) and present the winner plus key differences to the user.
+3. You make the final call: verify the decisive evidence at its cited location first — if it is overstated or wrong, correct it in the ledger even when the verdict direction survives — then present the winner plus key differences to the user.
 4. Append the scorecard verbatim, with candidate names unblinded, to `routing-notes.md` in the working folder. Keep the file under ~15 entries; prune superseded ones when you write.
 
 ## Self-improvement (approval-gated)
