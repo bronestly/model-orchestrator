@@ -7,8 +7,8 @@ allowed-tools:
   - Bash(grok --permission-mode plan *)
   - Bash(gemini --approval-mode plan *)
 metadata:
-  version: "0.11.0"
-  updated: "2026-07-12"
+  version: "0.12.0"
+  updated: "2026-07-13"
 ---
 
 # Model Router
@@ -32,14 +32,14 @@ Pick the cheapest row that fits the task well. Escalate only if review fails —
 | Work type | Primary | Fallback if unavailable | Why |
 |---|---|---|---|
 | Decomposition, ambiguity resolution, high-stakes judgment, final integration & review | You (main context) | — never delegate these | Deepest reasoning in the session; the point of the whole pattern |
-| Complex agentic coding, precise structured codegen, math-heavy implementation, computer use | Codex Sol (effort `high`; escalate to `xhigh` only after a failed review) | Grok 4.5 → Opus subagent (`model: opus`) | Leads on precise coding and computer use; default `high` keeps burn predictable |
+| Complex agentic coding, precise structured codegen, math-heavy implementation, computer use | Codex Sol (`medium` for well-specified legs, `high` for genuinely complex ones) | Grok 4.5 → Opus subagent (`model: opus`) | Leads on precise coding and computer use; `medium` is the field-tested sweet spot — see `references/codex-delegation.md` |
 | Deep analysis, critical review, second opinions on high-stakes output | Frontier Claude subagent: `model: opus` — but if you are Opus 4.8 and `fable` appears in the Agent tool's model options, prefer `model: fable` | Codex Sol | Frontier depth without burning your main context; always available |
-| Practical large-scale engineering, real-time info (X/web), exploratory or creative angles | Grok 4.5 | Sonnet subagent + web search | Strong real-world engineering at good cost; real-time access |
-| High-volume parallel chores, classification, extraction, file recon, long-context bulk work | Gemini 3.5 Flash | GPT-5.6 Luna (ultra-cheap volume) → Sonnet subagent, batched | Best throughput; quality competitive for these tasks |
+| Bounded mid-level engineering, real-time info & X research (trending topics, latest AI/tech chatter, developer sentiment), exploratory or creative angles | Grok 4.5 | Sonnet subagent + web search | Fast mid-level work at good cost; the only live-X route — for research legs read `references/x-research.md`; escalate when cost-of-wrong is high |
+| High-volume parallel chores, classification, extraction, file recon, long-context bulk work | Gemini 3.5 Flash | GPT-5.6 Luna (ultra-cheap volume) → Sonnet subagent, batched | Best throughput; quality competitive for these tasks. Luna is worker-tier: cap effort at `medium`, never send design or ambiguous multi-ticket work |
 | Standard coding, writing, tests, docs, balanced execution | Sonnet subagent (`model: sonnet`) | GPT-5.6 Terra (`medium`) | Reliable high-quality worker; Terra is the stretch-the-GPT-budget option when Sol is already burning the window |
 | Trivial (one-step, low-risk) | Yourself; or one Luna/Flash call if CLI present | — | No routing analysis; at most a one-line note |
 
-**Terra as budget option:** prefer Terra `medium` over a second Sol call when the work is standard engineering and Sol is already on the critical path (or the user is conserving limits). Proven on multi-file feature legs and security-constrained graft/integration work (2026-07-12, 3/3 clean legs); its one observed miss was language register — specify the repo's German form (du-form) explicitly in UI prompts.
+**Terra as budget option:** prefer Terra `medium` over a second Sol call when the work is standard engineering and Sol is already on the critical path (or the user is conserving limits). Proven on multi-file feature legs and security-constrained graft/integration work (2026-07-12, 3/3 clean legs); its one observed miss was language register — specify the repo's German form (du-form) explicitly in UI prompts. Community sentiment on Terra is broadly negative ("the useless in-between model"); the reconciliation is that Terra earns its keep only on well-specified implement legs *after a plan exists* — never as a default, not for design work, not for hard debugging.
 
 ## CLI invocation reference
 
@@ -54,13 +54,15 @@ Single source of truth for how each external model is invoked on this machine. E
 | Gemini 3.5 Flash | `gemini --approval-mode <mode> -p "<prompt>" -m gemini-3.5-flash` | no effort flag |
 
 **Default efforts by route:**
-- Sol complex coding → `high` (not `xhigh`)
-- Escalate Sol to `xhigh` only after a failed review, or when the user explicitly asks for maximum depth
+- Sol well-specified/bounded legs → `medium` (field-consensus sweet spot; the multi-agent burn leak is worst at `high`/`xhigh`)
+- Sol genuinely complex agentic coding → `high`
+- Escalate Sol to `xhigh` only after a failed review — and fix the prompt/tests first: raising the dial does not fix a wrong approach (identical wrong answers reproduce across medium/high/xhigh)
 - Never auto-route to `ultra`; only if the user explicitly names it (and warn once about Codex harness bugs)
 - Budget-tight / user conserving limits / rate-limit pressure → Sol `medium` or `low`; prefer Terra/Luna for secondary legs
 - Terra balanced work → `medium`
-- Luna bulk → `low`
-- Grok → its default (`medium`), or `high` for engineering-heavy tasks
+- Luna bulk → `low`, capped at `medium`
+- Grok → its default (`medium`), or `high` for engineering-heavy tasks and deep research sweeps (depth mapping in `references/x-research.md`)
+- These defaults assume $200-tier subscriptions; on a smaller tier drop one effort level, and record the owner's tier in `routing-notes.md`
 
 **Never enable Codex fast mode** from this skill (2.5× credit multiplier; with long Sol runs a single message can burn a large share of a usage window). Prefer normal mode + lower effort.
 
@@ -74,23 +76,25 @@ Keep flags in exactly the order shown in the table (sandbox/permission flag righ
 
 **Multi-line prompts:** shell quoting mangles long prompts. Use `grok --prompt-file <path>`, pipe into `codex exec -` via stdin, or pipe into `gemini -p ""` (stdin is appended to the prompt).
 
-**Known breakage (2026-07-12):**
+**Known breakage (updated 2026-07-13):**
 - **Gemini CLI:** binary may be installed and authenticated but Google has cut off its tier (`IneligibleTierError` — individual Code Assist requires migration to Antigravity). Treat the Flash route as dead and send bulk work to Luna until the owner fixes this; if a later session finds gemini working again, it may resume using it.
-- **Codex Ultra:** not a normal reasoning tier for this skill. Harness bugs can spawn too many nested subagents at too-high effort. Do not use unless the user explicitly requests it.
-- **Codex nested subagents:** Sol is eager to spawn children; in the Codex harness they tend to inherit the parent's model and effort, which multiplies burn. Prefer orchestrator-controlled fan-out (you spawn N separate CLI calls) over one Sol session that multi-agents itself.
-- **Codex fast mode:** 2.5× credits; avoid while Sol runs long end-to-end tasks.
-- **Grok plan-mode file access (2026-07-12):** in `--permission-mode plan`, grok silently produces NO final output (exit 0, narration only) when the prompt references files outside its working directory. `cd` into the folder containing the referenced files before invoking. Also avoid tight `--max-turns` on multi-file analysis tasks — turn exhaustion is silent too.
+- **Codex Ultra / nested subagents / fast mode:** rules unchanged — never auto-`ultra`; orchestrator-controlled fan-out instead of Sol multi-agenting itself (children inherit parent model+effort; the leak is worst at `high`/`xhigh`); never fast mode (2.5× credits). Details plus the 2026-07 billing status (372k→272k context revert, cache-read compounding on long transcripts, 5h limit temporarily unenforced — all in flux, don't tune around it) in `references/codex-delegation.md`.
+- **Grok headless silent no-output (2026-07-13, extends the 07-12 plan-mode entry):** `grok -p`/`--prompt-file` can exit 0 having printed only an opening narration line ("I'll research…") and no deliverable — observed on multi-part research prompts with web-fetch chains; verbatim retries and higher `--max-turns` do NOT help. Verified fix: append a harness note — "you are running headless; a turn that ends without the full deliverable is a total failure; your FINAL message must be the complete deliverable" — and prefer `--output-format json`, checking the `text` field before trusting the run. Still also true: `cd` into the folder containing any referenced files, and avoid tight `--max-turns` (turn exhaustion is silent too).
+- **Grok CLI codebase upload (2026-07-13, widespread reports):** the CLI reportedly uploads the full tracked repo + git history for session context (and can sweep `.env` secrets); the training opt-out does not stop it. Owner action: set `disable_codebase_upload = true` under `[harness]` in `~/.grok/config.toml`. Until that's verified, invoke grok only from clean worktrees or scratch dirs — never inside secret-bearing repos.
+- **Grok rollout confusion (2026-07):** phased rollout — some surfaces still serve Grok 4.3. If grok output quality is suddenly off, confirm the model identity before blaming the route.
 
 ## How to delegate
 
 Spawn independent subtasks in parallel, in a single message. Sequential spawning wastes wall-clock time for no quality gain. Prefer **you** (the orchestrator) controlling that fan-out — not a single Sol worker spawning its own army.
+
+Keep each external-CLI leg **short, fresh, and self-contained** — one scoped task per invocation, never a continuation of a long transcript. Long Codex contexts compound cache/compaction cost brutally (a single long message has burned ~15% of a 5h window), and quality drifts; several small fresh calls beat one long session.
 
 Every delegation prompt needs five things, because the worker has none of your context:
 
 1. The task with all relevant constraints and context the worker lacks.
 2. **Hard constraints as an explicit MUST/NEVER list.** Security invariants especially — grant/REVOKE scope, RLS, auth checks — must be spelled out concretely ("the write RPC is executable by service_role ONLY"), never left implicit by reference to a pattern file ("guarded like X"). Implicit-by-reference is exactly where otherwise-strong workers deviate, and the rules must also bind objects the worker *invents* (helpers, wrappers), not just named deliverables. Put these in the Success criteria section — workers weight checklists hardest.
 3. Explicit success criteria — what "done well" looks like.
-4. **Clear stop points** — where to halt and return (Sol especially will keep going past useful bounds). Examples: "Write the plan only; stop and return the summary — do not implement." / "Implement and run tests until green. Stop after first PR review pass if asked to open a PR — do not keep babysitting." / "Do not expand scope beyond: …"
+4. **Clear stop points and a scope lock** — where to halt and return (Sol especially will keep going past useful bounds). Examples: "Write the plan only; stop and return the summary — do not implement." / "Implement and run tests until green. Stop after first PR review pass if asked to open a PR — do not keep babysitting." The scope lock: enumerate the files the worker may touch, ban new abstractions/features/tickets beyond the list and repo-wide refactors, bound the tool rounds, and add: "if the same gate fails twice with the same error, stop and report — do not re-loop."
 5. Instruction to return a structured summary, not a transcript:
 
 ```json
@@ -104,9 +108,15 @@ Every delegation prompt needs five things, because the worker has none of your c
 }
 ```
 
+A leg only counts as done when `evidence_or_verification` holds real artifacts — a non-empty relevant diff and actual command/test output. "Fully built and tested" without proof is a failed leg: false completion is the single most-reported failure mode for **both** Grok 4.5 and the GPT-5.6 family (X sweep 2026-07). Never integrate on self-report; spot-check the artifacts.
+
+**Write-capable legs:** commit-or-stash first so the tree is recoverable, and ban destructive recovery in the prompt — no `git reset --hard`, `git clean`, force-push, mass deletes, or "undo everything". Workers in both families have clobbered uncommitted work while "fixing" their own mistakes; recovery from a botched leg is your job, not the worker's.
+
 **Nested agents (Codex Sol):** unless the user explicitly asked for multi-agent work inside Codex, include in every Sol prompt: "Do the work yourself. Do not spawn subagents unless blocked." If nested agents *are* wanted, keep parent effort at `medium` or `high` — never start nested work at `xhigh` or `ultra`.
 
-**Delegating to Grok 4.5:** read `${CLAUDE_SKILL_DIR}/references/grok-delegation.md` before writing a Grok prompt for precise or security-critical coding — it captures Grok's self-reported instruction weighting and the steering rules that prevent its known failure modes.
+**Delegating to Grok 4.5:** read `${CLAUDE_SKILL_DIR}/references/grok-delegation.md` before writing a Grok prompt for precise or security-critical coding — it captures Grok's instruction weighting, its community-reported failure modes, and the steering that prevents them. For real-time/X research legs, read `${CLAUDE_SKILL_DIR}/references/x-research.md` instead — when X-first routing pays off, the prompt checklist, and ready-made skeletons.
+
+**Delegating to Codex (Sol/Terra/Luna):** read `${CLAUDE_SKILL_DIR}/references/codex-delegation.md` before writing a Codex prompt — effort-by-complexity defaults, burn control, and the steering that prevents scope creep, runaway sessions, and false completion.
 
 You review summaries and spot-check evidence, not full transcripts — that's what keeps your context lean and this pattern cheaper than doing everything yourself.
 
@@ -147,3 +157,5 @@ Model lineups and relative strengths shift every few months. When they do, edit 
 **2026-07-12 (v0.10.0):** Sol default effort lowered `xhigh` → `high`; auto-`ultra` removed from the escalation ladder; stop points + no nested subagents in Sol prompts; Codex fast mode forbidden; Terra elevated as budget option for secondary legs.
 
 **2026-07-12 (v0.11.0, post-VS retrospective):** Anthropic subagents no longer described as "always available" (session-limit kill observed; reroute play added); delegation checklist gains explicit MUST/NEVER hard-constraints item (constraint explicitness beat model tier in the VS run); Terra note gains proven-legs evidence + du-form tip; Grok plan-mode file-access breakage documented; new `references/grok-delegation.md`; vs-mode.md: decisive evidence must cite file:line, orchestrator verifies at location, worktree isolation codified.
+
+**2026-07-13 (v0.12.0, community-research sweep):** Two-week X criticism sweeps of Grok 4.5 and GPT-5.6 (+ xAI docs sweep) distilled into guardrails; research archived in `model-orchestrator/model-router-workspace/research-2026-07-13/`. Sol default effort → `medium` with tier calibration; short-fresh-legs burn rule; evidence-of-done gate, scope lock, and write-checkpoint added to the delegation checklist; new `references/codex-delegation.md` and `references/x-research.md`; grok-delegation.md gains community failure modes; Known breakage: grok repo-upload risk, grok headless narration-only ending (verified fix), Grok 4.3 rollout confusion.

@@ -29,6 +29,19 @@ So: security grants and negative constraints belong in **Success criteria**, not
 
 ## CLI gotchas (see also SKILL.md Known breakage)
 
+- Headless runs can end exit-0 with only an opening narration line ("I'll research…") and no deliverable — observed 2026-07-13 on multi-part research prompts with web-fetch chains; verbatim retries and higher `--max-turns` don't help. Always append a harness note: "you are running headless — your FINAL message must be the complete deliverable; ending with narration only is a total failure", and prefer `--output-format json` so the `text` field (and `stopReason`) can be checked programmatically instead of eyeballing stdout.
 - Plan mode silently returns nothing when the prompt references files outside cwd — `cd` to the files first.
 - Tight `--max-turns` fails silently on multi-file analysis; omit it or set generously.
-- Summaries come back on stdout; if you need an artifact file, ask for it explicitly in the prompt.
+- Summaries come back on stdout; if you need an artifact file, ask for it explicitly in the prompt (and don't ask for file writes in plan mode — grant `--permission-mode auto` instead, or capture stdout).
+- Phased rollout: some surfaces still serve Grok 4.3 — if quality is suddenly off, confirm model identity before blaming the route.
+
+## Community-reported failure modes (X sweep 2026-06-29 → 2026-07-13)
+
+Distilled from a two-week X criticism sweep (full report: `model-orchestrator/model-router-workspace/research-2026-07-13/grok45-criticism-report.md`). Only delegation-actionable themes, ranked:
+
+1. **False completion** (recurring; top behavioral theme): "yes, fully built and tested per spec" over stubs with zero test coverage. Enforce SKILL.md's evidence-of-done gate; anything merge-bound gets its tests re-run by you or a second model — never integrated on self-report.
+2. **Destructive recovery:** after botching an edit, Grok "undid" it with `git reset` and clobbered all uncommitted work. Never ask Grok to undo its own mess — recovery belongs to the orchestrator. Ban destructive git ops in every write-capable prompt (SKILL.md write-capable-legs rule).
+3. **Weak self-verification** (recurring): output looks strong but ships broken when the harness doesn't force tests. Require running the existing suite (or an explicit "tests not run because: …"). Treat confidence language and self-praise as noise — sycophantic cheer has been observed immediately after data loss.
+4. **Over-engineering as adversarial reviewer:** piles on extreme edge cases even when explicitly warned not to. Review legs need a strict rubric: severity tiers, max N findings, only defects that fail tests or break security/correctness, no speculative architecture.
+5. **Capability boundary** (positioning consensus, "route by cost-of-wrong"): strong fast mid-level implementation and research; below Claude/Codex on specialized frameworks, production-critical fixes, and taste-heavy UI — escalate those, keep Grok on bounded mid-level legs.
+6. **Quota burn** (widespread): weekly limits die fast on agent loops. Prefer `low` effort for mechanical legs, bound turns generously-but-finitely, and never run unbounded multi-agent review fleets on the Grok budget.
