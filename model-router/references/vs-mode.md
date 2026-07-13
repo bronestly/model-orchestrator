@@ -31,13 +31,13 @@ Before running, state the overhead in relative terms (roughly N× the tokens of 
 ```
 
 3. You make the final call: verify the decisive evidence at its cited location first — if it is overstated or wrong, correct it in the ledger even when the verdict direction survives — then present the winner plus key differences to the user.
-4. Append the scorecard verbatim, with candidate names unblinded, to `routing-notes.md` in the working folder. Keep the file under ~15 entries; prune superseded ones when you write.
+4. Append the scorecard verbatim, with candidate names unblinded, to the global log at `$HOME/.claude/model-router/routing-notes.md`. Keep the file under ~15 entries; prune superseded ones when you write.
 
 ## Self-improvement (approval-gated)
 
 After every VS run, compare the scorecard's `routing_implication` against the routing table:
 
-- If it contradicts or refines a row, draft a minimal edit — exact before/after of just the affected cells — and present it to the user with the evidence. State the sample size plainly: a single VS run is one data point, so label the proposal's confidence accordingly (prior consistent entries in `routing-notes.md` raise it).
-- **Only after the user explicitly approves**, apply the edit to SKILL.md (in Claude Code the skill lives user-writable in `~/.claude/skills/model-router/`). Never edit the skill without approval.
-- If the user declines, record the declined proposal in `routing-notes.md` so you don't re-propose the same change.
-- If the skill file isn't writable (e.g., a managed/plugin install like Cowork), stop at the ledger: show the diff for the user to apply manually via their skill settings.
+- If it contradicts or refines a row, draft a minimal edit — exact before/after of just the affected cells — and present it to the user with the evidence. State the sample size plainly: a single VS run is one data point, so label the proposal's confidence accordingly (prior consistent entries in the global `routing-notes.md` raise it).
+- **Only after the user explicitly approves**, apply the edit to the **source-repo** SKILL.md — the repo path and the sync command are recorded in the header of `$HOME/.claude/model-router/routing-notes.md`. Apply there, then run that sync command to propagate to the installed copy. Never hand-edit the installed copy (`~/.claude/skills/model-router/`): it's a build artifact the next sync overwrites. Never edit the skill at all without approval.
+- If the user declines, record the declined proposal in the global `routing-notes.md` so you don't re-propose the same change.
+- If the source repo path isn't recorded or reachable (e.g., a managed/plugin install like Cowork with no source repo), stop at the ledger: show the diff for the user to apply manually via their skill settings.

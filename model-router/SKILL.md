@@ -7,7 +7,7 @@ allowed-tools:
   - Bash(grok --permission-mode plan *)
   - Bash(gemini --approval-mode plan *)
 metadata:
-  version: "0.12.0"
+  version: "0.13.0"
   updated: "2026-07-13"
 ---
 
@@ -21,7 +21,9 @@ You are the orchestrator. This skill runs under Fable 5 or Opus 4.8 — the patt
 
 Available external CLI binaries: !`command -v codex grok gemini 2>/dev/null || echo "(none found)"`
 
-Calibration notes from `routing-notes.md` in the working folder — let them override the routing table's defaults where they conflict: !`cat routing-notes.md 2>/dev/null || echo "(no routing-notes.md)"`
+Calibration notes — the global cross-session log first, then any project-local overrides. Let them override the routing table's defaults where they conflict: !`cat "$HOME/.claude/model-router/routing-notes.md" 2>/dev/null || echo "(no global routing-notes.md)"; test -f ./routing-notes.md && printf '\n--- project-local overrides (cwd) ---\n' && cat ./routing-notes.md; true`
+
+The global log at `$HOME/.claude/model-router/routing-notes.md` is this skill's durable memory — machine-local, append-only, read every session, and outside the skill dir so syncs never touch it. Its header records the source-repo path and the sync command; the self-improvement flow below needs both.
 
 A binary missing from the list above kills that route for this session — use the fallback column without comment or retries. A present binary is only *provisionally* alive: auth or account tier can be broken server-side, and the first real call is the true probe (see "When a delegation fails"). Anthropic subagents (Agent tool) are normally available but can be killed mid-run by the account's session limit — treat that like any other dead route: reroute the leg to an external CLI (Luna/Terra for recon and standard work, Sol/Grok for heavy legs), note when the window resets, and don't re-spawn Claude subagents until it has. External CLIs are enhancements, never a hard dependency — but no route is guaranteed. Never stall because a CLI is missing.
 
@@ -62,7 +64,7 @@ Single source of truth for how each external model is invoked on this machine. E
 - Terra balanced work → `medium`
 - Luna bulk → `low`, capped at `medium`
 - Grok → its default (`medium`), or `high` for engineering-heavy tasks and deep research sweeps (depth mapping in `references/x-research.md`)
-- These defaults assume $200-tier subscriptions; on a smaller tier drop one effort level, and record the owner's tier in `routing-notes.md`
+- These defaults assume $200-tier subscriptions; on a smaller tier drop one effort level, and record the owner's tier in the global `routing-notes.md`
 
 **Never enable Codex fast mode** from this skill (2.5× credit multiplier; with long Sol runs a single message can burn a large share of a usage window). Prefer normal mode + lower effort.
 
@@ -128,15 +130,27 @@ External CLIs fail in mundane ways: empty stdout, a non-zero exit, an auth/tier 
 2. Retry once only if the cause looks transient (timeout, rate limit). Auth, tier, and config errors will not fix themselves — don't retry those.
 3. On a confirmed failure, mark that route dead for the rest of the session and move to the fallback column. Tell the user in one line: "gemini errored (tier); routed to Luna instead."
 4. If the fallback chain is exhausted and no Claude subagent can reasonably absorb the work, stop and ask the user how to proceed. Don't invent an unrouted workaround.
-5. Record persistent breakage (auth/tier errors, not one-off timeouts) in `routing-notes.md` so future sessions skip the dead route without re-probing.
+5. Record persistent breakage (auth/tier errors, not one-off timeouts) in the global `routing-notes.md` so future sessions skip the dead route without re-probing. This is a machine-specific fact — it stays in the local log and is never promoted to the skill (the route may be healthy on another machine).
 
 ## Review
 
 Review every summary against the original goal before integrating. Don't rubber-stamp: spot-check at least one claim or piece of evidence. For high-stakes outputs (production code, published content, irreversible actions), have a second model from a different family sanity-check the result — or, if only Claude models are reachable, a fresh subagent that hasn't seen the producing agent's reasoning.
 
-## VS Mode & self-improvement
+## Continuous calibration & self-improvement
 
-When the user asks to compare models ("vs mode", "compare models", "use 2–3 models and compare"), read `${CLAUDE_SKILL_DIR}/references/vs-mode.md` for the comparison protocol, the mandatory scorecard schema, and the approval-gated routing-table update flow — then follow it exactly; the standardized scorecard is what makes runs comparable across sessions. You may suggest VS mode once for a substantial task where two routing rows genuinely overlap and calibration would pay for itself — never for trivial work, and don't push if declined.
+This skill learns across sessions through the global log at `$HOME/.claude/model-router/routing-notes.md` — the same file read at invocation above. Self-improvement is always on, not something that only happens in VS mode.
+
+**Capture (any session, one line, near-zero cost).** When a real task surfaces something worth remembering — a route that underperformed, a fallback that fired, a CLI behaving differently than the reference, or a notably good call worth repeating — append one dated line to the global log: `YYYY-MM-DD · <what happened> · route:<row>`. Don't write on routine success; the signal is rare. Keep the file under ~15 live entries, pruning ones that have been promoted or superseded.
+
+**Two kinds of note, two fates:**
+- *Machine-specific facts* (a CLI's auth/tier is dead on this box, a particular repo's build quirks) stay in the local log only — they're false on other machines and must never be promoted.
+- *Universal judgment calls* (a task type routes better to a different model; a model was renamed or re-tiered) become promotion candidates once the same signal recurs across 2–3 unrelated sessions. One data point is noise.
+
+**Promote (approval-gated).** When a universal note has earned it, follow the self-improvement flow in `${CLAUDE_SKILL_DIR}/references/vs-mode.md`: draft a minimal before/after diff of the affected routing-table cells, show the evidence and honest confidence, and — only after the user approves — apply it to the **source repo** (path in the log header), then run the sync command from that header. Never edit the installed copy directly: it's a build artifact the next sync overwrites. Prune promoted notes from the local log.
+
+## VS Mode
+
+When the user asks to compare models ("vs mode", "compare models", "use 2–3 models and compare"), read `${CLAUDE_SKILL_DIR}/references/vs-mode.md` for the comparison protocol and the mandatory scorecard schema — then follow it exactly; the standardized scorecard is what makes runs comparable across sessions and is a strong input to the promotion flow above. You may suggest VS mode once for a substantial task where two routing rows genuinely overlap and calibration would pay for itself — never for trivial work, and don't push if declined.
 
 ## Effort calibration
 
@@ -152,10 +166,12 @@ If the plan includes **≥2 Sol calls** or any Sol at **`xhigh`**, say so in the
 
 ## Maintenance
 
-Model lineups and relative strengths shift every few months. When they do, edit the routing table and CLI reference — nothing else in this skill hardcodes model names or commands. Deliberately keep benchmark numbers and percentage claims out of this file: they go stale silently and lend false precision to what is a judgment call. Session-to-session calibration lives in `routing-notes.md`; durable, user-approved changes get promoted into this file via the self-improvement flow in `references/vs-mode.md`.
+Model lineups and relative strengths shift every few months. When they do, edit the routing table and CLI reference — nothing else in this skill hardcodes model names or commands. Deliberately keep benchmark numbers and percentage claims out of this file: they go stale silently and lend false precision to what is a judgment call. Session-to-session calibration lives in the global log at `$HOME/.claude/model-router/routing-notes.md` (machine-local, outside the skill dir so syncs never touch it); durable, user-approved changes get promoted from there into this file via the self-improvement flow in `references/vs-mode.md`, then synced to the installed copy. The source repo is the single source of truth; the installed skill is a rsync build artifact — never hand-edit it.
 
 **2026-07-12 (v0.10.0):** Sol default effort lowered `xhigh` → `high`; auto-`ultra` removed from the escalation ladder; stop points + no nested subagents in Sol prompts; Codex fast mode forbidden; Terra elevated as budget option for secondary legs.
 
 **2026-07-12 (v0.11.0, post-VS retrospective):** Anthropic subagents no longer described as "always available" (session-limit kill observed; reroute play added); delegation checklist gains explicit MUST/NEVER hard-constraints item (constraint explicitness beat model tier in the VS run); Terra note gains proven-legs evidence + du-form tip; Grok plan-mode file-access breakage documented; new `references/grok-delegation.md`; vs-mode.md: decisive evidence must cite file:line, orchestrator verifies at location, worktree isolation codified.
 
 **2026-07-13 (v0.12.0, community-research sweep):** Two-week X criticism sweeps of Grok 4.5 and GPT-5.6 (+ xAI docs sweep) distilled into guardrails; research archived in `model-orchestrator/model-router-workspace/research-2026-07-13/`. Sol default effort → `medium` with tier calibration; short-fresh-legs burn rule; evidence-of-done gate, scope lock, and write-checkpoint added to the delegation checklist; new `references/codex-delegation.md` and `references/x-research.md`; grok-delegation.md gains community failure modes; Known breakage: grok repo-upload risk, grok headless narration-only ending (verified fix), Grok 4.3 rollout confusion.
+
+**2026-07-13 (v0.13.0, self-improvement architecture):** Calibration memory moved from a scattered per-cwd `routing-notes.md` to a single machine-local global log at `$HOME/.claude/model-router/routing-notes.md`, outside the skill dir so `rsync` syncs never clobber it (project-local `./routing-notes.md` still read as optional override). Self-improvement generalized from VS-mode-only to always-on continuous calibration, with an explicit machine-specific-vs-universal split (only universal notes get promoted) and a recurrence bar (2–3 sessions) before promotion. Promotion now targets the **source repo** (path + sync command recorded in the log header), never the installed build artifact. vs-mode.md updated to match.
