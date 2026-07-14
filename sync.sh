@@ -8,7 +8,7 @@
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="$REPO_ROOT/model-router"
+SRC="$REPO_ROOT/.claude/skills/model-router"
 DEST="$HOME/.claude/skills/model-router"
 LOGDIR="$HOME/.claude/model-router"
 
@@ -32,7 +32,7 @@ Machine-local, NOT version-controlled — this file is not in the source repo.
 
 - **Source repo (this machine):** see `$HOME/.claude/model-router/source-repo` (auto-stamped by sync.sh).
 - **Sync repo -> installed copy:** `bash "$(cat "$HOME/.claude/model-router/source-repo")/sync.sh"`
-- **Edit the skill source at:** `$(cat "$HOME/.claude/model-router/source-repo")/model-router/SKILL.md`
+- **Edit the skill source at:** `$(cat "$HOME/.claude/model-router/source-repo")/.claude/skills/model-router/SKILL.md`
 
 ## How to use this file
 - Append one dated line per real learning: `YYYY-MM-DD · <what happened> · route:<row>`.

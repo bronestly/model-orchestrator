@@ -146,7 +146,7 @@ This skill learns across sessions through the global log at `$HOME/.claude/model
 - *Machine-specific facts* (a CLI's auth/tier is dead on this box, a particular repo's build quirks) stay in the local log only — they're false on other machines and must never be promoted.
 - *Universal judgment calls* (a task type routes better to a different model; a model was renamed or re-tiered) become promotion candidates once the same signal recurs across 2–3 unrelated sessions. One data point is noise.
 
-**Promote (approval-gated).** When a universal note has earned it, follow the self-improvement flow in `${CLAUDE_SKILL_DIR}/references/vs-mode.md`: draft a minimal before/after diff of the affected routing-table cells, show the evidence and honest confidence, and — only after the user approves — edit the source at `$(cat "$HOME/.claude/model-router/source-repo")/model-router/SKILL.md`, then run `bash "$(cat "$HOME/.claude/model-router/source-repo")/sync.sh"` to propagate. Never edit the installed copy directly: it's a build artifact the next sync overwrites. Prune promoted notes from the local log.
+**Promote (approval-gated).** When a universal note has earned it, follow the self-improvement flow in `${CLAUDE_SKILL_DIR}/references/vs-mode.md`: draft a minimal before/after diff of the affected routing-table cells, show the evidence and honest confidence, and — only after the user approves — edit the source at `$(cat "$HOME/.claude/model-router/source-repo")/.claude/skills/model-router/SKILL.md`, then run `bash "$(cat "$HOME/.claude/model-router/source-repo")/sync.sh"` to propagate. Never edit the installed copy directly: it's a build artifact the next sync overwrites. Prune promoted notes from the local log.
 
 ## VS Mode
 
