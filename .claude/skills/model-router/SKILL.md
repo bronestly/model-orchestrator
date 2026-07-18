@@ -1,106 +1,50 @@
 ---
 name: model-router
-description: "Routes work to the most suitable model at the best cost/speed/quality balance, then executes the delegation. Use whenever a task has multiple subtasks, parallelizable work, bulk/mechanical operations, or deep analysis worth delegating to subagents — even if the user never mentions models, routing, or cost. Also use when the user asks which model to use, wants to reduce cost or tokens, says 'delegate', 'route', 'subagents', 'vs mode', 'compare models', or names a model (Fable, Opus, Sonnet, Codex, GPT, Grok, Gemini). Skip for single-step trivial tasks you can answer directly."
+description: "Routes and executes substantial multi-model work at an appropriate cost, speed, and quality. Use when the user asks to route, delegate, compare models, use subagents, conserve model limits, or when a task has independent bulk, research, implementation, or review legs that clearly benefit from different models. Skip routine single-model work and trivial tasks."
 allowed-tools:
   - Bash(command -v *)
   - Bash(codex exec --skip-git-repo-check -s read-only *)
   - Bash(grok --permission-mode plan *)
   - Bash(gemini --approval-mode plan *)
 metadata:
-  version: "0.14.0"
+  version: "0.15.0"
   updated: "2026-07-18"
 ---
 
-# Model Router
+# Model Router — Claude Adapter
 
-You are the orchestrator. This skill runs under Fable 5 or Opus 4.8 — the pattern is identical for both, so the table below names roles ("you", "frontier Claude subagent") rather than hardcoding who you are; the one place your identity changes a route is flagged inline. Your context window and inference are the most expensive resources in the session — spend them only on what cheaper models can't do well: decomposing ambiguous problems, high-stakes judgment calls, verifying results, and final integration. Prefer: you plan, decompose, verify, integrate; workers implement — don't spend frontier main-context tokens typing bulk code when a Sol/Grok/Sonnet leg can. Everything else gets delegated. Don't just recommend a route — execute it.
+Act as the orchestrator. Keep ambiguity resolution, consequential judgment, verification, and final integration in the main context. Delegate only a bounded leg with a clear cost, speed, context, or independent-review advantage. Do not route merely because a task is long or touches many files.
 
-**Quality floor:** never route to Haiku. The cheapest permitted Claude worker is Sonnet; cheap bulk work belongs to Gemini Flash or Luna via CLI. If neither CLI is available, batch the bulk work into as few Sonnet calls as possible rather than dropping below the floor.
+## Route selection
 
-## Session context (auto-gathered at invocation)
-
-Available external CLI binaries: !`command -v codex grok gemini 2>/dev/null || echo "(none found)"`
-
-Calibration notes — the global cross-session log first, then any project-local overrides. Let them override the routing table's defaults where they conflict: !`cat "$HOME/.claude/model-router/routing-notes.md" 2>/dev/null || echo "(no global routing-notes.md)"; test -f ./routing-notes.md && printf '\n--- project-local overrides (cwd) ---\n' && cat ./routing-notes.md; true`
-
-The global log at `$HOME/.claude/model-router/routing-notes.md` is this skill's durable memory — machine-local, append-only, read every session, and outside the skill dir so syncs never touch it. The source-repo path for this machine is stamped (by `sync.sh`) in `$HOME/.claude/model-router/source-repo`; the self-improvement flow below reads it to locate the editable source, so nothing here hardcodes a per-machine path.
-
-A binary missing from the list above kills that route for this session — use the fallback column without comment or retries. A present binary is only *provisionally* alive: auth or account tier can be broken server-side, and the first real call is the true probe (see "When a delegation fails"). Anthropic subagents (Agent tool) are normally available but can be killed mid-run by the account's session limit — treat that like any other dead route: reroute the leg to an external CLI (Luna/Terra for recon and standard work, Sol/Grok for heavy legs), note when the window resets, and don't re-spawn Claude subagents until it has. External CLIs are enhancements, never a hard dependency — but no route is guaranteed. Never stall because a CLI is missing.
-
-## Routing table
-
-Pick the cheapest row that fits the task well. Escalate only if review fails — a failed cheap attempt plus escalation usually still costs less than starting expensive. Overlaps are normal; routing is a judgment call on cost, speed, and subtle strengths.
-
-| Work type | Primary | Fallback if unavailable | Why |
-|---|---|---|---|
-| Decomposition, ambiguity resolution, high-stakes judgment, final integration & review | You (main context) | — never delegate these | Deepest reasoning in the session; the point of the whole pattern |
-| Complex agentic coding, precise structured codegen, math-heavy implementation, computer use | Codex Sol (`medium` for well-specified legs, `high` for genuinely complex ones) | Grok 4.5 → Opus subagent (`model: opus`) | Leads on precise coding and computer use; `medium` is the field-tested sweet spot — see `references/codex-delegation.md` |
-| Deep analysis, critical review, second opinions on high-stakes output | Frontier Claude subagent: `model: opus` — but if you are Opus 4.8 and `fable` appears in the Agent tool's model options, prefer `model: fable` | Codex Sol | Frontier depth without burning your main context; always available |
-| Bounded mid-level engineering, real-time info & X research (trending topics, latest AI/tech chatter, developer sentiment), exploratory or creative angles | Grok 4.5 | Sonnet subagent + web search | Fast mid-level work at good cost; the only live-X route — for research legs read `references/x-research.md`; escalate when cost-of-wrong is high |
-| High-volume parallel chores, classification, extraction, file recon, long-context bulk work | Gemini 3.5 Flash | GPT-5.6 Luna (ultra-cheap volume) → Sonnet subagent, batched | Best throughput; quality competitive for these tasks. Luna is worker-tier: cap effort at `medium`, never send design or ambiguous multi-ticket work |
-| Standard coding, writing, tests, docs, balanced execution | Sonnet subagent (`model: sonnet`) | GPT-5.6 Terra (`medium` implement / `high` review) | Reliable high-quality worker; Terra is the stretch-the-GPT-budget option when Sol is already burning the window |
-| Trivial (one-step, low-risk) | Yourself; or one Luna/Flash call if CLI present | — | No routing analysis; at most a one-line note |
-
-**Terra as budget option:** prefer Terra over a second Sol call when Sol is already on the critical path (or the user is conserving limits). Effort by leg shape: `medium` for well-specified implement *after a plan exists*; `high` for review / PR-triage secondary legs (field-tested faster with negligible quality loss vs Sol low). Proven on multi-file feature legs and security-constrained graft/integration work (2026-07-12, 3/3 clean legs); its one observed miss was language register — specify the repo's German form (du-form) explicitly in UI prompts. Community sentiment on Terra is broadly negative ("the useless in-between model"); the reconciliation is that Terra earns its keep only on those two shapes — never as a default, not for design work, not for hard debugging.
-
-## CLI invocation reference
-
-Single source of truth for how each external model is invoked on this machine. Every command below was smoke-tested live on 2026-07-12. Never guess flags beyond these — a wrong flag silently runs the wrong model or the wrong effort.
-
-| Model | Command (verified) | Effort values |
+| Work | Primary | Fallback |
 |---|---|---|
-| Codex Sol | `codex exec --skip-git-repo-check -s <sandbox> -m gpt-5.6-sol -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` | Prefer `low medium high xhigh`. CLI also accepts `max` and `ultra` — **do not use `ultra`** (see Known breakage) |
-| GPT-5.6 Terra | same, with `-m gpt-5.6-terra` | same as Sol (no `ultra`) |
-| GPT-5.6 Luna | same, with `-m gpt-5.6-luna` | `low medium high xhigh max` (no `ultra`) |
-| Grok 4.5 | `grok --permission-mode <mode> -p "<prompt>" --reasoning-effort <effort> [--max-turns <N>] [--output-format json]` | `none minimal low medium high xhigh max` |
-| Gemini 3.5 Flash | `gemini --approval-mode <mode> -p "<prompt>" -m gemini-3.5-flash` | no effort flag |
+| Decomposition, high-stakes judgment, final integration | Main Claude context | Never delegate |
+| Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium`; `high` when genuinely complex) | Grok 4.5, then an Opus/Fable subagent |
+| Independent critical review | Fresh Fable/Opus subagent | Codex Sol |
+| Bounded mid-level engineering or live-X research | Grok 4.5 | Sonnet subagent plus web search |
+| Bulk classification, extraction, or file reconnaissance | Gemini Flash | Luna, then batched Sonnet |
+| Standard implementation, tests, docs, or writing | Sonnet subagent | Terra (`medium` implement; `high` review) |
 
-**Default efforts by route:**
-- Sol well-specified/bounded legs → `medium` (field-consensus sweet spot; the multi-agent burn leak is worst at `high`/`xhigh`)
-- Sol well-specified when conserving limits → try `low` first (often same quality, far cheaper; if hitting limits on medium/low, turn off fast mode before raising effort)
-- Sol genuinely complex agentic coding → `high`
-- Escalate Sol to `xhigh` only after a failed review — and fix the prompt/tests first: raising the dial does not fix a wrong approach (identical wrong answers reproduce across medium/high/xhigh)
-- Never auto-route to `ultra`; only if the user explicitly names it (and warn once about Codex harness bugs)
-- Budget-tight / user conserving limits / rate-limit pressure → Sol `low` first, then `medium`; prefer Terra/Luna for secondary legs
-- Terra well-specified implement (after a plan) → `medium`; Terra review / PR-triage → `high`
-- Luna bulk → `low`, capped at `medium` (do not raise Luna to `xhigh` to chase quality — that costs more than Sol `medium`)
-- Grok mechanical / mid-level implement / quick research → `low`; engineering-heavy or deep X criticism sweeps → `high` (depth mapping in `references/x-research.md`)
-- Inverse effort (Codex family): smaller model needs higher effort to approach Sol-`medium` quality — Terra `high` is the practical expression; Luna stays capped for cost
-- These defaults assume $200-tier subscriptions; on a smaller tier drop one effort level, and record the owner's tier in the global `routing-notes.md`
+Use the cheapest route that comfortably clears the quality bar. For routine work, stay in the main context instead of spending time on routing analysis.
 
-**Never enable Codex fast mode** from this skill (2.5× credit multiplier; with long Sol runs a single message can burn a large share of a usage window). Prefer normal mode + lower effort.
+Before an external CLI call, read [references/routing-reference.md](references/routing-reference.md). Then read only the provider reference selected by the route:
 
-**Sandbox / permissions are task-scoped — grant only what the task needs:**
-- Research, analysis, review (no edits): codex `-s read-only` · grok `--permission-mode plan` · gemini `--approval-mode plan`
-- Tasks that must edit files: codex `-s workspace-write` · grok `--permission-mode auto` · gemini `--approval-mode yolo`
+- Codex Sol/Terra/Luna: [references/codex-delegation.md](references/codex-delegation.md)
+- Grok engineering: [references/grok-delegation.md](references/grok-delegation.md)
+- Grok live-X research: [references/x-research.md](references/x-research.md)
+- Explicit model comparison: [references/vs-mode.md](references/vs-mode.md)
 
-Keep flags in exactly the order shown in the table (sandbox/permission flag right after the binary for grok and gemini, `-s` right after `exec --skip-git-repo-check` for codex). The skill pre-approves only the read-only forms via prefix-matched permission rules, so reordering flags re-introduces prompts; write-capable forms always prompt, by design.
+## Delegation contract
 
-**Output capture:** codex prints a transcript to stdout and writes only the final message to the `-o` file — read the file, not stdout. grok and gemini print the answer directly to stdout. Either way, have workers write real artifacts to files and return the JSON summary from "How to delegate".
+Each worker receives one fresh, self-contained task with:
 
-**Multi-line prompts:** shell quoting mangles long prompts. Use `grok --prompt-file <path>`, pipe into `codex exec -` via stdin, or pipe into `gemini -p ""` (stdin is appended to the prompt).
-
-**Known breakage (updated 2026-07-18):**
-- **Gemini CLI:** binary may be installed and authenticated but Google has cut off its tier (`IneligibleTierError` — individual Code Assist requires migration to Antigravity). Treat the Flash route as dead and send bulk work to Luna until the owner fixes this; if a later session finds gemini working again, it may resume using it.
-- **Codex Ultra / nested subagents / fast mode:** rules unchanged — never auto-`ultra`; orchestrator-controlled fan-out instead of Sol multi-agenting itself (children inherit parent model+effort; the leak is worst at `high`/`xhigh`); never fast mode (2.5× credits). Details plus the 2026-07 billing status (372k→272k context revert, cache-read compounding on long transcripts, 5h limit temporarily unenforced — all in flux, don't tune around it) in `references/codex-delegation.md`.
-- **Grok headless silent no-output (2026-07-13, extends the 07-12 plan-mode entry):** `grok -p`/`--prompt-file` can exit 0 having printed only an opening narration line ("I'll research…") and no deliverable — observed on multi-part research prompts with web-fetch chains; verbatim retries and higher `--max-turns` do NOT help. Verified fix: append a harness note — "you are running headless; a turn that ends without the full deliverable is a total failure; your FINAL message must be the complete deliverable" — and prefer `--output-format json`, checking the `text` field before trusting the run. Still also true: `cd` into the folder containing any referenced files, and avoid tight `--max-turns` (turn exhaustion is silent too).
-- **Grok concurrent CLI cancel (2026-07-17):** two simultaneous `grok -p` runs can leave one with `stopReason:Cancelled` and empty output. Serialize Grok CLI legs; don't fan out multiple headless grok processes in parallel.
-- **Grok CLI codebase upload (2026-07-13, widespread reports):** the CLI reportedly uploads the full tracked repo + git history for session context (and can sweep `.env` secrets); the training opt-out does not stop it. Owner action: set `disable_codebase_upload = true` under `[harness]` in `~/.grok/config.toml`. Until that's verified, invoke grok only from clean worktrees or scratch dirs — never inside secret-bearing repos.
-- **Grok rollout confusion (2026-07):** phased rollout — some surfaces still serve Grok 4.3. If grok output quality is suddenly off, confirm the model identity before blaming the route.
-
-## How to delegate
-
-Spawn independent subtasks in parallel, in a single message. Sequential spawning wastes wall-clock time for no quality gain. Prefer **you** (the orchestrator) controlling that fan-out — not a single Sol worker spawning its own army.
-
-Keep each external-CLI leg **short, fresh, and self-contained** — one scoped task per invocation, never a continuation of a long transcript. Long Codex contexts compound cache/compaction cost brutally (a single long message has burned ~15% of a 5h window), and quality drifts; several small fresh calls beat one long session.
-
-Every delegation prompt needs five things, because the worker has none of your context:
-
-1. The task with all relevant constraints and context the worker lacks.
-2. **Hard constraints as an explicit MUST/NEVER list.** Security invariants especially — grant/REVOKE scope, RLS, auth checks — must be spelled out concretely ("the write RPC is executable by service_role ONLY"), never left implicit by reference to a pattern file ("guarded like X"). Implicit-by-reference is exactly where otherwise-strong workers deviate, and the rules must also bind objects the worker *invents* (helpers, wrappers), not just named deliverables. Put these in the Success criteria section — workers weight checklists hardest.
-3. Explicit success criteria — what "done well" looks like.
-4. **Clear stop points and a scope lock** — where to halt and return (Sol especially will keep going past useful bounds). Examples: "Write the plan only; stop and return the summary — do not implement." / "Implement and run tests until green. Stop after first PR review pass if asked to open a PR — do not keep babysitting." The scope lock: enumerate the files the worker may touch, ban new abstractions/features/tickets beyond the list and repo-wide refactors, bound the tool rounds, and add: "if the same gate fails twice with the same error, stop and report — do not re-loop."
-5. Instruction to return a structured summary, not a transcript:
+1. Goal and relevant context.
+2. Explicit MUST/NEVER constraints, including security and permission invariants.
+3. Concrete success criteria and required evidence.
+4. Scope lock: allowed files/actions, no unrelated abstractions or refactors.
+5. Stop rule: if the same gate fails twice with the same error, return blocked.
+6. A concise structured result:
 
 ```json
 {
@@ -113,70 +57,27 @@ Every delegation prompt needs five things, because the worker has none of your c
 }
 ```
 
-A leg only counts as done when `evidence_or_verification` holds real artifacts — a non-empty relevant diff and actual command/test output. "Fully built and tested" without proof is a failed leg: false completion is the single most-reported failure mode for **both** Grok 4.5 and the GPT-5.6 family (X sweep 2026-07). Never integrate on self-report; spot-check the artifacts.
+For write-capable legs, first create a recoverable commit or stash checkpoint. Forbid `git reset --hard`, `git clean`, force-push, mass deletion, and destructive recovery. Unless nested work was explicitly requested, tell Codex workers to do the work themselves without spawning subagents.
 
-**Write-capable legs:** commit-or-stash first so the tree is recoverable, and ban destructive recovery in the prompt — no `git reset --hard`, `git clean`, force-push, mass deletes, or "undo everything". Workers in both families have clobbered uncommitted work while "fixing" their own mistakes; recovery from a botched leg is your job, not the worker's.
+## Verification and failure
 
-**Nested agents (Codex Sol):** unless the user explicitly asked for multi-agent work inside Codex, include in every Sol prompt: "Do the work yourself. Do not spawn subagents unless blocked." If nested agents *are* wanted, keep parent effort at `medium` or `high` — never start nested work at `xhigh` or `ultra`.
+- Trust artifacts, diffs, and real command output—not a worker's completion claim.
+- Spot-check at least one material claim before integration.
+- Retry once only for an apparently transient failure. Do not retry auth, tier, configuration, or empty-deliverable failures.
+- Mark a failed route dead for the session and use its documented fallback.
+- For high-stakes output, use a fresh reviewer from another model family when one is available.
+- Never stall solely because an external CLI is unavailable.
 
-**Delegating to Grok 4.5:** read `${CLAUDE_SKILL_DIR}/references/grok-delegation.md` before writing a Grok prompt for precise or security-critical coding — it captures Grok's instruction weighting, its community-reported failure modes, and the steering that prevents them. For real-time/X research legs, read `${CLAUDE_SKILL_DIR}/references/x-research.md` instead — when X-first routing pays off, the prompt checklist, and ready-made skeletons.
+For substantial routes, state the route and cost/quality rationale briefly before executing. Call out plans containing two or more Sol calls or any Sol at `xhigh`.
 
-**Delegating to Codex (Sol/Terra/Luna):** read `${CLAUDE_SKILL_DIR}/references/codex-delegation.md` before writing a Codex prompt — effort-by-complexity defaults, burn control, and the steering that prevents scope creep, runaway sessions, and false completion.
+## Calibration
 
-You review summaries and spot-check evidence, not full transcripts — that's what keeps your context lean and this pattern cheaper than doing everything yourself.
-
-## When a delegation fails
-
-External CLIs fail in mundane ways: empty stdout, a non-zero exit, an auth/tier error, output that ignores the prompt. Never paper over these — a silently failed delegation poisons everything you integrate downstream.
-
-1. Check every CLI result before using it: exit code 0 **and** non-empty, on-task output. An empty `-o` file or an off-topic reply counts as failure.
-2. Retry once only if the cause looks transient (timeout, rate limit). Auth, tier, and config errors will not fix themselves — don't retry those.
-3. On a confirmed failure, mark that route dead for the rest of the session and move to the fallback column. Tell the user in one line: "gemini errored (tier); routed to Luna instead."
-4. If the fallback chain is exhausted and no Claude subagent can reasonably absorb the work, stop and ask the user how to proceed. Don't invent an unrouted workaround.
-5. Record persistent breakage (auth/tier errors, not one-off timeouts) in the global `routing-notes.md` so future sessions skip the dead route without re-probing. This is a machine-specific fact — it stays in the local log and is never promoted to the skill (the route may be healthy on another machine).
-
-## Review
-
-Review every summary against the original goal before integrating. Don't rubber-stamp: spot-check at least one claim or piece of evidence. For high-stakes outputs (production code, published content, irreversible actions), have a second model from a different family sanity-check the result — or, if only Claude models are reachable, a fresh subagent that hasn't seen the producing agent's reasoning.
-
-## Continuous calibration & self-improvement
-
-This skill learns across sessions through the global log at `$HOME/.claude/model-router/routing-notes.md` — the same file read at invocation above. Self-improvement is always on, not something that only happens in VS mode.
-
-**Capture (any session, one line, near-zero cost).** When a real task surfaces something worth remembering — a route that underperformed, a fallback that fired, a CLI behaving differently than the reference, or a notably good call worth repeating — append one dated line to the global log: `YYYY-MM-DD · <what happened> · route:<row>`. Don't write on routine success; the signal is rare. Keep the file under ~15 live entries, pruning ones that have been promoted or superseded.
-
-**Two kinds of note, two fates:**
-- *Machine-specific facts* (a CLI's auth/tier is dead on this box, a particular repo's build quirks) stay in the local log only — they're false on other machines and must never be promoted.
-- *Universal judgment calls* (a task type routes better to a different model; a model was renamed or re-tiered) become promotion candidates once the same signal recurs across 2–3 unrelated sessions. One data point is noise.
-
-**Promote (approval-gated).** When a universal note has earned it, follow the self-improvement flow in `${CLAUDE_SKILL_DIR}/references/vs-mode.md`: draft a minimal before/after diff of the affected routing-table cells, show the evidence and honest confidence, and — only after the user approves — edit the source at `$(cat "$HOME/.claude/model-router/source-repo")/.claude/skills/model-router/SKILL.md`, then run `bash "$(cat "$HOME/.claude/model-router/source-repo")/sync.sh"` to propagate. Never edit the installed copy directly: it's a build artifact the next sync overwrites. Prune promoted notes from the local log.
-
-## VS Mode
-
-When the user asks to compare models ("vs mode", "compare models", "use 2–3 models and compare"), read `${CLAUDE_SKILL_DIR}/references/vs-mode.md` for the comparison protocol and the mandatory scorecard schema — then follow it exactly; the standardized scorecard is what makes runs comparable across sessions and is a strong input to the promotion flow above. You may suggest VS mode once for a substantial task where two routing rows genuinely overlap and calibration would pay for itself — never for trivial work, and don't push if declined.
-
-## Effort calibration
-
-- **Trivial:** no routing analysis. Do it or fire one cheap CLI call. One-line note at most: "Routed to Luna (bulk extraction)."
-- **Substantial** (multi-part, costly, or risky): state the plan briefly before executing so the user can redirect:
-
-```
-Route: [you: decompose] → [Codex Sol + 3× Luna in parallel] → [Sonnet: review] → [you: integrate]
-Why: [1–2 lines on the cost/quality tradeoff]
-```
-
-If the plan includes **≥2 Sol calls** or any Sol at **`xhigh`**, say so in the Route line and prefer lower effort or Terra for secondary legs — multi-Sol-high plans can torch a usage window even under orchestrator control.
+Read machine-local observations from `$HOME/.claude/model-router/routing-notes.md` when present and let recent, relevant notes override defaults. Record only persistent breakage or a non-routine routing lesson; do not log ordinary success. Keep machine-specific facts local. Promote a repeated universal lesson only through the approval-gated flow in `references/vs-mode.md`, editing this repository's source rather than the installed copy.
 
 ## Maintenance
 
-Model lineups and relative strengths shift every few months. When they do, edit the routing table and CLI reference — nothing else in this skill hardcodes model names or commands. Deliberately keep benchmark numbers and percentage claims out of this file: they go stale silently and lend false precision to what is a judgment call. Session-to-session calibration lives in the global log at `$HOME/.claude/model-router/routing-notes.md` (machine-local, outside the skill dir so syncs never touch it); durable, user-approved changes get promoted from there into this file via the self-improvement flow in `references/vs-mode.md`, then synced to the installed copy. The source repo is the single source of truth; the installed skill is a rsync build artifact — never hand-edit it.
-
-**2026-07-12 (v0.10.0):** Sol default effort lowered `xhigh` → `high`; auto-`ultra` removed from the escalation ladder; stop points + no nested subagents in Sol prompts; Codex fast mode forbidden; Terra elevated as budget option for secondary legs.
-
-**2026-07-12 (v0.11.0, post-VS retrospective):** Anthropic subagents no longer described as "always available" (session-limit kill observed; reroute play added); delegation checklist gains explicit MUST/NEVER hard-constraints item (constraint explicitness beat model tier in the VS run); Terra note gains proven-legs evidence + du-form tip; Grok plan-mode file-access breakage documented; new `references/grok-delegation.md`; vs-mode.md: decisive evidence must cite file:line, orchestrator verifies at location, worktree isolation codified.
-
-**2026-07-13 (v0.12.0, community-research sweep):** Two-week X criticism sweeps of Grok 4.5 and GPT-5.6 (+ xAI docs sweep) distilled into guardrails; research archived in `model-orchestrator/model-router-workspace/research-2026-07-13/`. Sol default effort → `medium` with tier calibration; short-fresh-legs burn rule; evidence-of-done gate, scope lock, and write-checkpoint added to the delegation checklist; new `references/codex-delegation.md` and `references/x-research.md`; grok-delegation.md gains community failure modes; Known breakage: grok repo-upload risk, grok headless narration-only ending (verified fix), Grok 4.3 rollout confusion.
-
-**2026-07-13 (v0.13.0, self-improvement architecture):** Calibration memory moved from a scattered per-cwd `routing-notes.md` to a single machine-local global log at `$HOME/.claude/model-router/routing-notes.md`, outside the skill dir so `rsync` syncs never clobber it (project-local `./routing-notes.md` still read as optional override). Self-improvement generalized from VS-mode-only to always-on continuous calibration, with an explicit machine-specific-vs-universal split (only universal notes get promoted) and a recurrence bar (2–3 sessions) before promotion. Promotion now targets the **source repo**, never the installed build artifact. The repo path is not hardcoded anywhere: a self-locating `sync.sh` at the repo root rsyncs source→installed and stamps this machine's repo root into `$HOME/.claude/model-router/source-repo`, which the self-improvement flow reads to locate the editable source — so a second machine works by cloning and running `sync.sh` once, with no per-box edits. vs-mode.md updated to match.
-
-**2026-07-18 (v0.14.0, X-consensus effort recalibration):** Three-week high-signal X sweep (Theo, OpenAI Codex DX, steipete, Ben Holmes, xAI/skcd) reconciled against local VS logs — effort dials only, no new routing-table rows. Grok default mid-level effort → `low` (raise to `high` for eng-peer / deep research); Sol `low` elevated as first-class when conserving; Terra `high` for review/PR-triage secondary legs; one-line inverse-effort rule for Codex family; orchestrator typing discipline (plan/verify, workers implement); Known breakage: serialize concurrent Grok CLI. Explicitly not added: Kimi route, Mythos, Ultra fleets.
+- **2026-07-12 · v0.10.0–v0.11.0:** Lowered Sol effort, bounded nested work, strengthened explicit constraints and evidence review.
+- **2026-07-13 · v0.12.0:** Added short fresh legs, scope locks, write checkpoints, and provider-specific references.
+- **2026-07-13 · v0.13.0:** Added machine-local calibration and approval-gated promotion.
+- **2026-07-18 · v0.14.0–v0.14.1:** Recalibrated efforts; made fast mode categorically forbidden and removed stale percentage claims.
+- **2026-07-18 · v0.15.0:** Split Claude and Codex host adapters, moved CLI/breakage detail to shared references, and added a rare Fable advisor path for a Sol-high Codex host.
