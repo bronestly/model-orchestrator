@@ -27,9 +27,16 @@ So: security grants and negative constraints belong in **Success criteria**, not
 9. **Keep performance/algorithm bullets concrete** (SKIP LOCKED, bounded LATERAL, no cross join, claim ≤ limit) — this is where Grok over-delivers; don't dilute those to make room for constraints.
 10. **Keep pure-logic extraction + enumerated test cases** in the deliverable — that's what produced 13 hermetic tests vs the rival's 4. Add a test bullet per critical config scope ("assert per-feed config, not per-shop") when multi-tenancy matters.
 
+## Effort defaults (2026-07-18 recalibration)
+
+- **Mechanical / mid-level implement / quick research → `low`.** Community consensus (and xAI-adjacent tips) is near-zero quality loss vs medium on most tasks, with large quota and latency savings. This is the default for Grok legs.
+- **Engineering-heavy, security-adjacent, or deep X criticism sweeps → `high`.** Raise when cost-of-wrong is high or when matching Sol@high in a VS peer leg — not by default.
+- Lead with the exact task and output format; keep security MUST/NEVER in Success criteria (the ten rules above still bind). Lean prompts help Grok; vague "improve things" prompts do not.
+
 ## CLI gotchas (see also SKILL.md Known breakage)
 
 - Headless runs can end exit-0 with only an opening narration line ("I'll research…") and no deliverable — observed 2026-07-13 on multi-part research prompts with web-fetch chains; verbatim retries and higher `--max-turns` don't help. Always append a harness note: "you are running headless — your FINAL message must be the complete deliverable; ending with narration only is a total failure", and prefer `--output-format json` so the `text` field (and `stopReason`) can be checked programmatically instead of eyeballing stdout.
+- Concurrent `grok -p` runs can cancel each other (`stopReason:Cancelled`, empty output) — serialize Grok CLI legs; do not fan out multiple headless grok processes in parallel.
 - Plan mode silently returns nothing when the prompt references files outside cwd — `cd` to the files first.
 - Tight `--max-turns` fails silently on multi-file analysis; omit it or set generously.
 - Summaries come back on stdout; if you need an artifact file, ask for it explicitly in the prompt (and don't ask for file writes in plan mode — grant `--permission-mode auto` instead, or capture stdout).
@@ -44,4 +51,4 @@ Distilled from a two-week X criticism sweep (full report: `model-orchestrator/mo
 3. **Weak self-verification** (recurring): output looks strong but ships broken when the harness doesn't force tests. Require running the existing suite (or an explicit "tests not run because: …"). Treat confidence language and self-praise as noise — sycophantic cheer has been observed immediately after data loss.
 4. **Over-engineering as adversarial reviewer:** piles on extreme edge cases even when explicitly warned not to. Review legs need a strict rubric: severity tiers, max N findings, only defects that fail tests or break security/correctness, no speculative architecture.
 5. **Capability boundary** (positioning consensus, "route by cost-of-wrong"): strong fast mid-level implementation and research; below Claude/Codex on specialized frameworks, production-critical fixes, and taste-heavy UI — escalate those, keep Grok on bounded mid-level legs.
-6. **Quota burn** (widespread): weekly limits die fast on agent loops. Prefer `low` effort for mechanical legs, bound turns generously-but-finitely, and never run unbounded multi-agent review fleets on the Grok budget.
+6. **Quota burn** (widespread): weekly limits die fast on agent loops. Prefer `low` effort as the default (see Effort defaults above), bound turns generously-but-finitely, serialize concurrent CLI runs, and never run unbounded multi-agent review fleets on the Grok budget.

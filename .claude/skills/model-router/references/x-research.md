@@ -39,12 +39,12 @@ Fast-moving-topic rule: X-first for the *discourse*, then corroborate every fact
 
 | Depth | Effort |
 |---|---|
-| Quick "is this moving?" snapshot | `low`–`medium` |
-| Standard daily/weekly brief | `medium` |
+| Quick "is this moving?" snapshot | `low` |
+| Standard daily/weekly brief | `low`–`medium` |
 | Deep criticism/sentiment sweep | `high` |
 | "What changed in the last N days" brief | `medium`–`high` |
 
-Higher effort must buy more diverse queries and stricter citation rules — not longer prose.
+Default to `low` unless the brief needs multi-angle criticism depth. Higher effort must buy more diverse queries and stricter citation rules — not longer prose.
 
 ## Prompt skeletons
 

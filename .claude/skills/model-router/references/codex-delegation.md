@@ -7,12 +7,19 @@ Loaded on demand from SKILL.md's "How to delegate". Sources: field reports from 
 | Leg | Effort |
 |---|---|
 | Well-specified, bounded implement/fix/tests | Sol `medium` (default) |
+| Same shape, conserving limits | Sol `low` first (often same quality, far cheaper) |
 | Genuinely complex agentic coding, hard debugging | Sol `high` |
 | After a failed review — and only after fixing the prompt/tests | Sol `xhigh` |
+| Well-specified implement after a plan (Terra route) | Terra `medium` |
+| Review / PR-triage secondary legs (Terra route) | Terra `high` |
 | Mechanical/bulk (when Luna is the route) | Luna `low`–`medium` |
 | `max` / `ultra` | Never auto; user-request only |
 
-Why `medium` is the default: field consensus is that medium handles the large majority of legs well; higher efforts mostly buy scope creep and burn, and Codex's multi-agent leak is worst at high/xhigh. Escalating the dial does not fix a wrong approach — identical wrong answers have been reproduced at medium, high, AND xhigh. When a leg fails review, change the prompt or the tests before changing the effort.
+Why `medium` is the default for Sol quality legs: field consensus is that medium handles the large majority of legs well; higher efforts mostly buy scope creep and burn, and Codex's multi-agent leak is worst at high/xhigh. Escalating the dial does not fix a wrong approach — identical wrong answers have been reproduced at medium, high, AND xhigh. When a leg fails review, change the prompt or the tests before changing the effort.
+
+**Sol `low` is first-class, not a last resort** (Theo / Codex DX, 2026-07): for well-scoped work it is often as capable as medium at much lower burn. If you are hitting limits on medium/low, turn off fast mode before raising effort.
+
+**Inverse effort (Codex family):** smaller model needs higher effort to approach Sol-`medium` quality — practical expression is Terra `high` for review-style legs. Do not chase quality by raising Luna to `xhigh` (costs more than Sol `medium`); keep Luna capped.
 
 Tier calibration: these defaults assume a $200-tier sub ("sol high if $200 tier, sol low otherwise"). On smaller tiers drop one level; record the owner's tier in `routing-notes.md`.
 
@@ -34,8 +41,8 @@ Tier calibration: these defaults assume a $200-tier sub ("sol high if $200 tier,
 
 ## Within-family choice
 
-- **Sol** — the default Codex workhorse, at `medium`.
-- **Terra** — community sentiment is broadly negative ("the useless in-between model"), but our own blinded VS run had 3/3 clean Terra `medium` legs. Reconciliation: Terra earns its keep only on well-specified implement legs *after a plan exists* — never as a default, not for design work, not for hard debugging.
+- **Sol** — the default Codex workhorse, at `medium` (or `low` when conserving).
+- **Terra** — community sentiment is broadly negative ("the useless in-between model"), but our own blinded VS run had 3/3 clean Terra `medium` legs, and high-signal eng reports (2026-07) find Terra `high` strong for review/PR-triage (~40% faster than Sol low on that shape). Reconciliation: Terra earns its keep on (1) well-specified implement *after a plan exists* at `medium`, and (2) review secondary legs at `high` — never as a default, not for design work, not for hard debugging.
 - **Luna** — worker-tier: recon, mechanical edits, review drafts at `low`–`medium`. Never design work (widely panned) or ambiguous multi-ticket queues (invents tickets). Luna `xhigh` costs more than Sol `medium` — cap the effort instead of raising it.
 
 ## Harness notes (2026-07-13)
