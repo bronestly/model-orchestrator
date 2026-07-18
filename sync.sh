@@ -1,44 +1,50 @@
 #!/usr/bin/env bash
-# Sync the model-router skill source -> installed copy, and register this repo
-# as the source of truth for this machine. Self-locating: works from wherever
-# the repo is cloned, so no machine ever needs a hand-edited path.
-#
+# Install both model-router host adapters from this repository.
+# Global skill directories are build artifacts; edit this repository, then run:
 #   bash sync.sh
-#
 set -euo pipefail
 
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-SRC="$REPO_ROOT/.claude/skills/model-router"
-DEST="$HOME/.claude/skills/model-router"
+CLAUDE_SRC="$REPO_ROOT/.claude/skills/model-router"
+CODEX_ADAPTER="$CLAUDE_SRC/adapters/codex.md"
+CLAUDE_DEST="$HOME/.claude/skills/model-router"
+CODEX_DEST="$HOME/.agents/skills/model-router"
 LOGDIR="$HOME/.claude/model-router"
 
-# 1. Sync skill source -> installed copy (the installed copy is a build artifact).
-mkdir -p "$DEST"
-rsync -a --delete "$SRC/" "$DEST/"
+if [[ ! -f "$CLAUDE_SRC/SKILL.md" || ! -f "$CODEX_ADAPTER" ]]; then
+  echo "Missing a required model-router adapter under $CLAUDE_SRC" >&2
+  exit 1
+fi
 
-# 2. Stamp this machine's repo root so the self-improvement flow can find the
-#    source of truth without any hardcoded path.
+# Claude receives its adapter and the shared references, not the Codex source.
+mkdir -p "$CLAUDE_DEST"
+rsync -a --delete --delete-excluded \
+  --exclude 'adapters/' \
+  --exclude '.DS_Store' \
+  "$CLAUDE_SRC/" "$CLAUDE_DEST/"
+
+# Codex receives its adapter as SKILL.md plus the same shared references.
+CODEX_STAGE="$(mktemp -d "${TMPDIR:-/tmp}/model-router-codex.XXXXXX")"
+if [[ -z "$CODEX_STAGE" || ! -d "$CODEX_STAGE" ]]; then
+  echo "Could not create the Codex staging directory" >&2
+  exit 1
+fi
+trap 'rm -rf -- "$CODEX_STAGE"' EXIT
+mkdir -p "$CODEX_STAGE/references" "$CODEX_DEST"
+cp "$CODEX_ADAPTER" "$CODEX_STAGE/SKILL.md"
+rsync -a --exclude '.DS_Store' "$CLAUDE_SRC/references/" "$CODEX_STAGE/references/"
+rsync -a --delete "$CODEX_STAGE/" "$CODEX_DEST/"
+
+# Preserve the existing Claude-host calibration memory and source pointer.
 mkdir -p "$LOGDIR"
 printf '%s\n' "$REPO_ROOT" > "$LOGDIR/source-repo"
-
-# 3. Seed the machine-local calibration log ONLY if missing — never clobber
-#    accumulated notes.
-if [ ! -f "$LOGDIR/routing-notes.md" ]; then
+if [[ ! -f "$LOGDIR/routing-notes.md" ]]; then
   cat > "$LOGDIR/routing-notes.md" <<'NOTES'
-# model-router — calibration log (machine-local)
+# model-router — calibration log (Claude host, machine-local)
 
-Durable cross-session memory for the model-router skill. Read at every invocation.
-Machine-local, NOT version-controlled — this file is not in the source repo.
-
-- **Source repo (this machine):** see `$HOME/.claude/model-router/source-repo` (auto-stamped by sync.sh).
-- **Sync repo -> installed copy:** `bash "$(cat "$HOME/.claude/model-router/source-repo")/sync.sh"`
-- **Edit the skill source at:** `$(cat "$HOME/.claude/model-router/source-repo")/.claude/skills/model-router/SKILL.md`
-
-## How to use this file
-- Append one dated line per real learning: `YYYY-MM-DD · <what happened> · route:<row>`.
-- Don't log routine success; the signal is rare. Keep under ~15 live entries; prune promoted/superseded ones.
-- **Machine-specific facts** (a CLI's auth/tier dead on this box, a repo's build quirks) stay here only — never promote; they may be false on another machine.
-- **Universal judgment calls** (a task type routes better elsewhere; a model renamed/re-tiered) are promotion candidates once the same signal recurs across 2-3 unrelated sessions. Promote via the approval-gated flow in `references/vs-mode.md`: edit the SOURCE REPO SKILL.md (path above), then run the sync command above. Never hand-edit the installed copy.
+Record only persistent routing observations. Keep this file under roughly 15
+live entries and never put secrets in it. Codex intentionally has no shared
+mutable calibration state.
 
 ## Entries
 <!-- newest first -->
@@ -46,5 +52,6 @@ NOTES
   echo "Seeded new calibration log at $LOGDIR/routing-notes.md"
 fi
 
-echo "Synced $SRC -> $DEST"
-echo "Source repo registered: $REPO_ROOT"
+echo "Installed Claude adapter: $CLAUDE_DEST"
+echo "Installed Codex adapter:  $CODEX_DEST"
+echo "Source repo registered:   $REPO_ROOT"

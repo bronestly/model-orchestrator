@@ -4,7 +4,7 @@ This is a rare, read-only second opinion for a GPT-5.6 Sol main session. It appr
 
 ## Trigger
 
-Consult Fable exactly once only when the user explicitly requests it or either condition holds:
+Consult Fable at most once per task, and only when the user explicitly requests it or either condition holds:
 
 1. After initial read-only orientation, Codex must choose among multiple plausible approaches for a consequential architecture, migration, security, data-model, or public-interface decision where a wrong choice creates substantial risk or rework.
 2. The same implementation approach has failed twice.
@@ -48,4 +48,4 @@ Include only the minimum relevant excerpts. Never forward the complete transcrip
 
 ## Failure
 
-This call is best-effort and never blocks the task. On any missing binary, auth, quota, timeout, empty output, or malformed response, do not retry automatically. Continue with Sol's own judgment and state briefly that the consultation was skipped.
+This call is best-effort and never blocks the task. On any missing binary, auth, quota, timeout, empty output, or malformed response, do not retry or send a second completion call. Continue with Sol's own judgment and state briefly that the consultation was skipped.
