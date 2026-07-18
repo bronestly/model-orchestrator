@@ -15,7 +15,16 @@ not an application. There is no build system.
 
 - Edit only repository sources, never either installed package.
 - Keep both adapters short and host-specific; move detail into references.
-- Preserve the Sol-high-first Codex workflow and the exact rare Fable triggers.
+- Preserve the Sol-high-first Codex workflow and rare Fable triggers in
+  `references/fable-advisor.md` (architecture / twice-failed approach /
+  rare overbuild taste; plus optional VS taste check — not a default on
+  every Sol write).
+- Sol/Terra implement/fix legs must include the **minimal-code contract**
+  and, for multi-file ambiguous work, the **plan → fresh medium implement**
+  split (`references/codex-delegation.md`). Orchestrators reject grossly
+  disproportionate diffs once under that contract before raising effort.
+- VS mode supports same-model bake-offs (Sol baseline vs +contract) with
+  `code_minimalism` scores and optional Fable taste (`references/vs-mode.md`).
 - Never enable Codex fast mode or automatically select `ultra` effort.
 - Keep external CLI legs fresh, bounded, and evidence-returning.
 - Preserve existing `~/.claude/model-router/routing-notes.md`; do not create

@@ -8,7 +8,7 @@ Loaded on demand from SKILL.md's "How to delegate". Sources: field reports from 
 |---|---|
 | Well-specified, bounded implement/fix/tests | Sol `medium` (default) |
 | Same shape, conserving limits | Sol `low` first (often same quality, far cheaper) |
-| Genuinely complex agentic coding, hard debugging | Sol `high` |
+| Genuinely complex agentic coding, hard debugging | Sol `high` **plan only** when multi-file/ambiguous; then Sol/Terra `medium` implement (see Plan → execute) |
 | After a failed review — and only after fixing the prompt/tests | Sol `xhigh` |
 | Well-specified implement after a plan (Terra route) | Terra `medium` |
 | Review / PR-triage secondary legs (Terra route) | Terra `high` |
@@ -22,6 +22,15 @@ Why `medium` is the default for Sol quality legs: field consensus is that medium
 **Inverse effort (Codex family):** smaller model needs higher effort to approach Sol-`medium` quality — practical expression is Terra `high` for review-style legs. Do not chase quality by raising Luna to `xhigh` (costs more than Sol `medium`); keep Luna capped.
 
 Tier calibration: these defaults assume a $200-tier sub ("sol high if $200 tier, sol low otherwise"). On smaller tiers drop one level; record the owner's tier in `routing-notes.md`.
+
+## Plan → execute (complex multi-file legs)
+
+Do not plan and implement in one long high/xhigh/Ultra transcript — that maximizes eagerness, machinery, and cache burn.
+
+1. **Plan leg (Sol `high` or main Sol context):** produce a file-touch plan with concrete paths and line refs only. Stop. No code edits.
+2. **Implement leg (fresh `codex exec`, Sol `medium` or Terra `medium`):** execute that plan under the **minimal-code contract** below. One scoped task; no continuation of the plan transcript.
+
+Skip the split for single-file, well-specified fixes — go straight to Sol `medium` (or `low`) with the contract.
 
 ## Burn control
 
@@ -38,6 +47,26 @@ Tier calibration: these defaults assume a $200-tier sub ("sol high if $200 tier,
 4. **Selective non-compliance.** Sol has deliberately overridden explicit constraints "for simplicity", especially on frontend/design taste. Mark hard constraints "MUST / NON-NEGOTIABLE — violating any of these is a failed task", and consider a Claude review pass for UI-taste-critical output.
 5. **Destructive actions & credential overreach** — model card: destructive cleanup on machines the user didn't name, credential use beyond authorization; worse when the prompt glorifies persistence. No prod secrets, billing, or IAM access in delegated legs; strip "persist no matter what" language; destructive commands need an explicit path allowlist.
 6. **Loop blindness.** Sol doesn't notice it's stuck in an approve→fail→retry gate cycle and burns tokens indefinitely. Rule: "If the same gate fails twice with the same error, stop and report — do not re-request approval."
+7. **Code bloat / eagerness** (Theo + field reports, 2026-07): 5.6 is stronger than prior Codex models but **too eager** — more helpers, defensive layers, wrapper machinery, and premature generalization than Fable for the same goal. Agency/scope locks alone do not fix code shape. Every Sol (and Terra) **implement/fix** prompt must include the **minimal-code contract** below. Do not rely on vague "be concise" (OpenAI: can overshoot for 5.6 prose); steer **diff size, reuse, and YAGNI** instead.
+
+### Minimal-code contract (paste into every Sol/Terra implement/fix prompt)
+
+```text
+## Minimal-code contract (MUST)
+- Prefer the smallest change that fully satisfies the acceptance criteria.
+- Reuse existing helpers, types, patterns, and call sites. Search before inventing.
+- Touch only the listed files. New files require a one-line justification in the return JSON.
+- No new abstractions, wrapper layers, config flags, or "future-proofing" unless required by the criteria.
+- No defensive try/catch, null-guards, or validation for states the codebase already forbids.
+- No drive-by renames, reformat-only diffs, or opportunistic cleanup outside the task.
+- Prefer deleting/simplifying dead paths over adding parallel paths.
+- If two designs work, pick the one with fewer new symbols and fewer control-flow branches.
+- Stop when criteria pass. Do not continue "improving" the design.
+```
+
+**Pathology to reject on review (orchestrator):** one-shot helpers used once (should have been inlined); parallel "v2" paths beside working code; broad try/catch that swallows errors; new config/feature flags for a single call site; invented ticket queues or "while we're here" refactors.
+
+**VS validation:** same-model bake-off (baseline vs +contract) is defined in `vs-mode.md`. Prefer measuring the contract alone before stacking plan→execute as a second confound.
 
 ## Within-family choice
 

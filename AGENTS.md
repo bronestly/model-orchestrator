@@ -17,9 +17,18 @@ not an application. There is no build system.
 - Edit repository sources, never either installed package.
 - Keep Sol high as Codex's planner, executor, verifier, and final synthesizer.
 - Delegate only independently bounded work with a clear advantage.
-- Consult Fable only for the two triggers in `references/fable-advisor.md` or
-  when the user explicitly requests it: one best-effort call, no retry.
-- Complexity, duration, and file count are not Fable triggers.
+- When Sol (or Terra) implements or fixes code — main session or delegated —
+  apply the **minimal-code contract** from `references/codex-delegation.md`.
+  Prefer plan-high then a fresh medium implement for multi-file work.
+- Reject grossly disproportionate diffs once and re-prompt under that contract
+  before raising effort (`references/routing-reference.md` completion gate).
+- Consult Fable only for the triggers in `references/fable-advisor.md` or when
+  the user explicitly requests it: one best-effort call, no retry. Triggers
+  are rare architecture decisions, twice-failed approach, optional overbuild
+  taste, and optional VS bake-off taste — not routine coding.
+- Complexity, duration, and file count alone are not Fable triggers.
+- VS mode can A/B the same model (Sol baseline vs +minimal-code contract);
+  see `references/vs-mode.md`.
 - Never enable Codex fast mode or automatically select `ultra` effort.
 - Preserve existing Claude-host calibration notes; Codex remains stateless.
 

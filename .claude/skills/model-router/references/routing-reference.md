@@ -32,6 +32,13 @@ Do not guess additional flags. For multiline prompts, use stdin or a prompt file
 
 A worker result counts only when it includes relevant artifacts and real verification. Reject empty output, narration-only output, unverifiable completion claims, or changes outside the scope lock.
 
+For Sol/Terra **write** legs, also reject **code bloat** as a failed deliverable (not a soft style note):
+
+- Diff must stay within the scope lock; no unexplained new packages or files.
+- Net LOC / new symbols grossly disproportionate to the task (e.g. large helper layers for a small fix) → reject once and re-prompt with the minimal-code contract from `codex-delegation.md` plus: "Delete the unnecessary machinery; do not add more."
+- Spot-check: any new helper used only once should usually have been inlined.
+- Require `git diff --stat` (or equivalent) in evidence when files changed.
+
 For high-risk work, require a fresh review from another model family where practical. The orchestrator remains responsible for the final decision.
 
 ## Known route failures

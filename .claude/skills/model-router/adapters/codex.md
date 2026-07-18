@@ -1,6 +1,6 @@
 ---
 name: model-router
-description: "Routes and executes substantial multi-model work from a GPT-5.6 Sol Codex session. Use when the user asks to route, delegate, compare models, consult Fable, conserve limits, or when a task has an independently bounded bulk, live-research, implementation, or review leg with a clear model advantage. Skip routine single-model work and trivial tasks."
+description: "Routes and executes substantial multi-model work from a GPT-5.6 Sol Codex session. Use when the user asks to route, delegate, compare models, consult Fable, conserve limits, A/B Sol with vs without the minimal-code contract, or when a task has an independently bounded bulk, live-research, implementation, or review leg with a clear model advantage. Skip routine single-model work and trivial tasks."
 ---
 
 # Model Router — Codex Adapter
@@ -9,13 +9,15 @@ Keep GPT-5.6 Sol high as the primary planner, executor, verifier, and integrator
 
 User instructions, repository guidance, available tools, sandbox policy, and approval requirements always override this routing guide. Never assume a model, CLI, native subagent type, or permission is available; probe only a route you are about to use.
 
+When **you** (Sol main) implement or fix code in-session, apply the same **minimal-code contract** as delegated Sol legs (`references/codex-delegation.md`). Prefer plan-high then a fresh medium implement for multi-file work over one long eager transcript.
+
 ## Route selection
 
 | Work | Primary | Fallback |
 |---|---|---|
 | Planning, ambiguity, complex integrated coding, final verification | Main Sol-high context | Do not delegate |
 | Consequential architecture decision or twice-failed approach | One Fable advisor call, if available | Sol self-review |
-| Well-specified independent implementation | Terra `medium` | Main Sol |
+| Well-specified independent implementation | Terra `medium` (minimal-code contract) | Main Sol with contract |
 | Fresh independent implementation review | Terra `high` | Main Sol with a clean review pass |
 | Bulk extraction, classification, or reconnaissance | Luna `low`–`medium` | Gemini Flash, then main Sol |
 | Live-X research or bounded alternative engineering angle | Grok 4.5 | Web research or main Sol |
@@ -26,9 +28,9 @@ Before an external worker call, read [references/routing-reference.md](reference
 - Sol/Terra/Luna: [references/codex-delegation.md](references/codex-delegation.md)
 - Grok engineering: [references/grok-delegation.md](references/grok-delegation.md)
 - Grok live-X research: [references/x-research.md](references/x-research.md)
-- Explicit model comparison: [references/vs-mode.md](references/vs-mode.md)
+- Explicit model comparison, including Sol baseline vs +minimal-code-contract: [references/vs-mode.md](references/vs-mode.md)
 
-Normal tasks must not load Fable instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its two-clause trigger is met or the user explicitly requests Fable.
+Normal tasks must not load Fable instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests Fable.
 
 ## Delegation contract
 
@@ -38,9 +40,10 @@ Give each worker one fresh, self-contained task containing:
 2. Explicit MUST/NEVER constraints and permission boundaries.
 3. Success criteria and the evidence required to count as done.
 4. Scope lock and a clear stop condition.
-5. A concise result with changes/findings, artifacts, verification, confidence, and remaining risks.
+5. For Sol/Terra implement/fix: the **minimal-code contract** from `references/codex-delegation.md`.
+6. A concise result with changes/findings, artifacts, verification (include `git diff --stat` when files changed), confidence, and remaining risks.
 
-For write-capable legs, first create a recoverable checkpoint and forbid destructive recovery. Unless the user explicitly requests nested agents, tell external Codex workers not to spawn subagents. Integrate only after checking the returned artifacts or evidence.
+For write-capable legs, first create a recoverable checkpoint and forbid destructive recovery. Unless the user explicitly requests nested agents, tell external Codex workers not to spawn subagents. Integrate only after checking the returned artifacts or evidence. Reject grossly disproportionate diffs once and re-prompt under the contract before raising effort.
 
 ## Failure policy
 
