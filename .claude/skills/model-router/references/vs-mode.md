@@ -30,7 +30,7 @@ Before running, state the overhead in relative terms (roughly N× the tokens of 
 }
 ```
 
-3. You make the final call: verify the decisive evidence at its cited location first — if it is overstated or wrong, correct it in the ledger even when the verdict direction survives — then present the winner plus key differences to the user.
+3. You make the final call: verify the decisive evidence at its cited location first — if it is overstated or wrong, correct it in the ledger even when the verdict direction survives — then present the winner plus key differences to the user. In that user-facing summary, always name which model/effort produced each candidate (never just "A"/"B" or "1"/"2" — those are for the blinded reviewer only) and **bold the winning model's name**.
 4. Append the scorecard verbatim, with candidate names unblinded, to the global log at `$HOME/.claude/model-router/routing-notes.md`. Keep the file under ~15 entries; prune superseded ones when you write.
 
 ## Self-improvement (approval-gated)
