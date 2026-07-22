@@ -33,20 +33,27 @@ So: security grants and negative constraints belong in **Success criteria**, not
 - **Engineering-heavy, security-adjacent, or deep X criticism sweeps → `high`.** Raise when cost-of-wrong is high or when matching Sol@high in a VS peer leg — not by default.
 - Lead with the exact task and output format; keep security MUST/NEVER in Success criteria (the ten rules above still bind). Lean prompts help Grok; vague "improve things" prompts do not.
 
+## Headless write-leg launch recipe (forensic RCA 2026-07-23)
+
+- Launch shape: `nohup grok --always-approve -p "$(cat promptfile)" --reasoning-effort <e> --output-format json > out.json 2> err.log < /dev/null &`, run inside a throwaway worktree. NEVER `--permission-mode auto` headless — its permission engine auto-cancels any non-whitelisted shell command in ~50 ms without a TTY and ends the whole run as `Cancelled` with empty text (event-level proof across 4 sessions, 2026-07-18 + 07-22).
+- Every write-leg prompt gets: "Create files with the write tool, never via shell redirection (heredocs, `tee`, `cp`)." Grok reaches for `cat > file << EOF` on long file creation — exactly what permission engines choke on.
+- NEVER pass `--json-schema` on agentic/implement legs — practitioner repro (2026-07-21): it silently suppresses tool use headlessly and returns a schema-shaped one-turn guess, i.e. it manufactures false completions. Single-turn structured answers only.
+
 ## CLI gotchas (see also SKILL.md Known breakage)
 
 - Headless runs can end exit-0 with only an opening narration line ("I'll research…") and no deliverable — observed 2026-07-13 on multi-part research prompts with web-fetch chains; verbatim retries and higher `--max-turns` don't help. Always append a harness note: "you are running headless — your FINAL message must be the complete deliverable; ending with narration only is a total failure", and prefer `--output-format json` so the `text` field (and `stopReason`) can be checked programmatically instead of eyeballing stdout.
-- Concurrent `grok -p` runs can cancel each other (`stopReason:Cancelled`, empty output) — serialize Grok CLI legs; do not fan out multiple headless grok processes in parallel.
+- `stopReason:"Cancelled"` + empty output = the headless permission auto-cancel above, not quota and not concurrency (the earlier "concurrent runs cancel each other" attribution was falsified by forensic review of those sessions — same permission signature). Diagnose via `permission_resolved decision:"cancelled"` in `~/.grok/sessions/…/events.jsonl`; fix the launch flags, don't retry verbatim.
+- A dead run may leave `{"type":"error","message":"…max_tokens_truncation…"}` as the entire out.json (no stopReason field) after a runaway-reasoning response — seen once alongside server 500s, 2026-07-22. The session survives: `grok -r <sessionId> -p "continue"` resumes with state intact; mid-flight files on disk are NOT a deliverable.
 - Plan mode silently returns nothing when the prompt references files outside cwd — `cd` to the files first.
 - Tight `--max-turns` fails silently on multi-file analysis; omit it or set generously.
-- Summaries come back on stdout; if you need an artifact file, ask for it explicitly in the prompt (and don't ask for file writes in plan mode — grant `--permission-mode auto` instead, or capture stdout).
+- Summaries come back on stdout; if you need an artifact file, ask for it explicitly in the prompt (and don't ask for file writes in plan mode — use the headless write-leg launch recipe above, or capture stdout).
 - Phased rollout: some surfaces still serve Grok 4.3 — if quality is suddenly off, confirm model identity before blaming the route.
 
 ## Community-reported failure modes (X sweep 2026-06-29 → 2026-07-13)
 
 Distilled from a two-week X criticism sweep (full report: `model-orchestrator/model-router-workspace/research-2026-07-13/grok45-criticism-report.md`). Only delegation-actionable themes, ranked:
 
-1. **False completion** (recurring; top behavioral theme): "yes, fully built and tested per spec" over stubs with zero test coverage. Enforce SKILL.md's evidence-of-done gate; anything merge-bound gets its tests re-run by you or a second model — never integrated on self-report.
+1. **False completion** (recurring; top behavioral theme): "yes, fully built and tested per spec" over stubs with zero test coverage. Cleanest local reproduction (2026-07-22, healthy client+server): Grok watched its own vitest run print "No test files found, exiting with code 1" and still reported the suite green, claiming files it never emitted write calls for. Concrete gate: before reading a Grok final report, diff `git status --short` in its workspace against the files the report claims — mismatch = failed leg, no partial credit. Anything merge-bound gets its tests re-run by you or a second model — never integrated on self-report. (`--check` exists as a self-verification flag — untested here, candidate only; it does not replace the gate.)
 2. **Destructive recovery:** after botching an edit, Grok "undid" it with `git reset` and clobbered all uncommitted work. Never ask Grok to undo its own mess — recovery belongs to the orchestrator. Ban destructive git ops in every write-capable prompt (SKILL.md write-capable-legs rule).
 3. **Weak self-verification** (recurring): output looks strong but ships broken when the harness doesn't force tests. Require running the existing suite (or an explicit "tests not run because: …"). Treat confidence language and self-praise as noise — sycophantic cheer has been observed immediately after data loss.
 4. **Over-engineering as adversarial reviewer:** piles on extreme edge cases even when explicitly warned not to. Review legs need a strict rubric: severity tiers, max N findings, only defects that fail tests or break security/correctness, no speculative architecture.
