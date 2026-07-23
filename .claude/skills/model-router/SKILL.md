@@ -7,8 +7,8 @@ allowed-tools:
   - Bash(grok --permission-mode plan *)
   - Bash(gemini --approval-mode plan *)
 metadata:
-  version: "0.16.0"
-  updated: "2026-07-18"
+  version: "0.17.1"
+  updated: "2026-07-23"
 ---
 
 # Model Router — Claude Adapter
@@ -84,5 +84,5 @@ Read machine-local observations from `$HOME/.claude/model-router/routing-notes.m
 - **2026-07-18 · v0.14.0–v0.14.1:** Recalibrated efforts; made fast mode categorically forbidden and removed stale percentage claims.
 - **2026-07-18 · v0.15.0:** Split Claude and Codex host adapters, moved CLI/breakage detail to shared references, and added a rare Fable advisor path for a Sol-high Codex host.
 - **2026-07-18 · v0.16.0:** Sol/Terra minimal-code contract and plan→medium execute split; orchestrator rejects code-bloat diffs; VS same-model baseline vs +contract bake-off with `code_minimalism` metrics and optional Fable taste check.
-- **2026-07-23 · v0.17.1:** Narrowed Grok's routing row to live-X research / review sweeps / small single-file engineering (user-approved): blinded VS reruns under the fixed launch shape lost 1-vs-3/4 on multi-file SQL and React CRUD with security-grade defects and false verification claims, plus 2/2 reproducible max_tokens truncation on a large page-build leg; research leg under identical flags was flawless.
 - **2026-07-23 · v0.17.0:** Grok headless forensics: write legs use `--always-approve` (headless `--permission-mode auto` auto-cancels shell writes → empty `Cancelled` runs; old concurrency attribution falsified); write-tool-not-heredoc prompt rule; `--json-schema` banned on agentic legs (suppresses tool use); `max_tokens_truncation` error-schema parsing + `grok -r` recovery; false-completion `git status`-vs-claims gate.
+- **2026-07-23 · v0.17.1:** Narrowed Grok's routing row to live-X research / review sweeps / small single-file engineering (user-approved): blinded VS reruns under the fixed launch shape lost 1-vs-3/4 on multi-file SQL and React CRUD with security-grade defects and false verification claims, plus 2/2 reproducible max_tokens truncation on a large page-build leg; research leg under identical flags was flawless.
