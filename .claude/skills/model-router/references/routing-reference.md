@@ -10,9 +10,9 @@ Read this only before using an external CLI route. Keep calls short, fresh, self
 | Codex Terra | Same command with `-m gpt-5.6-terra` |
 | Codex Luna | Same command with `-m gpt-5.6-luna` |
 | Grok 4.5 | read-only: `grok --permission-mode plan -p "<prompt>" --reasoning-effort <effort> --output-format json` · write legs: `grok --always-approve -p "<prompt>" --reasoning-effort <effort> --output-format json` (see Permissions) |
-| Gemini Flash | `gemini --approval-mode <mode> -p "<prompt>" -m gemini-3.5-flash` |
+| Antigravity (agy) | `agy -p "<prompt>" --model <slug> --print-timeout <dur>` · slugs from `agy models` (e.g. `gemini-3.6-flash-low|medium|high`, `gemini-3.1-pro-high`); effort is encoded in the slug (verified agy 1.1.5, 2026-07-23) |
 
-Do not guess additional flags. For multiline prompts, use stdin or a prompt file rather than brittle shell quoting. Codex writes its final answer to `-o`; its stdout is a transcript. Grok and Gemini return their result on stdout.
+Do not guess additional flags. For multiline prompts, use stdin or a prompt file rather than brittle shell quoting. Codex writes its final answer to `-o`; its stdout is a transcript. Grok and agy return their result on stdout.
 
 ## Effort defaults
 
@@ -20,12 +20,13 @@ Do not guess additional flags. For multiline prompts, use stdin or a prompt file
 - Terra: `medium` for implementation after a plan; `high` for review or PR triage.
 - Luna: `low`–`medium` for bulk work. Do not raise it to chase quality.
 - Grok: `low` for bounded engineering or quick research; `high` for security-adjacent work or deep criticism sweeps.
+- Antigravity: `gemini-3.6-flash-low` for bulk work, `-medium` for quick research, `-high` for deep multi-source sweeps; `gemini-3.1-pro-high` only when Flash-high output was insufficient.
 - Never enable Codex fast mode from this skill.
 
 ## Permissions
 
-- Read-only research/review: Codex `-s read-only`; Grok `--permission-mode plan`; Gemini `--approval-mode plan`.
-- File edits: Codex `-s workspace-write`; Grok `--always-approve` — never `--permission-mode auto` headless: auto silently auto-CANCELS any non-whitelisted shell command (e.g. heredoc file writes) and ends the whole run with empty output; it is only safe interactively. Deny rules and hooks still apply under `--always-approve`, so containment comes from those plus a throwaway worktree. Gemini `--approval-mode yolo`.
+- Read-only research/review: Codex `-s read-only`; Grok `--permission-mode plan`; agy plain `-p` (web search/fetch run without prompting; tools that would need approval are soft-denied with a stderr notice naming the allow-rule — an empty stdout plus such a notice means blocked, not failed).
+- File edits: Codex `-s workspace-write`; Grok `--always-approve` — never `--permission-mode auto` headless: auto silently auto-CANCELS any non-whitelisted shell command (e.g. heredoc file writes) and ends the whole run with empty output; it is only safe interactively. Deny rules and hooks still apply under `--always-approve`, so containment comes from those plus a throwaway worktree. agy write legs are not an established route; never use `--dangerously-skip-permissions` — grant specific allow-rules in agy `settings.json` instead.
 - Grant only the minimum task-scoped access. Do not pass credentials or production secrets to delegated legs.
 
 ## Completion gate
@@ -44,7 +45,8 @@ For high-risk work, require a fresh review from another model family where pract
 ## Known route failures
 
 - A present binary may still have broken auth, quota, account tier, or configuration. The first real call is the probe.
-- Gemini can return `IneligibleTierError`; treat that route as dead without retrying.
+- The gemini CLI is permanently dead: Google retired it 2026-06-18 in favor of Antigravity (`agy`); `IneligibleTierError` was the shutdown symptom. Do not probe it.
+- agy `--print-timeout` defaults to 5m; raise it (e.g. `15m`) for deep research legs. An unresolvable `--model` hard-fails with a non-zero exit listing valid slugs — fix the slug, don't retry.
 - Grok can exit successfully with narration but no deliverable. Check its JSON `text` and stop reason.
 - Grok `stopReason:"Cancelled"` with empty text = headless permission auto-cancel, not quota or concurrency (the 2026-07 "concurrent cancels" attribution showed this same signature on forensic review). Verify: `permission_resolved decision:"cancelled"` (~50 ms) in `~/.grok/sessions/…/events.jsonl`. Relaunch with `--always-approve`.
 - A failed Grok run may write `{"type":"error","message":"…max_tokens_truncation…"}` with NO stopReason field — parse that schema separately from result objects. The session survives; `grok -r <sessionId> -p "continue"` resumes it (single observation, 2026-07-23).

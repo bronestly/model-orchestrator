@@ -25,12 +25,19 @@ claude -p \
   --safe-mode \
   --model claude-fable-5 \
   --effort medium \
-  --permission-mode plan \
   --tools "" \
+  --system-prompt "You are a read-only advisor giving one second opinion. You have no tools, no shell, and no repository access — only the dossier in the user message. Never call, attempt, describe, or plan any tool, file read, or shell command. Reply with ONLY the requested bullets as plain prose. Emitting tool-use syntax, or narrating what you would investigate instead of answering, is a total failure." \
   --output-format json \
   --no-session-persistence \
   "<compact dossier>"
 ```
+
+Why this exact shape (each flag earns its place):
+
+- `--tools ""` removes every tool, which is the actual read-only guarantee; `--safe-mode` strips this repo's `CLAUDE.md`, skills, hooks, and MCP so nothing leaks into the advisor context.
+- `--system-prompt` replaces Claude Code's default coding-agent prompt with a pure advisor persona. **This is required.** Without it, the default agent framing makes Fable try to investigate the repo first, and with no tools it emits *attempted tool instructions instead of a recommendation* (the exact narration-only failure this route hit before).
+- **Do not add `--permission-mode plan`.** With no tools it gates nothing, and it reintroduces the "investigate, then present a plan" framing (via a missing `ExitPlanMode`) that produced the tool-instruction narration.
+- Read the answer from the JSON `result` field. Verified 2026-07-23: this shape returns the five plain-prose bullets in one turn (`stop_reason: end_turn`), no tool-use attempts.
 
 Use `high` effort only when the user explicitly requests it.
 
@@ -68,3 +75,5 @@ Include only the minimum relevant excerpts. Never forward the complete transcrip
 ## Failure
 
 This call is best-effort and never blocks the task. On any missing binary, auth, quota, timeout, empty output, or malformed response, do not retry or send a second completion call. Continue with Sol's own judgment and state briefly that the consultation was skipped.
+
+A reply whose `result` is only attempted tool-use syntax, or narration of what Fable would investigate, with no actual recommendation, counts as an empty deliverable: treat it as a skipped consultation and fall back to Sol's judgment — do not retry. If the invocation above still produces this, confirm `--system-prompt` is present and `--permission-mode plan` is absent before considering the route usable.

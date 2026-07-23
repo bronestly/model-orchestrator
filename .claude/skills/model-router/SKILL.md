@@ -5,9 +5,10 @@ allowed-tools:
   - Bash(command -v *)
   - Bash(codex exec --skip-git-repo-check -s read-only *)
   - Bash(grok --permission-mode plan *)
-  - Bash(gemini --approval-mode plan *)
+  - Bash(agy -p *)
+  - Bash(agy models*)
 metadata:
-  version: "0.17.1"
+  version: "0.18.0"
   updated: "2026-07-23"
 ---
 
@@ -23,7 +24,8 @@ Act as the orchestrator. Keep ambiguity resolution, consequential judgment, veri
 | Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Grok 4.5, then an Opus/Fable subagent |
 | Independent critical review | Fresh Fable/Opus subagent | Codex Sol |
 | Live-X research, review/criticism sweeps, and small single-file engineering only | Grok 4.5 | Sonnet subagent plus web search |
-| Bulk classification, extraction, or file reconnaissance | Gemini Flash | Luna, then batched Sonnet |
+| General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity `gemini-3.6-flash` | Grok 4.5, then Sonnet subagent plus web search |
+| Bulk classification, extraction, or file reconnaissance | Antigravity `gemini-3.6-flash-low` | Luna, then batched Sonnet |
 | Standard implementation, tests, docs, or writing | Sonnet subagent | Terra (`medium` implement; `high` review) |
 
 Use the cheapest route that comfortably clears the quality bar. For routine work, stay in the main context instead of spending time on routing analysis.
@@ -33,6 +35,7 @@ Before an external CLI call, read [references/routing-reference.md](references/r
 - Codex Sol/Terra/Luna: [references/codex-delegation.md](references/codex-delegation.md)
 - Grok engineering: [references/grok-delegation.md](references/grok-delegation.md)
 - Grok live-X research: [references/x-research.md](references/x-research.md)
+- Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
 - Explicit model comparison, including Sol with vs without the minimal-code contract: [references/vs-mode.md](references/vs-mode.md)
 
 ## Delegation contract
@@ -86,3 +89,5 @@ Read machine-local observations from `$HOME/.claude/model-router/routing-notes.m
 - **2026-07-18 · v0.16.0:** Sol/Terra minimal-code contract and plan→medium execute split; orchestrator rejects code-bloat diffs; VS same-model baseline vs +contract bake-off with `code_minimalism` metrics and optional Fable taste check.
 - **2026-07-23 · v0.17.0:** Grok headless forensics: write legs use `--always-approve` (headless `--permission-mode auto` auto-cancels shell writes → empty `Cancelled` runs; old concurrency attribution falsified); write-tool-not-heredoc prompt rule; `--json-schema` banned on agentic legs (suppresses tool use); `max_tokens_truncation` error-schema parsing + `grok -r` recovery; false-completion `git status`-vs-claims gate.
 - **2026-07-23 · v0.17.1:** Narrowed Grok's routing row to live-X research / review sweeps / small single-file engineering (user-approved): blinded VS reruns under the fixed launch shape lost 1-vs-3/4 on multi-file SQL and React CRUD with security-grade defects and false verification claims, plus 2/2 reproducible max_tokens truncation on a large page-build leg; research leg under identical flags was flawless.
+- **2026-07-23 · v0.17.2:** Fixed the Fable advisor invocation (`references/fable-advisor.md`): a Codex host got tool-instruction narration and no recommendation. Root cause was `--permission-mode plan` + the default coding-agent system prompt nudging Fable to investigate the repo with no tools available. Fix (smoke-tested): add a read-only advisor `--system-prompt`, drop `--permission-mode plan`; narration-only replies now count as a skipped consultation, no retry.
+- **2026-07-23 · v0.18.0:** Added Antigravity CLI (`agy` 1.1.5, Gemini 3.6 Flash) as trial primary for general web/docs research and replacement for the dead gemini CLI on bulk legs (Google retired gemini CLI 2026-06-18; `IneligibleTierError` was the shutdown, not an account issue). Headless shape verified: `agy -p` returns the deliverable on stdout, web search works without prompts, permission-needing tools are soft-denied to stderr. New `references/antigravity-research.md`; trial status pending the Grok-vs-agy research bake-off in routing-notes.
