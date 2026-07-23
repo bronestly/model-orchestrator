@@ -8,7 +8,7 @@ allowed-tools:
   - Bash(agy -p *)
   - Bash(agy models*)
 metadata:
-  version: "0.18.1"
+  version: "0.18.2"
   updated: "2026-07-23"
 ---
 
@@ -37,6 +37,8 @@ Before an external CLI call, read [references/routing-reference.md](references/r
 - Grok live-X research: [references/x-research.md](references/x-research.md)
 - Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
 - Explicit model comparison, including Sol with vs without the minimal-code contract: [references/vs-mode.md](references/vs-mode.md)
+
+Normal tasks must not load Fable instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests a Fable plan review — a full-plan dossier for a consequential decision, returning a verdict plus implementor steering notes. On this host, prefer a native Fable subagent over the CLI shape; the dossier, effort, and failure rules apply either way.
 
 ## Delegation contract
 
@@ -92,3 +94,4 @@ Read machine-local observations from `$HOME/.claude/model-router/routing-notes.m
 - **2026-07-23 · v0.17.2:** Fixed the Fable advisor invocation (`references/fable-advisor.md`): a Codex host got tool-instruction narration and no recommendation. Root cause was `--permission-mode plan` + the default coding-agent system prompt nudging Fable to investigate the repo with no tools available. Fix (smoke-tested): add a read-only advisor `--system-prompt`, drop `--permission-mode plan`; narration-only replies now count as a skipped consultation, no retry.
 - **2026-07-23 · v0.18.0:** Added Antigravity CLI (`agy` 1.1.5, Gemini 3.6 Flash) as trial primary for general web/docs research and replacement for the dead gemini CLI on bulk legs (Google retired gemini CLI 2026-06-18; `IneligibleTierError` was the shutdown, not an account issue). Headless shape verified: `agy -p` returns the deliverable on stdout, web search works without prompts, permission-needing tools are soft-denied to stderr. New `references/antigravity-research.md`; trial status pending the Grok-vs-agy research bake-off in routing-notes.
 - **2026-07-23 · v0.18.1:** Generalized the Fable advisor (`references/fable-advisor.md`) from a Codex/Sol-only path into a cross-model plan-review any orchestrator can request. Primary dossier now forwards the **full detailed plan** (not a summary) and Fable returns a verdict, ranked risks, missing facts, concrete revisions, **and implementor steering notes** for whichever model later builds it. Added effort decision rules: `medium` default, `high` only for hard-to-reverse/high-blast-radius decisions or a hedged medium pass; `xhigh`/`max`/`ultra` forbidden for a read-only advisory.
+- **2026-07-23 · v0.18.2:** Claude adapter now carries the same gated `fable-advisor.md` pointer as the Codex adapter, so Claude-as-orchestrator can request a Fable plan review deliberately (native subagent preferred over the CLI shape; same trigger, dossier, effort, and failure rules).
