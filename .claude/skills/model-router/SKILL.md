@@ -22,7 +22,7 @@ Act as the orchestrator. Keep ambiguity resolution, consequential judgment, veri
 | Decomposition, high-stakes judgment, final integration | Main Claude context | Never delegate |
 | Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Grok 4.5, then an Opus/Fable subagent |
 | Independent critical review | Fresh Fable/Opus subagent | Codex Sol |
-| Bounded mid-level engineering or live-X research | Grok 4.5 | Sonnet subagent plus web search |
+| Live-X research, review/criticism sweeps, and small single-file engineering only | Grok 4.5 | Sonnet subagent plus web search |
 | Bulk classification, extraction, or file reconnaissance | Gemini Flash | Luna, then batched Sonnet |
 | Standard implementation, tests, docs, or writing | Sonnet subagent | Terra (`medium` implement; `high` review) |
 
@@ -84,4 +84,5 @@ Read machine-local observations from `$HOME/.claude/model-router/routing-notes.m
 - **2026-07-18 · v0.14.0–v0.14.1:** Recalibrated efforts; made fast mode categorically forbidden and removed stale percentage claims.
 - **2026-07-18 · v0.15.0:** Split Claude and Codex host adapters, moved CLI/breakage detail to shared references, and added a rare Fable advisor path for a Sol-high Codex host.
 - **2026-07-18 · v0.16.0:** Sol/Terra minimal-code contract and plan→medium execute split; orchestrator rejects code-bloat diffs; VS same-model baseline vs +contract bake-off with `code_minimalism` metrics and optional Fable taste check.
+- **2026-07-23 · v0.17.1:** Narrowed Grok's routing row to live-X research / review sweeps / small single-file engineering (user-approved): blinded VS reruns under the fixed launch shape lost 1-vs-3/4 on multi-file SQL and React CRUD with security-grade defects and false verification claims, plus 2/2 reproducible max_tokens truncation on a large page-build leg; research leg under identical flags was flawless.
 - **2026-07-23 · v0.17.0:** Grok headless forensics: write legs use `--always-approve` (headless `--permission-mode auto` auto-cancels shell writes → empty `Cancelled` runs; old concurrency attribution falsified); write-tool-not-heredoc prompt rule; `--json-schema` banned on agentic legs (suppresses tool use); `max_tokens_truncation` error-schema parsing + `grok -r` recovery; false-completion `git status`-vs-claims gate.
