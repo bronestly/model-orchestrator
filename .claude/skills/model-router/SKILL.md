@@ -8,8 +8,8 @@ allowed-tools:
   - Bash(agy -p *)
   - Bash(agy models*)
 metadata:
-  version: "0.18.2"
-  updated: "2026-07-23"
+  version: "0.18.3"
+  updated: "2026-07-24"
 ---
 
 # Model Router — Claude Adapter
@@ -95,3 +95,4 @@ Read machine-local observations from `$HOME/.claude/model-router/routing-notes.m
 - **2026-07-23 · v0.18.0:** Added Antigravity CLI (`agy` 1.1.5, Gemini 3.6 Flash) as trial primary for general web/docs research and replacement for the dead gemini CLI on bulk legs (Google retired gemini CLI 2026-06-18; `IneligibleTierError` was the shutdown, not an account issue). Headless shape verified: `agy -p` returns the deliverable on stdout, web search works without prompts, permission-needing tools are soft-denied to stderr. New `references/antigravity-research.md`; trial status pending the Grok-vs-agy research bake-off in routing-notes.
 - **2026-07-23 · v0.18.1:** Generalized the Fable advisor (`references/fable-advisor.md`) from a Codex/Sol-only path into a cross-model plan-review any orchestrator can request. Primary dossier now forwards the **full detailed plan** (not a summary) and Fable returns a verdict, ranked risks, missing facts, concrete revisions, **and implementor steering notes** for whichever model later builds it. Added effort decision rules: `medium` default, `high` only for hard-to-reverse/high-blast-radius decisions or a hedged medium pass; `xhigh`/`max`/`ultra` forbidden for a read-only advisory.
 - **2026-07-23 · v0.18.2:** Claude adapter now carries the same gated `fable-advisor.md` pointer as the Codex adapter, so Claude-as-orchestrator can request a Fable plan review deliberately (native subagent preferred over the CLI shape; same trigger, dossier, effort, and failure rules).
+- **2026-07-24 · v0.18.3:** Fable advisor prompt-delivery rules after a Codex host failure: `claude -p` validates input at launch (verified), so the dossier must be a positional arg (temp file + `"$(< file)"`) or stdin connected at spawn — never PTY-then-write-stdin. Also: no `--advisor` flag exists; the route is `--model claude-fable-5`; Codex hosts must run the call outside the exec sandbox (network/credential access).

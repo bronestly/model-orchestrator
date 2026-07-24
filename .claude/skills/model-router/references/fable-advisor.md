@@ -28,9 +28,14 @@ If the decision cannot be expressed as one precise question or a concrete plan t
 
 ## Invocation
 
-Run one fresh call with no tools, no session persistence, and no repository access:
+Run one fresh call with no tools, no session persistence, and no repository access. Write the dossier to a temp file first, then expand it into the positional prompt at launch:
 
 ```bash
+# 1. Write the non-sensitive dossier to a temp file (avoids quoting/length pitfalls).
+DOSSIER=$(mktemp)
+# ... write the full dossier into "$DOSSIER" ...
+
+# 2. One non-interactive call; the prompt must be present at launch.
 claude -p \
   --safe-mode \
   --model claude-fable-5 \
@@ -39,8 +44,18 @@ claude -p \
   --system-prompt "You are a read-only advisor giving one second opinion on a plan or decision. You have no tools, no shell, and no repository access — only the dossier in the user message. Never call, attempt, describe, or plan any tool, file read, or shell command, and never ask to see the repository. Reply with ONLY the requested output as plain prose (short labeled sections or bullets). Emitting tool-use syntax, or narrating what you would investigate instead of answering, is a total failure." \
   --output-format json \
   --no-session-persistence \
-  "<full dossier>"
+  "$(< "$DOSSIER")"
 ```
+
+### Prompt delivery (headless hosts)
+
+`claude -p` validates its input **at launch** and exits immediately with `Input must be provided either through stdin or as a prompt argument` if neither is there. Verified 2026-07-24. Therefore:
+
+- Deliver the dossier as the **positional argument** (temp file + `"$(< file)"` as above) or as **stdin already connected at spawn** (`claude -p ... < "$DOSSIER"`).
+- **Never** launch the process first (PTY or otherwise) and try to write the dossier to stdin afterward — the process has already exited. This is a confirmed failure mode from a Codex host.
+- Run it as a plain non-TTY exec, require exit code 0, and read the answer from the JSON `result` field.
+- There is **no advisor flag**: the route to Fable is `--model claude-fable-5` on a normal `claude -p` call. Do not invent `--advisor` or similar.
+- **GPT-5.6 / Codex hosts: run this command outside the sandbox.** The Codex exec sandbox blocks the network and credential access `claude` needs to reach the API, so a sandboxed call dies on auth/network, and per the Failure policy that consultation is then simply skipped — no retry. Request escalated (non-sandboxed) execution for this one read-only command; it needs no filesystem writes beyond reading the dossier temp file.
 
 Why this exact shape (each flag earns its place):
 
