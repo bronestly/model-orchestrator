@@ -9,7 +9,7 @@ Read this only before using an external CLI route. Keep calls short, fresh, self
 | Codex Sol | `codex exec --skip-git-repo-check -s <sandbox> -m gpt-5.6-sol -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` |
 | Codex Terra | Same command with `-m gpt-5.6-terra` |
 | Codex Luna | Same command with `-m gpt-5.6-luna` |
-| Grok 4.5 | read-only: `grok --permission-mode plan -p "<prompt>" --reasoning-effort <effort> --output-format json` · write legs: `grok --always-approve -p "<prompt>" --reasoning-effort <effort> --output-format json` (see Permissions) |
+| Grok 4.5 | headless (read-only AND write legs): `grok --always-approve -p "<prompt>" --reasoning-effort <effort> --output-format json`, launched from a throwaway cwd; read-only legs must carry an explicit read-only prompt contract (see Permissions). `--permission-mode plan` is interactive-only. |
 | Antigravity (agy) | `agy -p "<prompt>" --model <slug> --print-timeout <dur>` · slugs from `agy models` (e.g. `gemini-3.6-flash-low|medium|high`, `gemini-3.1-pro-high`); effort is encoded in the slug (verified agy 1.1.5, 2026-07-23) |
 
 Do not guess additional flags. For multiline prompts, use stdin or a prompt file rather than brittle shell quoting. Codex writes its final answer to `-o`; its stdout is a transcript. Grok and agy return their result on stdout.
@@ -25,7 +25,7 @@ Do not guess additional flags. For multiline prompts, use stdin or a prompt file
 
 ## Permissions
 
-- Read-only research/review: Codex `-s read-only`; Grok `--permission-mode plan`; agy plain `-p` (web search/fetch run without prompting; tools that would need approval are soft-denied with a stderr notice naming the allow-rule — an empty stdout plus such a notice means blocked, not failed).
+- Read-only research/review: Codex `-s read-only`; Grok headless `--always-approve` from a throwaway cwd with an explicit read-only prompt contract ("do not create, modify, or delete files; use only search/fetch tools") — headless `--permission-mode plan` auto-cancels the first tool call and kills the run (verified 2026-07-24: `stopReason:"Cancelled"` + narration-only text on a pure research leg, same signature as `auto`); reserve `plan` for interactive sessions. agy plain `-p` (web search/fetch run without prompting; tools that would need approval are soft-denied with a stderr notice naming the allow-rule — an empty stdout plus such a notice means blocked, not failed).
 - File edits: Codex `-s workspace-write`; Grok `--always-approve` — never `--permission-mode auto` headless: auto silently auto-CANCELS any non-whitelisted shell command (e.g. heredoc file writes) and ends the whole run with empty output; it is only safe interactively. Deny rules and hooks still apply under `--always-approve`, so containment comes from those plus a throwaway worktree. agy write legs are not an established route; never use `--dangerously-skip-permissions` — grant specific allow-rules in agy `settings.json` instead.
 - Grant only the minimum task-scoped access. Do not pass credentials or production secrets to delegated legs.
 
@@ -48,7 +48,7 @@ For high-risk work, require a fresh review from another model family where pract
 - The gemini CLI is permanently dead: Google retired it 2026-06-18 in favor of Antigravity (`agy`); `IneligibleTierError` was the shutdown symptom. Do not probe it.
 - agy `--print-timeout` defaults to 5m; raise it (e.g. `15m`) for deep research legs. An unresolvable `--model` hard-fails with a non-zero exit listing valid slugs — fix the slug, don't retry.
 - Grok can exit successfully with narration but no deliverable. Check its JSON `text` and stop reason.
-- Grok `stopReason:"Cancelled"` with empty text = headless permission auto-cancel, not quota or concurrency (the 2026-07 "concurrent cancels" attribution showed this same signature on forensic review). Verify: `permission_resolved decision:"cancelled"` (~50 ms) in `~/.grok/sessions/…/events.jsonl`. Relaunch with `--always-approve`.
+- Grok `stopReason:"Cancelled"` with empty text = headless permission auto-cancel, not quota or concurrency (the 2026-07 "concurrent cancels" attribution showed this same signature on forensic review). Verify: `permission_resolved decision:"cancelled"` (~50 ms) in `~/.grok/sessions/…/events.jsonl`. Relaunch with `--always-approve`. This hits `--permission-mode plan` too, even on tool calls that write nothing (verified 2026-07-24 on a web-research leg) — headless runs always use `--always-approve`.
 - A failed Grok run may write `{"type":"error","message":"…max_tokens_truncation…"}` with NO stopReason field — parse that schema separately from result objects. The session survives; `grok -r <sessionId> -p "continue"` resumes it (single observation, 2026-07-23).
 - Grok cancel handling is actively churning across 0.2.x (0.2.103 fixed an early-cancel session-wedge race) — re-verify this behavior after CLI upgrades.
 - Grok may upload repository context. In secret-bearing repositories, keep the route disabled unless the installed CLI's upload-disable setting is verified. A warning that the configured key is unrecognized means it is not verified.

@@ -8,7 +8,7 @@ allowed-tools:
   - Bash(agy -p *)
   - Bash(agy models*)
 metadata:
-  version: "0.18.3"
+  version: "0.19.0"
   updated: "2026-07-24"
 ---
 
@@ -21,14 +21,16 @@ Act as the orchestrator. Keep ambiguity resolution, consequential judgment, veri
 | Work | Primary | Fallback |
 |---|---|---|
 | Decomposition, high-stakes judgment, final integration | Main Claude context | Never delegate |
-| Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Grok 4.5, then an Opus/Fable subagent |
-| Independent critical review | Fresh Fable/Opus subagent | Codex Sol |
+| Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5 subagent, then Grok 4.5 (single-file only) |
+| Independent critical review | Fresh Opus 5 subagent (precision primary; add a Codex Sol recall pass for correctness-critical diffs) | Fresh Fable subagent, then Codex Sol |
 | Live-X research, review/criticism sweeps, and small single-file engineering only | Grok 4.5 | Sonnet subagent plus web search |
 | General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity `gemini-3.6-flash` | Grok 4.5, then Sonnet subagent plus web search |
 | Bulk classification, extraction, or file reconnaissance | Antigravity `gemini-3.6-flash-low` | Luna, then batched Sonnet |
 | Standard implementation, tests, docs, or writing | Sonnet subagent | Terra (`medium` implement; `high` review) |
 
 Use the cheapest route that comfortably clears the quality bar. For routine work, stay in the main context instead of spending time on routing analysis.
+
+Opus 5 legs (trial, day-0 evidence 2026-07-24): default `medium`/`high` effort, never `max` by default; do not route bulk or trivially simple work to Opus 5 (verbosity/latency tax vs 4.8); never auto-enable fast mode on any provider.
 
 Before an external CLI call, read [references/routing-reference.md](references/routing-reference.md). Then read only the provider reference selected by the route:
 
@@ -96,3 +98,4 @@ Read machine-local observations from `$HOME/.claude/model-router/routing-notes.m
 - **2026-07-23 · v0.18.1:** Generalized the Fable advisor (`references/fable-advisor.md`) from a Codex/Sol-only path into a cross-model plan-review any orchestrator can request. Primary dossier now forwards the **full detailed plan** (not a summary) and Fable returns a verdict, ranked risks, missing facts, concrete revisions, **and implementor steering notes** for whichever model later builds it. Added effort decision rules: `medium` default, `high` only for hard-to-reverse/high-blast-radius decisions or a hedged medium pass; `xhigh`/`max`/`ultra` forbidden for a read-only advisory.
 - **2026-07-23 · v0.18.2:** Claude adapter now carries the same gated `fable-advisor.md` pointer as the Codex adapter, so Claude-as-orchestrator can request a Fable plan review deliberately (native subagent preferred over the CLI shape; same trigger, dossier, effort, and failure rules).
 - **2026-07-24 · v0.18.3:** Fable advisor prompt-delivery rules after a Codex host failure: `claude -p` validates input at launch (verified), so the dossier must be a positional arg (temp file + `"$(< file)"`) or stdin connected at spawn — never PTY-then-write-stdin. Also: no `--advisor` flag exists; the route is `--model claude-fable-5`; Codex hosts must run the call outside the exec sandbox (network/credential access).
+- **2026-07-24 · v0.19.0:** Replaced Opus 4.8 with Opus 5 (`claude-opus-5`, released 2026-07-24, same $5/$25 price) in routing — trial on day-0 evidence (Grok 4.5 launch sweep + platform.claude.com spot-check). Coding fallback now Opus 5 subagent before Grok (SWE-bench Verified 97.0% vs 4.8's 88.6%, Grok's 86.6%; consistent with the v0.17.1 Grok demotion). Review row: Opus 5 precision primary with a Sol recall co-pass on correctness-critical diffs (CodeRabbit: actionable precision 39.3% vs 35.2% baseline, but recall 55.2% vs 61.1% and ~4× nitpicks); Fable retained as highest-stakes escalation. New Opus 5 caveats: no `max` effort by default (analysis-paralysis reports), no bulk/simple legs (verbosity tax), fast mode stays forbidden. Grok read-only shape corrected in routing-reference: headless `--permission-mode plan` auto-cancelled a pure research leg (same `Cancelled`+narration signature as `auto`); headless read-only legs now use `--always-approve` + throwaway cwd + read-only prompt contract.
