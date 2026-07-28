@@ -8,8 +8,8 @@ allowed-tools:
   - Bash(agy -p *)
   - Bash(agy models*)
 metadata:
-  version: "0.19.0"
-  updated: "2026-07-24"
+  version: "0.21.0"
+  updated: "2026-07-28"
 ---
 
 # Model Router — Claude Adapter
@@ -40,7 +40,7 @@ Before an external CLI call, read [references/routing-reference.md](references/r
 - Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
 - Explicit model comparison, including Sol with vs without the minimal-code contract: [references/vs-mode.md](references/vs-mode.md)
 
-Normal tasks must not load Fable instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests a Fable plan review — a full-plan dossier for a consequential decision, returning a verdict plus implementor steering notes. On this host, prefer a native Fable subagent over the CLI shape; the dossier, effort, and failure rules apply either way.
+Normal tasks must not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor plan review — a full-plan dossier for a consequential decision, returning a verdict plus implementor steering notes. The advisor model is Fable 5 by default; Opus 5 is available on request or for consequential-but-standard engineering calls, and both may be consulted (identical dossier each) when the user explicitly asks for a dual opinion. On this host, prefer a native subagent with the chosen model over the CLI shape; the dossier, effort, and failure rules apply either way.
 
 ## Delegation contract
 
@@ -99,3 +99,5 @@ Read machine-local observations from `$HOME/.claude/model-router/routing-notes.m
 - **2026-07-23 · v0.18.2:** Claude adapter now carries the same gated `fable-advisor.md` pointer as the Codex adapter, so Claude-as-orchestrator can request a Fable plan review deliberately (native subagent preferred over the CLI shape; same trigger, dossier, effort, and failure rules).
 - **2026-07-24 · v0.18.3:** Fable advisor prompt-delivery rules after a Codex host failure: `claude -p` validates input at launch (verified), so the dossier must be a positional arg (temp file + `"$(< file)"`) or stdin connected at spawn — never PTY-then-write-stdin. Also: no `--advisor` flag exists; the route is `--model claude-fable-5`; Codex hosts must run the call outside the exec sandbox (network/credential access).
 - **2026-07-24 · v0.19.0:** Replaced Opus 4.8 with Opus 5 (`claude-opus-5`, released 2026-07-24, same $5/$25 price) in routing — trial on day-0 evidence (Grok 4.5 launch sweep + platform.claude.com spot-check). Coding fallback now Opus 5 subagent before Grok (SWE-bench Verified 97.0% vs 4.8's 88.6%, Grok's 86.6%; consistent with the v0.17.1 Grok demotion). Review row: Opus 5 precision primary with a Sol recall co-pass on correctness-critical diffs (CodeRabbit: actionable precision 39.3% vs 35.2% baseline, but recall 55.2% vs 61.1% and ~4× nitpicks); Fable retained as highest-stakes escalation. New Opus 5 caveats: no `max` effort by default (analysis-paralysis reports), no bulk/simple legs (verbosity tax), fast mode stays forbidden. Grok read-only shape corrected in routing-reference: headless `--permission-mode plan` auto-cancelled a pure research leg (same `Cancelled`+narration signature as `auto`); headless read-only legs now use `--always-approve` + throwaway cwd + read-only prompt contract.
+- **2026-07-25 · v0.20.0:** Generalized the advisor mode (`references/fable-advisor.md`, filename kept) to support model selection: Fable 5 (`claude-fable-5`) stays the default for the highest-stakes calls; Opus 5 (`claude-opus-5`) is now a first-class advisor for user-requested or consequential-but-standard engineering reviews; a dual Fable+Opus advisory (identical dossier per model, orchestrator reconciles agreement/disagreement) is available on explicit user request only. Same invocation shape, dossier discipline, effort rules, and per-call failure policy for both models — only `--model` changes; Opus 5's never-`max` caveat carries over via the existing effort ceiling.
+- **2026-07-28 · v0.21.0:** Updated Grok launch recipe and CLI flags: replaced background nohup execution with synchronous `--prompt-file` invocation (`--no-subagents`, `--disable-web-search`, `--no-alt-screen`, `--minimal`, `--output-format json`) to prevent lost subshell output; added zsh reserved `status` variable trap to CLI gotchas.

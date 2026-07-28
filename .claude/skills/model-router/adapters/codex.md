@@ -16,7 +16,7 @@ When **you** (Sol main) implement or fix code in-session, apply the same **minim
 | Work | Primary | Fallback |
 |---|---|---|
 | Planning, ambiguity, complex integrated coding, final verification | Main Sol-high context | Do not delegate |
-| Consequential architecture decision or twice-failed approach | One Fable advisor call, if available | Sol self-review |
+| Consequential architecture decision or twice-failed approach | One advisor call (Fable 5 default; Opus 5 on request), if available | Sol self-review |
 | Well-specified independent implementation | Terra `medium` (minimal-code contract) | Main Sol with contract |
 | Fresh independent implementation review | Terra `high` | Main Sol with a clean review pass |
 | Bulk extraction, classification, or reconnaissance | Luna `low`–`medium` | Antigravity `gemini-3.6-flash-low`, then main Sol |
@@ -32,7 +32,7 @@ Before an external worker call, read [references/routing-reference.md](reference
 - Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
 - Explicit model comparison, including Sol baseline vs +minimal-code-contract: [references/vs-mode.md](references/vs-mode.md)
 
-Normal tasks must not load Fable instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests Fable.
+Normal tasks must not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor review (Fable 5 default; Opus 5 or a dual Fable+Opus advisory on request).
 
 ## Delegation contract
 
@@ -51,7 +51,7 @@ For write-capable legs, first create a recoverable checkpoint and forbid destruc
 
 - A route succeeds only with exit success and a non-empty, on-task deliverable.
 - Retry once only for a clearly transient worker failure; never retry auth, quota, tier, configuration, or malformed-output failures.
-- The Fable advisor is stricter: one best-effort call, no automatic retry, and never a blocker.
+- The advisor route is stricter: one best-effort call per advisor model, no automatic retry, and never a blocker.
 - Mark a failed route dead for the session, use the fallback, and mention the reroute briefly.
 - If no external route is healthy, continue safely in the Sol main context.
 

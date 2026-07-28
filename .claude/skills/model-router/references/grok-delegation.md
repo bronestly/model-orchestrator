@@ -33,14 +33,23 @@ So: security grants and negative constraints belong in **Success criteria**, not
 - **Engineering-heavy, security-adjacent, or deep X criticism sweeps → `high`.** Raise when cost-of-wrong is high or when matching Sol@high in a VS peer leg — not by default.
 - Lead with the exact task and output format; keep security MUST/NEVER in Success criteria (the ten rules above still bind). Lean prompts help Grok; vague "improve things" prompts do not.
 
-## Headless write-leg launch recipe (forensic RCA 2026-07-23)
+## Headless write-leg launch recipe (forensic RCA 2026-07-23, updated 2026-07-28)
 
-- Launch shape: `nohup grok --always-approve -p "$(cat promptfile)" --reasoning-effort <e> --output-format json > out.json 2> err.log < /dev/null &`, run inside a throwaway worktree. NEVER `--permission-mode auto` headless — its permission engine auto-cancels any non-whitelisted shell command in ~50 ms without a TTY and ends the whole run as `Cancelled` with empty text (event-level proof across 4 sessions, 2026-07-18 + 07-22).
+- **Launch shape (synchronous):**
+  ```bash
+  grok --always-approve --no-subagents --disable-web-search --no-alt-screen --minimal \
+    --output-format json \
+    --reasoning-effort <effort> \
+    --prompt-file /path/to/prompt.txt
+  ```
+  Run synchronously inside a throwaway worktree. NEVER use background `nohup ... &` in subshell tool invocations (it fails to retain/deliver results reliably in Codex/subagent environments).
+  NEVER `--permission-mode auto` headless — its permission engine auto-cancels any non-whitelisted shell command in ~50 ms without a TTY and ends the whole run as `Cancelled` with empty text (event-level proof across 4 sessions, 2026-07-18 + 07-22).
 - Every write-leg prompt gets: "Create files with the write tool, never via shell redirection (heredocs, `tee`, `cp`)." Grok reaches for `cat > file << EOF` on long file creation — exactly what permission engines choke on.
 - NEVER pass `--json-schema` on agentic/implement legs — practitioner repro (2026-07-21): it silently suppresses tool use headlessly and returns a schema-shaped one-turn guess, i.e. it manufactures false completions. Single-turn structured answers only.
 
 ## CLI gotchas (see also SKILL.md Known breakage)
 
+- **Shell trap (zsh):** Do NOT use `status` as a shell variable name when checking Grok's exit code or result in zsh — `status` is a reserved zsh variable and assigning to it causes shell errors after Grok finishes. Use `$?` or a custom variable like `grok_status`.
 - Headless runs can end exit-0 with only an opening narration line ("I'll research…") and no deliverable — observed 2026-07-13 on multi-part research prompts with web-fetch chains; verbatim retries and higher `--max-turns` don't help. Always append a harness note: "you are running headless — your FINAL message must be the complete deliverable; ending with narration only is a total failure", and prefer `--output-format json` so the `text` field (and `stopReason`) can be checked programmatically instead of eyeballing stdout.
 - `stopReason:"Cancelled"` + empty output = the headless permission auto-cancel above, not quota and not concurrency (the earlier "concurrent runs cancel each other" attribution was falsified by forensic review of those sessions — same permission signature). Diagnose via `permission_resolved decision:"cancelled"` in `~/.grok/sessions/…/events.jsonl`; fix the launch flags, don't retry verbatim.
 - A dead run may leave `{"type":"error","message":"…max_tokens_truncation…"}` as the entire out.json (no stopReason field) after a runaway-reasoning response — seen once alongside server 500s, 2026-07-22. The session survives: `grok -r <sessionId> -p "continue"` resumes with state intact; mid-flight files on disk are NOT a deliverable.

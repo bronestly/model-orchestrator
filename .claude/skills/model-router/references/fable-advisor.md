@@ -1,21 +1,27 @@
-# Fable advisor — cross-model plan review
+# Advisor mode — cross-model plan review (Fable 5 / Opus 5)
 
-A read-only second opinion that **any orchestrator model** — Claude main, Codex Sol, Grok, or another — can request from Fable 5 to pressure-test a plan or a consequential decision before committing to implementation. The requesting model invokes `claude -p` and forwards a self-contained dossier. Fable sees **only that dossier** — never the orchestrator's transcript and never the repository — so the dossier must carry everything needed to judge the plan on its merits.
+A read-only second opinion that **any orchestrator model** — Claude main, Codex Sol, Grok, or another — can request from an advisor model — **Fable 5 or Opus 5** — to pressure-test a plan or a consequential decision before committing to implementation. The requesting model invokes `claude -p` and forwards a self-contained dossier. The advisor sees **only that dossier** — never the orchestrator's transcript and never the repository — so the dossier must carry everything needed to judge the plan on its merits.
 
-Fable's output serves two purposes, and the dossier should be built for both:
+The advisor's output serves two purposes, and the dossier should be built for both:
 
 1. **Decide now** — accept, revise, or reconsider the orchestrator's plan.
 2. **Steer later** — produce guardrails the orchestrator can hand to whichever model is assigned to implement the plan.
 
-Because of purpose 2, hand Fable the **full detailed plan, not a brief summary.**
+Because of purpose 2, hand the advisor the **full detailed plan, not a brief summary.**
 
-Non-Claude orchestrators reach Fable only through this CLI path. A Claude-host orchestrator may instead spawn a native Fable subagent, but the dossier discipline and effort rules below still apply.
+## Advisor model selection
+
+- **Fable 5 (`claude-fable-5`) — default.** The highest-judgment advisor; use for the highest-stakes calls: architecture, migrations, security/trust boundaries, public contracts, and anything hard to reverse.
+- **Opus 5 (`claude-opus-5`) — alternative.** Use when the user asks for an Opus opinion, when the decision is consequential but standard engineering (no novel architecture or trust-boundary judgment), or to conserve Fable capacity. Same dossier, invocation shape, effort rules, and failure policy — only `--model` changes. Opus 5 caveats apply: never `max` effort, and expect somewhat more verbose output.
+- **Both (dual advisory) — explicit user request only.** When the user asks for "Opus and Fable" (or two independent opinions), run one call per model with the **identical dossier**, then reconcile: where they agree, treat it as strong signal; where they disagree, the orchestrator decides and states why. Each call follows the per-call failure policy independently — one failing does not invalidate the other.
+
+Non-Claude orchestrators reach the advisor only through this CLI path. A Claude-host orchestrator may instead spawn a native subagent with the chosen model (Fable or Opus), but the dossier discipline and effort rules below still apply.
 
 Also used as an **optional taste layer** in VS mode when comparing a baseline vs a minimal-code-contract variant (see `vs-mode.md`). VS taste checks follow the same invocation and failure rules.
 
 ## Trigger
 
-Consult Fable at most once per task, and only when the user explicitly requests it or one of these holds:
+Consult the advisor at most once per task — one call, or one identical-dossier call per model in the user-requested dual advisory — and only when the user explicitly requests it or one of these holds:
 
 1. The orchestrator has a detailed plan for a consequential architecture, migration, security, data-model, or public-interface decision and wants it pressure-tested before implementation begins — where a wrong approach creates substantial rework or risk.
 2. The orchestrator must choose among multiple plausible approaches and cannot resolve it from evidence alone.
@@ -24,7 +30,7 @@ Consult Fable at most once per task, and only when the user explicitly requests 
 
 Complexity, duration, and file count alone are not triggers. Do not consult for routine coding, mechanical refactors, clear bugs, ordinary review, factual research, or final review by default.
 
-If the decision cannot be expressed as one precise question or a concrete plan to review, gather more evidence instead of calling Fable.
+If the decision cannot be expressed as one precise question or a concrete plan to review, gather more evidence instead of calling the advisor.
 
 ## Invocation
 
@@ -36,6 +42,7 @@ DOSSIER=$(mktemp)
 # ... write the full dossier into "$DOSSIER" ...
 
 # 2. One non-interactive call; the prompt must be present at launch.
+#    --model is the advisor selection: claude-fable-5 (default) or claude-opus-5.
 claude -p \
   --safe-mode \
   --model claude-fable-5 \
@@ -54,13 +61,13 @@ claude -p \
 - Deliver the dossier as the **positional argument** (temp file + `"$(< file)"` as above) or as **stdin already connected at spawn** (`claude -p ... < "$DOSSIER"`).
 - **Never** launch the process first (PTY or otherwise) and try to write the dossier to stdin afterward — the process has already exited. This is a confirmed failure mode from a Codex host.
 - Run it as a plain non-TTY exec, require exit code 0, and read the answer from the JSON `result` field.
-- There is **no advisor flag**: the route to Fable is `--model claude-fable-5` on a normal `claude -p` call. Do not invent `--advisor` or similar.
+- There is **no advisor flag**: the route is `--model claude-fable-5` (or `--model claude-opus-5`) on a normal `claude -p` call. Do not invent `--advisor` or similar.
 - **GPT-5.6 / Codex hosts: run this command outside the sandbox.** The Codex exec sandbox blocks the network and credential access `claude` needs to reach the API, so a sandboxed call dies on auth/network, and per the Failure policy that consultation is then simply skipped — no retry. Request escalated (non-sandboxed) execution for this one read-only command; it needs no filesystem writes beyond reading the dossier temp file.
 
 Why this exact shape (each flag earns its place):
 
 - `--tools ""` removes every tool, which is the actual read-only guarantee; `--safe-mode` strips this repo's `CLAUDE.md`, skills, hooks, and MCP so nothing leaks into the advisor context.
-- `--system-prompt` replaces Claude Code's default coding-agent prompt with a pure advisor persona. **This is required.** Without it, the default agent framing makes Fable try to investigate the repo first, and with no tools it emits *attempted tool instructions instead of a recommendation* (the exact narration-only failure this route hit before).
+- `--system-prompt` replaces Claude Code's default coding-agent prompt with a pure advisor persona. **This is required for either advisor model.** Without it, the default agent framing makes the advisor try to investigate the repo first, and with no tools it emits *attempted tool instructions instead of a recommendation* (the exact narration-only failure this route hit before).
 - **Do not add `--permission-mode plan`.** With no tools it gates nothing, and it reintroduces the "investigate, then present a plan" framing (via a missing `ExitPlanMode`) that produced the tool-instruction narration.
 - Read the answer from the JSON `result` field. Verified 2026-07-23: this shape returns the requested sections in one turn (`stop_reason: end_turn`), no tool-use attempts.
 
@@ -68,7 +75,7 @@ Why this exact shape (each flag earns its place):
 
 Pick effort by blast radius, not by prompt length:
 
-- **`medium` (default).** Almost every plan review, architecture second opinion, and overbuild/taste check. Fable's judgment at `medium` is already strong for reviewing a plan it did not have to author.
+- **`medium` (default).** Almost every plan review, architecture second opinion, and overbuild/taste check. Either advisor's judgment at `medium` is already strong for reviewing a plan it did not have to author.
 - **`high` — one step up, reserved.** Use only when the decision is genuinely hard to reverse or high-blast-radius (data-model or schema migration, a security/trust boundary, a public API or wire contract, a cross-cutting refactor), **or** when a `medium` pass came back hedged or shallow on a decision that carries real rework, **or** when the user asks for it.
 - **Never `xhigh`, `max`, or `ultra`.** A single read-only advisory does not justify frontier-max compute. If a question seems to need that much, the fix is more evidence, a sharper question, or decomposition — not more effort. (`ultra` is a Codex-only tier and is not even valid for `claude -p`; it is named here so no cross-host orchestrator reaches for it.)
 
@@ -90,7 +97,7 @@ Proposed plan (full): The orchestrator's complete plan, verbatim — steps,
   reasoning behind each. Do not compress it.
 Alternatives considered: Approaches weighed and why they were set aside (if any).
 Open questions: What the orchestrator is unsure about.
-Decision(s) for Fable: The specific calls to review.
+Decision(s) for the advisor: The specific calls to review.
 
 Return as short labeled sections (not one prose blob):
 1. Verdict — proceed / revise / reconsider-approach.
@@ -111,7 +118,7 @@ Use when there is a specific fork to resolve, not a whole plan.
 Goal: What outcome is required?
 Constraints: What must remain true?
 Evidence: What repository facts, errors, or tradeoffs matter?
-Question: What single consequential decision should Fable review?
+Question: What single consequential decision should the advisor review?
 
 Return at most five bullets: recommendation, strongest objection,
 missing fact, risk mitigation, and proceed/revise verdict.
@@ -134,12 +141,12 @@ Do not implement anything.
 
 ### How much context to send
 
-Give Fable enough to judge on the merits — the full plan, the real constraints, and the relevant code facts. **Under-contextualizing is the main failure mode of this route:** a thin dossier yields generic advice. Fable has a large (1M-token) context window, so err toward completeness for plan reviews.
+Give the advisor enough to judge on the merits — the full plan, the real constraints, and the relevant code facts. **Under-contextualizing is the main failure mode of this route:** a thin dossier yields generic advice. Fable has a large (1M-token) context window, so err toward completeness for plan reviews; for an Opus 5 advisory the same completeness bias applies (recent Opus tiers are also 1M-class), but if a very large dossier is rejected for length, trim the longest code excerpts first while keeping the plan itself verbatim.
 
 Still never forward credentials, secrets, tokens, environment values, or unrelated proprietary material; redact those from any excerpt. For the terse taste check, keep it to `git diff --stat` plus the key hunks.
 
 ## Failure
 
-This call is best-effort and never blocks the task. On any missing binary, auth, quota, timeout, empty output, or malformed response, do not retry or send a second completion call. Continue with the orchestrator's own judgment and state briefly that the consultation was skipped.
+This call is best-effort and never blocks the task. On any missing binary, auth, quota, timeout, empty output, or malformed response, do not retry or send a second completion call with the same model. Continue with the orchestrator's own judgment and state briefly that the consultation was skipped. In a dual advisory, a failed call for one model does not invalidate the other's answer; do not add a replacement call for the failed model.
 
-A reply whose `result` is only attempted tool-use syntax, or narration of what Fable would investigate, with no actual recommendation, counts as an empty deliverable: treat it as a skipped consultation and fall back to the orchestrator's judgment — do not retry. If the invocation above still produces this, confirm `--system-prompt` is present and `--permission-mode plan` is absent before considering the route usable.
+A reply whose `result` is only attempted tool-use syntax, or narration of what the advisor would investigate, with no actual recommendation, counts as an empty deliverable: treat it as a skipped consultation and fall back to the orchestrator's judgment — do not retry. If the invocation above still produces this, confirm `--system-prompt` is present and `--permission-mode plan` is absent before considering the route usable.

@@ -9,10 +9,10 @@ Read this only before using an external CLI route. Keep calls short, fresh, self
 | Codex Sol | `codex exec --skip-git-repo-check -s <sandbox> -m gpt-5.6-sol -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` |
 | Codex Terra | Same command with `-m gpt-5.6-terra` |
 | Codex Luna | Same command with `-m gpt-5.6-luna` |
-| Grok 4.5 | headless (read-only AND write legs): `grok --always-approve -p "<prompt>" --reasoning-effort <effort> --output-format json`, launched from a throwaway cwd; read-only legs must carry an explicit read-only prompt contract (see Permissions). `--permission-mode plan` is interactive-only. |
+| Grok 4.5 | synchronous headless: `grok --always-approve --no-subagents --no-alt-screen --minimal --output-format json --reasoning-effort <effort> --prompt-file <path>` (add `--disable-web-search` for code/eng legs, omit for live-X research). Read-only legs must carry an explicit read-only prompt contract (see Permissions). `--permission-mode plan` is interactive-only. |
 | Antigravity (agy) | `agy -p "<prompt>" --model <slug> --print-timeout <dur>` · slugs from `agy models` (e.g. `gemini-3.6-flash-low|medium|high`, `gemini-3.1-pro-high`); effort is encoded in the slug (verified agy 1.1.5, 2026-07-23) |
 
-Do not guess additional flags. For multiline prompts, use stdin or a prompt file rather than brittle shell quoting. Codex writes its final answer to `-o`; its stdout is a transcript. Grok and agy return their result on stdout.
+Do not guess additional flags. For multiline prompts, use stdin or a prompt file (`--prompt-file`) rather than brittle shell quoting. Codex writes its final answer to `-o`; its stdout is a transcript. Grok and agy return their result on stdout.
 
 ## Effort defaults
 
@@ -47,6 +47,8 @@ For high-risk work, require a fresh review from another model family where pract
 - A present binary may still have broken auth, quota, account tier, or configuration. The first real call is the probe.
 - The gemini CLI is permanently dead: Google retired it 2026-06-18 in favor of Antigravity (`agy`); `IneligibleTierError` was the shutdown symptom. Do not probe it.
 - agy `--print-timeout` defaults to 5m; raise it (e.g. `15m`) for deep research legs. An unresolvable `--model` hard-fails with a non-zero exit listing valid slugs — fix the slug, don't retry.
+- Grok background `nohup ... &` invocations fail to retain usable results in subshell tool executions. Run Grok synchronously using `--prompt-file <path>`.
+- In zsh, do not use `status` as a variable name when handling Grok's output or exit code (reserved zsh variable causing execution error). Use `$?`.
 - Grok can exit successfully with narration but no deliverable. Check its JSON `text` and stop reason.
 - Grok `stopReason:"Cancelled"` with empty text = headless permission auto-cancel, not quota or concurrency (the 2026-07 "concurrent cancels" attribution showed this same signature on forensic review). Verify: `permission_resolved decision:"cancelled"` (~50 ms) in `~/.grok/sessions/…/events.jsonl`. Relaunch with `--always-approve`. This hits `--permission-mode plan` too, even on tool calls that write nothing (verified 2026-07-24 on a web-research leg) — headless runs always use `--always-approve`.
 - A failed Grok run may write `{"type":"error","message":"…max_tokens_truncation…"}` with NO stopReason field — parse that schema separately from result objects. The session survives; `grok -r <sessionId> -p "continue"` resumes it (single observation, 2026-07-23).
