@@ -8,8 +8,8 @@ allowed-tools:
   - Bash(agy -p *)
   - Bash(agy models*)
 metadata:
-  version: "0.21.0"
-  updated: "2026-07-28"
+  version: "0.22.0"
+  updated: "2026-07-29"
 ---
 
 # Model Router — Claude Adapter
@@ -101,3 +101,4 @@ Read machine-local observations from `$HOME/.claude/model-router/routing-notes.m
 - **2026-07-24 · v0.19.0:** Replaced Opus 4.8 with Opus 5 (`claude-opus-5`, released 2026-07-24, same $5/$25 price) in routing — trial on day-0 evidence (Grok 4.5 launch sweep + platform.claude.com spot-check). Coding fallback now Opus 5 subagent before Grok (SWE-bench Verified 97.0% vs 4.8's 88.6%, Grok's 86.6%; consistent with the v0.17.1 Grok demotion). Review row: Opus 5 precision primary with a Sol recall co-pass on correctness-critical diffs (CodeRabbit: actionable precision 39.3% vs 35.2% baseline, but recall 55.2% vs 61.1% and ~4× nitpicks); Fable retained as highest-stakes escalation. New Opus 5 caveats: no `max` effort by default (analysis-paralysis reports), no bulk/simple legs (verbosity tax), fast mode stays forbidden. Grok read-only shape corrected in routing-reference: headless `--permission-mode plan` auto-cancelled a pure research leg (same `Cancelled`+narration signature as `auto`); headless read-only legs now use `--always-approve` + throwaway cwd + read-only prompt contract.
 - **2026-07-25 · v0.20.0:** Generalized the advisor mode (`references/fable-advisor.md`, filename kept) to support model selection: Fable 5 (`claude-fable-5`) stays the default for the highest-stakes calls; Opus 5 (`claude-opus-5`) is now a first-class advisor for user-requested or consequential-but-standard engineering reviews; a dual Fable+Opus advisory (identical dossier per model, orchestrator reconciles agreement/disagreement) is available on explicit user request only. Same invocation shape, dossier discipline, effort rules, and per-call failure policy for both models — only `--model` changes; Opus 5's never-`max` caveat carries over via the existing effort ceiling.
 - **2026-07-28 · v0.21.0:** Updated Grok launch recipe and CLI flags: replaced background nohup execution with synchronous `--prompt-file` invocation (`--no-subagents`, `--disable-web-search`, `--no-alt-screen`, `--minimal`, `--output-format json`) to prevent lost subshell output; added zsh reserved `status` variable trap to CLI gotchas.
+- **2026-07-29 · v0.22.0:** Updated Antigravity route to exclusively use Gemini 3.6 Flash (`gemini-3.6-flash-low|medium|high`); explicitly deprecated and removed references to Gemini 3.5, 3.1 Pro, or any older Gemini models.

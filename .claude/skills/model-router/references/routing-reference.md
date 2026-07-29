@@ -10,7 +10,7 @@ Read this only before using an external CLI route. Keep calls short, fresh, self
 | Codex Terra | Same command with `-m gpt-5.6-terra` |
 | Codex Luna | Same command with `-m gpt-5.6-luna` |
 | Grok 4.5 | synchronous headless: `grok --always-approve --no-subagents --no-alt-screen --minimal --output-format json --reasoning-effort <effort> --prompt-file <path>` (add `--disable-web-search` for code/eng legs, omit for live-X research). Read-only legs must carry an explicit read-only prompt contract (see Permissions). `--permission-mode plan` is interactive-only. |
-| Antigravity (agy) | `agy -p "<prompt>" --model <slug> --print-timeout <dur>` · slugs from `agy models` (e.g. `gemini-3.6-flash-low|medium|high`, `gemini-3.1-pro-high`); effort is encoded in the slug (verified agy 1.1.5, 2026-07-23) |
+| Antigravity (agy) | `agy -p "<prompt>" --model <slug> --print-timeout <dur>` · slugs from `agy models` (e.g. `gemini-3.6-flash-low|medium|high`); effort is encoded in the slug (verified agy 1.1.5, 2026-07-23) |
 
 Do not guess additional flags. For multiline prompts, use stdin or a prompt file (`--prompt-file`) rather than brittle shell quoting. Codex writes its final answer to `-o`; its stdout is a transcript. Grok and agy return their result on stdout.
 
@@ -20,7 +20,7 @@ Do not guess additional flags. For multiline prompts, use stdin or a prompt file
 - Terra: `medium` for implementation after a plan; `high` for review or PR triage.
 - Luna: `low`–`medium` for bulk work. Do not raise it to chase quality.
 - Grok: `low` for bounded engineering or quick research; `high` for security-adjacent work or deep criticism sweeps.
-- Antigravity: `gemini-3.6-flash-low` for bulk work, `-medium` for quick research, `-high` for deep multi-source sweeps; `gemini-3.1-pro-high` only when Flash-high output was insufficient.
+- Antigravity: `gemini-3.6-flash-low` for bulk work, `-medium` for quick research, `-high` for deep multi-source sweeps. Use only Gemini 3.6 Flash models; do not use Gemini 3.5, 3.1 Pro, or older models.
 - Never enable Codex fast mode from this skill.
 
 ## Permissions

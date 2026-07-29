@@ -21,7 +21,7 @@ agy -p "$(cat promptfile)" --model <slug> --print-timeout 15m
 
 - Write the prompt with a file-write tool, not a heredoc; `-p "$(cat promptfile)"` avoids brittle quoting.
 - Deliverable arrives on **stdout**; exit code is meaningful (server-side failures exit non-zero with stderr, no silent empty successes since 1.1.1).
-- Slugs from `agy models`; effort is encoded in the slug (`gemini-3.6-flash-low|medium|high`, `gemini-3.1-pro-high|low`). Unresolvable `--model` hard-fails listing valid slugs.
+- Slugs from `agy models`; effort is encoded in the slug (`gemini-3.6-flash-low|medium|high`). Exclusively use Gemini 3.6 Flash models; do not use Gemini 3.5, 3.1 Pro, or any older Gemini models. Unresolvable `--model` hard-fails listing valid slugs.
 - `--print-timeout` defaults to 5m — raise for deep sweeps.
 - Web search/fetch run headless without prompting. Tools needing approval are **soft-denied** with a stderr notice naming the allow-rule; empty stdout + such a notice = blocked, not model failure. Never reach for `--dangerously-skip-permissions`.
 
@@ -32,9 +32,8 @@ agy -p "$(cat promptfile)" --model <slug> --print-timeout 15m
 | Bulk classification/extraction/recon | `gemini-3.6-flash-low` |
 | Quick lookup or standard brief | `gemini-3.6-flash-medium` |
 | Deep multi-source research sweep | `gemini-3.6-flash-high` |
-| Flash-high output was insufficient | `gemini-3.1-pro-high` |
 
-Higher tiers must buy more sources and stricter citations, not longer prose.
+If `gemini-3.6-flash-high` output is insufficient, refine the prompt or route to Grok 4.5 / main context. Do not fall back to Gemini 3.5, 3.1 Pro, or older models. Higher effort tiers must buy more sources and stricter citations, not longer prose.
 
 ## Delegation-prompt checklist
 
