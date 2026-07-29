@@ -38,7 +38,7 @@ Before running, state the overhead in relative terms (roughly N× the tokens of 
 `code_minimalism` (1–5): fewer unnecessary helpers/abstractions, better reuse, smaller on-task diff, no drive-by cleanup. Reviewer must cite concrete evidence. `metrics` are filled by the **orchestrator** from diffs/test results (not by the blinded model reviewer).
 
 3. You make the final call: verify the decisive evidence at its cited location first — if it is overstated or wrong, correct it in the ledger even when the verdict direction survives — then present the winner plus key differences to the user. In that user-facing summary, always name which model/effort produced each candidate (never just "A"/"B" or "1"/"2" — those are for the blinded reviewer only) and **bold the winning model's name**.
-4. On Claude, append the scorecard verbatim, with candidate names unblinded, to `$HOME/.claude/model-router/routing-notes.md`; keep it under ~15 entries. On Codex, present the scorecard in the task but do not create cross-host mutable state.
+4. If shared state is configured, both Claude and Codex save the unblinded scorecard as a new immutable Markdown file under `<state-repo>/events/YYYY/MM/<UTC timestamp>-<device-id>.md`; resolve `<state-repo>` and `<device-id>` from `$HOME/.claude/model-router/state-repo` and `device-id` (or the Windows equivalents). Never overwrite an event. Distill only a persistent routing implication into `<state-repo>/calibration.md`, keeping roughly 15 live entries. If shared state is unavailable, Claude appends to legacy `$HOME/.claude/model-router/routing-notes.md`; Codex only presents the scorecard in the task. Never push shared state automatically.
 
 ## Prompt-variant bake-off (same model)
 
@@ -88,7 +88,7 @@ Rules:
 
 After every VS run, compare the scorecard's `routing_implication` against the routing table **and** against the Sol minimal-code / plan→execute guidance in `codex-delegation.md`:
 
-- If it contradicts or refines a row or the contract wording, draft a minimal edit — exact before/after of just the affected cells or contract bullets — and present it to the user with the evidence. State the sample size plainly: a single VS run is one data point, so label the proposal's confidence accordingly (prior consistent entries in the global `routing-notes.md` raise it).
+- If it contradicts or refines a row or the contract wording, draft a minimal edit — exact before/after of just the affected cells or contract bullets — and present it to the user with the evidence. State the sample size plainly: a single VS run is one data point, so label the proposal's confidence accordingly (prior consistent shared events raise it).
 - **Only after the user explicitly approves**, edit the source under `$(cat "$HOME/.claude/model-router/source-repo")/.claude/skills/model-router/`, then run `bash "$(cat "$HOME/.claude/model-router/source-repo")/sync.sh"` to propagate both host adapters. Never hand-edit either installed copy (`~/.claude/skills/model-router/` or `~/.agents/skills/model-router/`): they are build artifacts. Never edit the skill without approval.
-- If the user declines, record the declined proposal in the global `routing-notes.md` so you don't re-propose the same change.
+- If the user declines, record the declined proposal in shared calibration when configured, otherwise in legacy `routing-notes.md`, so you don't re-propose the same change.
 - If `$HOME/.claude/model-router/source-repo` is missing or unreachable, stop at the scorecard and show the proposed source diff for the user to apply manually.

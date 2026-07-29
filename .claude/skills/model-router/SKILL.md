@@ -13,7 +13,7 @@ allowed-tools:
   - PowerShell(agy -p *)
   - PowerShell(agy models*)
 metadata:
-  version: "0.22.0"
+  version: "0.23.0"
   updated: "2026-07-29"
 ---
 
@@ -86,7 +86,13 @@ For substantial routes, state the route and cost/quality rationale briefly befor
 
 ## Calibration
 
-Read machine-local observations from `$HOME/.claude/model-router/routing-notes.md` (or `%USERPROFILE%\.claude\model-router\routing-notes.md` on Windows) when present and let recent, relevant notes override defaults. Record only persistent breakage or a non-routine routing lesson; do not log ordinary success. Keep machine-specific facts local. Promote a repeated universal lesson only through the approval-gated flow in `references/vs-mode.md`, editing this repository's source rather than the installed copy.
+Read calibration in this order when present:
+
+1. The shared `calibration.md` under the Git checkout named by `$HOME/.claude/model-router/state-repo` (or `%USERPROFILE%\.claude\model-router\state-repo` on Windows).
+2. Machine-local observations from `routing-notes.local.md` beside that pointer.
+3. Legacy `routing-notes.md` only when no shared state checkout is configured.
+
+Let recent, relevant observations override defaults. Record machine-specific CLI, tier, path, or repository facts only in `routing-notes.local.md`; never sync credentials or secrets. Store full comparison history as a new immutable file under the shared checkout's `events/YYYY/MM/` directory, and keep `calibration.md` to roughly 15 distilled live lessons. Do not push shared state automatically; use this repository's `state.sh` or `state.ps1` when the user asks to synchronize it. Promote a repeated universal lesson only through the approval-gated flow in `references/vs-mode.md`, editing this repository's source rather than an installed copy.
 
 ## Maintenance
 
@@ -107,3 +113,4 @@ Read machine-local observations from `$HOME/.claude/model-router/routing-notes.m
 - **2026-07-25 · v0.20.0:** Generalized the advisor mode (`references/fable-advisor.md`, filename kept) to support model selection: Fable 5 (`claude-fable-5`) stays the default for the highest-stakes calls; Opus 5 (`claude-opus-5`) is now a first-class advisor for user-requested or consequential-but-standard engineering reviews; a dual Fable+Opus advisory (identical dossier per model, orchestrator reconciles agreement/disagreement) is available on explicit user request only. Same invocation shape, dossier discipline, effort rules, and per-call failure policy for both models — only `--model` changes; Opus 5's never-`max` caveat carries over via the existing effort ceiling.
 - **2026-07-28 · v0.21.0:** Updated Grok launch recipe and CLI flags: replaced background nohup execution with synchronous `--prompt-file` invocation (`--no-subagents`, `--disable-web-search`, `--no-alt-screen`, `--minimal`, `--output-format json`) to prevent lost subshell output; added zsh reserved `status` variable trap to CLI gotchas.
 - **2026-07-29 · v0.22.0:** Updated Antigravity route to exclusively use Gemini 3.6 Flash (`gemini-3.6-flash-low|medium|high`); explicitly deprecated and removed references to Gemini 3.5, 3.1 Pro, or any older Gemini models.
+- **2026-07-29 · v0.23.0:** Added optional private-Git shared calibration for Claude and Codex, per-device local notes, immutable event history, and explicit cross-device state synchronization.

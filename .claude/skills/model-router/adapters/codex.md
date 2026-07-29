@@ -55,4 +55,14 @@ For write-capable legs, first create a recoverable checkpoint and forbid destruc
 - Mark a failed route dead for the session, use the fallback, and mention the reroute briefly.
 - If no external route is healthy, continue safely in the Sol main context.
 
+## Calibration
+
+Read calibration in this order when present:
+
+1. The shared `calibration.md` under the Git checkout named by `$HOME/.claude/model-router/state-repo` (or `%USERPROFILE%\.claude\model-router\state-repo` on Windows).
+2. Machine-local observations from `routing-notes.local.md` beside that pointer.
+3. Legacy `routing-notes.md` only when no shared state checkout is configured.
+
+Let recent, relevant observations override defaults. Keep machine-specific CLI, tier, path, or repository facts in `routing-notes.local.md`; never sync credentials or secrets. Store full comparison history as a new immutable file under the shared checkout's `events/YYYY/MM/` directory, and keep `calibration.md` to roughly 15 distilled live lessons. Do not push shared state automatically; use the source repository's `state.sh` or `state.ps1` when the user asks to synchronize it.
+
 For substantial work, state the chosen route in one compact line. Do not add routing narration to routine work.

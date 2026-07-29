@@ -48,24 +48,24 @@ Get-ChildItem -Path $StageDir | ForEach-Object {
 }
 Remove-Item -Recurse -Force $StageDir
 
-# 3. Preserve calibration log and source pointer
+# 3. Preserve machine-local state and source pointer. Shared state is configured
+# separately with state.ps1 and is never copied into either installed package.
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 Set-Content -Path (Join-Path $LogDir "source-repo") -Value $RepoRoot -NoNewline
 
-$NotesPath = Join-Path $LogDir "routing-notes.md"
+$NotesPath = Join-Path $LogDir "routing-notes.local.md"
 if (-not (Test-Path $NotesPath)) {
     $NotesHeader = @"
-# model-router — calibration log (Claude host, machine-local)
+# model-router — device-local observations
 
-Record only persistent routing observations. Keep this file under roughly 15
-live entries and never put secrets in it. Codex intentionally has no shared
-mutable calibration state.
+Record only facts specific to this device: CLI availability, auth/tier status,
+paths, or repository quirks. Never put credentials or secrets here.
 
 ## Entries
 <!-- newest first -->
 "@
     Set-Content -Path $NotesPath -Value $NotesHeader
-    Write-Host "Seeded new calibration log at $NotesPath"
+    Write-Host "Seeded device-local notes at $NotesPath"
 }
 
 Write-Host "Installed Claude adapter: $ClaudeDest"

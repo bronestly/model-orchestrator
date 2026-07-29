@@ -12,6 +12,8 @@ not an application. There is no build system.
 - `sync.sh` — installs Claude at `~/.claude/skills/model-router/` and Codex at
   `~/.agents/skills/model-router/` (Linux/macOS/Git Bash).
 - `sync.ps1` — installs both global packages on Windows PowerShell.
+- `state.sh` / `state.ps1` — configure and explicitly synchronize optional
+  private shared calibration state.
 
 ## Change rules
 
@@ -31,9 +33,13 @@ not an application. There is no build system.
 - VS mode can A/B the same model (Sol baseline vs +minimal-code contract);
   see `references/vs-mode.md`.
 - Never enable Codex fast mode or automatically select `ultra` effort.
-- Preserve existing Claude-host calibration notes; Codex remains stateless.
+- Preserve existing calibration history. Both hosts may read configured shared
+  calibration; device-specific observations remain local and shared-state
+  pushes are always explicit.
 
 ## Verification
 
-Run `bash -n sync.sh`, validate both skill frontmatters, then run `bash sync.sh` (or `.\sync.ps1` on Windows PowerShell)
-and compare each installed adapter and reference directory with its source.
+Run `bash -n sync.sh state.sh`, validate both skill frontmatters, then run
+`bash sync.sh` (or `.\sync.ps1` on Windows PowerShell) and compare each
+installed adapter and reference directory with its source. Exercise the
+configured state checkout with `bash state.sh status` without pushing.

@@ -59,21 +59,21 @@ else
   copy_dir_clean "$CODEX_STAGE" "$CODEX_DEST" ""
 fi
 
-# Preserve the existing Claude-host calibration memory and source pointer.
+# Preserve machine-local state and source pointer. Shared state is configured
+# separately with state.sh and is never copied into either installed package.
 mkdir -p "$LOGDIR"
 printf '%s\n' "$REPO_ROOT" > "$LOGDIR/source-repo"
-if [[ ! -f "$LOGDIR/routing-notes.md" ]]; then
-  cat > "$LOGDIR/routing-notes.md" <<'NOTES'
-# model-router — calibration log (Claude host, machine-local)
+if [[ ! -f "$LOGDIR/routing-notes.local.md" ]]; then
+  cat > "$LOGDIR/routing-notes.local.md" <<'NOTES'
+# model-router — device-local observations
 
-Record only persistent routing observations. Keep this file under roughly 15
-live entries and never put secrets in it. Codex intentionally has no shared
-mutable calibration state.
+Record only facts specific to this device: CLI availability, auth/tier status,
+paths, or repository quirks. Never put credentials or secrets here.
 
 ## Entries
 <!-- newest first -->
 NOTES
-  echo "Seeded new calibration log at $LOGDIR/routing-notes.md"
+  echo "Seeded device-local notes at $LOGDIR/routing-notes.local.md"
 fi
 
 echo "Installed Claude adapter: $CLAUDE_DEST"
