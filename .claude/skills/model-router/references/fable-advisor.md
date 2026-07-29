@@ -38,6 +38,7 @@ Run one fresh call with no tools, no session persistence, and no repository acce
 
 ```bash
 # 1. Write the non-sensitive dossier to a temp file (avoids quoting/length pitfalls).
+#    (Bash/WSL: DOSSIER=$(mktemp) | PowerShell: $DOSSIER = Join-Path $env:TEMP "dossier.txt")
 DOSSIER=$(mktemp)
 # ... write the full dossier into "$DOSSIER" ...
 

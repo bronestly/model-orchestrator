@@ -16,15 +16,33 @@ if [[ ! -f "$CLAUDE_SRC/SKILL.md" || ! -f "$CODEX_ADAPTER" ]]; then
   exit 1
 fi
 
+# Copy logic with fallback if rsync is unavailable (e.g. minimal container environments)
+copy_dir_clean() {
+  local src="$1" dest="$2" exclude_pattern="$3"
+  if command -v rsync >/dev/null 2>&1; then
+    if [[ -n "$exclude_pattern" ]]; then
+      rsync -a --delete --delete-excluded --exclude "$exclude_pattern" --exclude '.DS_Store' "$src/" "$dest/"
+    else
+      rsync -a --delete --exclude '.DS_Store' "$src/" "$dest/"
+    fi
+  else
+    rm -rf "$dest"
+    mkdir -p "$dest"
+    if [[ -n "$exclude_pattern" ]]; then
+      (cd "$src" && tar -cf - --exclude="$exclude_pattern" --exclude='.DS_Store' .) | (cd "$dest" && tar -xf -)
+    else
+      cp -R "$src/." "$dest/"
+      rm -f "$dest/.DS_Store"
+    fi
+  fi
+}
+
 # Claude receives its adapter and the shared references, not the Codex source.
 mkdir -p "$CLAUDE_DEST"
-rsync -a --delete --delete-excluded \
-  --exclude 'adapters/' \
-  --exclude '.DS_Store' \
-  "$CLAUDE_SRC/" "$CLAUDE_DEST/"
+copy_dir_clean "$CLAUDE_SRC" "$CLAUDE_DEST" "adapters/"
 
 # Codex receives its adapter as SKILL.md plus the same shared references.
-CODEX_STAGE="$(mktemp -d "${TMPDIR:-/tmp}/model-router-codex.XXXXXX")"
+CODEX_STAGE="$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/model-router-codex.XXXXXX")"
 if [[ -z "$CODEX_STAGE" || ! -d "$CODEX_STAGE" ]]; then
   echo "Could not create the Codex staging directory" >&2
   exit 1
@@ -32,8 +50,14 @@ fi
 trap 'rm -rf -- "$CODEX_STAGE"' EXIT
 mkdir -p "$CODEX_STAGE/references" "$CODEX_DEST"
 cp "$CODEX_ADAPTER" "$CODEX_STAGE/SKILL.md"
-rsync -a --exclude '.DS_Store' "$CLAUDE_SRC/references/" "$CODEX_STAGE/references/"
-rsync -a --delete "$CODEX_STAGE/" "$CODEX_DEST/"
+if command -v rsync >/dev/null 2>&1; then
+  rsync -a --exclude '.DS_Store' "$CLAUDE_SRC/references/" "$CODEX_STAGE/references/"
+  rsync -a --delete "$CODEX_STAGE/" "$CODEX_DEST/"
+else
+  cp -R "$CLAUDE_SRC/references/." "$CODEX_STAGE/references/"
+  rm -f "$CODEX_STAGE/references/.DS_Store"
+  copy_dir_clean "$CODEX_STAGE" "$CODEX_DEST" ""
+fi
 
 # Preserve the existing Claude-host calibration memory and source pointer.
 mkdir -p "$LOGDIR"

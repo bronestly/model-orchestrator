@@ -7,6 +7,11 @@ allowed-tools:
   - Bash(grok --permission-mode plan *)
   - Bash(agy -p *)
   - Bash(agy models*)
+  - PowerShell(Get-Command *)
+  - PowerShell(codex exec --skip-git-repo-check -s read-only *)
+  - PowerShell(grok --permission-mode plan *)
+  - PowerShell(agy -p *)
+  - PowerShell(agy models*)
 metadata:
   version: "0.22.0"
   updated: "2026-07-29"
@@ -81,7 +86,7 @@ For substantial routes, state the route and cost/quality rationale briefly befor
 
 ## Calibration
 
-Read machine-local observations from `$HOME/.claude/model-router/routing-notes.md` when present and let recent, relevant notes override defaults. Record only persistent breakage or a non-routine routing lesson; do not log ordinary success. Keep machine-specific facts local. Promote a repeated universal lesson only through the approval-gated flow in `references/vs-mode.md`, editing this repository's source rather than the installed copy.
+Read machine-local observations from `$HOME/.claude/model-router/routing-notes.md` (or `%USERPROFILE%\.claude\model-router\routing-notes.md` on Windows) when present and let recent, relevant notes override defaults. Record only persistent breakage or a non-routine routing lesson; do not log ordinary success. Keep machine-specific facts local. Promote a repeated universal lesson only through the approval-gated flow in `references/vs-mode.md`, editing this repository's source rather than the installed copy.
 
 ## Maintenance
 

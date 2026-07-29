@@ -10,7 +10,8 @@ not an application. There is no build system.
   read it fully before editing.
 - `.claude/skills/model-router/references/` — shared references loaded only when relevant.
 - `sync.sh` — installs Claude at `~/.claude/skills/model-router/` and Codex at
-  `~/.agents/skills/model-router/`.
+  `~/.agents/skills/model-router/` (Linux/macOS/Git Bash).
+- `sync.ps1` — installs both global packages on Windows PowerShell.
 
 ## Change rules
 
@@ -34,5 +35,5 @@ not an application. There is no build system.
 
 ## Verification
 
-Run `bash -n sync.sh`, validate both skill frontmatters, then run `bash sync.sh`
+Run `bash -n sync.sh`, validate both skill frontmatters, then run `bash sync.sh` (or `.\sync.ps1` on Windows PowerShell)
 and compare each installed adapter and reference directory with its source.

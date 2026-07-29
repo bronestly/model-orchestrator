@@ -9,22 +9,28 @@ only when they offer a clear advantage.
 - `.claude/skills/model-router/SKILL.md` — thin Claude adapter.
 - `.claude/skills/model-router/adapters/codex.md` — thin Codex adapter source.
 - `.claude/skills/model-router/references/` — shared guidance loaded on demand.
-- `sync.sh` — copy-based installer for both global packages.
+- `sync.sh` — copy-based installer for Linux, macOS, and Git Bash.
+- `sync.ps1` — copy-based installer for Windows PowerShell.
 - `model-router-workspace/` — gitignored scratch and archived migration material.
 
 ## Install
 
+**Linux / macOS / Git Bash:**
 ```bash
 bash sync.sh
 ```
 
+**Windows PowerShell:**
+```powershell
+.\sync.ps1
+```
+
 The installer materializes:
 
-- Claude: `~/.claude/skills/model-router/`
-- Codex: `~/.agents/skills/model-router/`
+- Claude: `~/.claude/skills/model-router/` (or `%USERPROFILE%\.claude\skills\model-router\`)
+- Codex: `~/.agents/skills/model-router/` (or `%USERPROFILE%\.agents\skills\model-router\`)
 
-Always edit this repository, then rerun `bash sync.sh`; both installed packages
-are build artifacts.
+Always edit this repository, then rerun `bash sync.sh` or `.\sync.ps1`; both installed packages are build artifacts.
 
 ## Operating model
 
