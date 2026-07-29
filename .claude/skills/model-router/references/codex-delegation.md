@@ -59,22 +59,26 @@ Skip the split for single-file, well-specified fixes — go straight to Sol `med
 - No new abstractions, wrapper layers, config flags, or "future-proofing" unless required by the criteria.
 - No defensive try/catch, null-guards, or validation for states the codebase already forbids.
 - No drive-by renames, reformat-only diffs, or opportunistic cleanup outside the task.
+- Do not fix unrequested "discovered issues" or expand scope without explicit approval ("the gpt-5.6-sol problem").
+- Do not invent new unit test suites or excessive test layers unless specified in criteria.
+- Batch tool calls (e.g. read/search multiple targets in single turns) to avoid sequential context re-drag.
 - Prefer deleting/simplifying dead paths over adding parallel paths.
 - If two designs work, pick the one with fewer new symbols and fewer control-flow branches.
 - Stop when criteria pass. Do not continue "improving" the design.
 ```
 
-**Pathology to reject on review (orchestrator):** one-shot helpers used once (should have been inlined); parallel "v2" paths beside working code; broad try/catch that swallows errors; new config/feature flags for a single call site; invented ticket queues or "while we're here" refactors.
+**Pathology to reject on review (orchestrator):** one-shot helpers used once (should have been inlined); parallel "v2" paths beside working code; broad try/catch that swallows errors; new config/feature flags for a single call site; invented ticket queues, unrequested test suites, or "noticed another issue" scope expansions.
 
 **VS validation:** same-model bake-off (baseline vs +contract) is defined in `vs-mode.md`. Prefer measuring the contract alone before stacking plan→execute as a second confound.
 
 ## Within-family choice
 
-- **Sol** — the default Codex workhorse, at `medium` (or `low` when conserving).
+- **Sol** — the default Codex workhorse, at `medium` (or `low` when conserving). Sol `low` ("Light") is first-class for fast parallel scouting/recon because Sol low overthinks far less than smaller models (OpenAI DX @pvncher).
 - **Terra** — community sentiment is broadly negative ("the useless in-between model"), but our own blinded VS run had 3/3 clean Terra `medium` legs, and high-signal eng reports (2026-07) find Terra `high` notably faster than Sol `low` on review/PR-triage, with negligible quality loss. Reconciliation: Terra earns its keep on (1) well-specified implement *after a plan exists* at `medium`, and (2) review secondary legs at `high` — never as a default, not for design work, not for hard debugging.
-- **Luna** — worker-tier: recon, mechanical edits, review drafts at `low`–`medium`. Never design work (widely panned) or ambiguous multi-ticket queues (invents tickets). Luna `xhigh` costs more than Sol `medium` — cap the effort instead of raising it.
+- **Luna** — worker-tier: recon, mechanical edits, review drafts at `low`–`medium`. Never design work (widely panned) or ambiguous multi-ticket queues (invents tickets). **Topology restriction:** Luna does NOT support multi-agent v2 tools (OpenAI DX @pvncher); use Terra or Sol for subagent trees, reserving Luna `xhigh` for standalone single-turn volume/execution.
 
 ## Harness notes (2026-07-13)
 
 - Prefer pinned headless `codex exec` over the desktop app for orchestration — crash and lost-history reports cluster around the ChatGPT-merge builds. Commit to git after every leg; app/session history is not a backup.
 - Final answer lands in the `-o` file; stdout is transcript (see SKILL.md CLI reference).
+

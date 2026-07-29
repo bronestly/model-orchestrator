@@ -13,7 +13,7 @@ allowed-tools:
   - PowerShell(agy -p *)
   - PowerShell(agy models*)
 metadata:
-  version: "0.23.0"
+  version: "0.24.0"
   updated: "2026-07-29"
 ---
 
@@ -30,7 +30,7 @@ Act as the orchestrator. Keep ambiguity resolution, consequential judgment, veri
 | Independent critical review | Fresh Opus 5 subagent (precision primary; add a Codex Sol recall pass for correctness-critical diffs) | Fresh Fable subagent, then Codex Sol |
 | Live-X research, review/criticism sweeps, and small single-file engineering only | Grok 4.5 | Sonnet subagent plus web search |
 | General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity `gemini-3.6-flash` | Grok 4.5, then Sonnet subagent plus web search |
-| Bulk classification, extraction, or file reconnaissance | Antigravity `gemini-3.6-flash-low` | Luna, then batched Sonnet |
+| Bulk classification, extraction, or file reconnaissance | Antigravity `gemini-3.6-flash-low` or Sol `low` (fast parallel scouting) | Luna `low`–`medium` / `xhigh` (standalone volume; no multi-agent v2), then batched Sonnet |
 | Standard implementation, tests, docs, or writing | Sonnet subagent | Terra (`medium` implement; `high` review) |
 
 Use the cheapest route that comfortably clears the quality bar. For routine work, stay in the main context instead of spending time on routing analysis.
@@ -114,3 +114,4 @@ Let recent, relevant observations override defaults. Record machine-specific CLI
 - **2026-07-28 · v0.21.0:** Updated Grok launch recipe and CLI flags: replaced background nohup execution with synchronous `--prompt-file` invocation (`--no-subagents`, `--disable-web-search`, `--no-alt-screen`, `--minimal`, `--output-format json`) to prevent lost subshell output; added zsh reserved `status` variable trap to CLI gotchas.
 - **2026-07-29 · v0.22.0:** Updated Antigravity route to exclusively use Gemini 3.6 Flash (`gemini-3.6-flash-low|medium|high`); explicitly deprecated and removed references to Gemini 3.5, 3.1 Pro, or any older Gemini models.
 - **2026-07-29 · v0.23.0:** Added optional private-Git shared calibration for Claude and Codex, per-device local notes, immutable event history, and explicit cross-device state synchronization.
+- **2026-07-29 · v0.24.0:** Integrated GPT-5.6 (Sol/Terra/Luna) and Grok 4.5 practitioner research (OpenAI DX @pashmerepat/@pvncher/@thsottiaux, @theo): Sol `low` scouting pattern, Luna multi-agent v2 topology restriction, anti-"noticed another issue" scope lock, tool-batching recommendation, and Grok orchestrator test re-verification requirement.

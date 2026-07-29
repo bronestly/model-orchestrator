@@ -16,9 +16,9 @@ Do not guess additional flags. For multiline prompts, use stdin or a prompt file
 
 ## Effort defaults
 
-- Sol: `medium` for bounded work, `high` for genuinely complex coding, `xhigh` only after fixing a failed prompt or test. Never auto-use `ultra`.
+- Sol: `low` for fast parallel scouting/recon, `medium` default for bounded work, `high` for genuinely complex coding, `xhigh` only after fixing a failed prompt or test. Never auto-use `ultra`.
 - Terra: `medium` for implementation after a plan; `high` for review or PR triage.
-- Luna: `low`–`medium` for bulk work. Do not raise it to chase quality.
+- Luna: `low`–`medium` / `xhigh` for standalone volume work (no multi-agent v2 topology support). Do not raise it to chase quality on complex code.
 - Grok: `low` for bounded engineering or quick research; `high` for security-adjacent work or deep criticism sweeps.
 - Antigravity: `gemini-3.6-flash-low` for bulk work, `-medium` for quick research, `-high` for deep multi-source sweeps. Use only Gemini 3.6 Flash models; do not use Gemini 3.5, 3.1 Pro, or older models.
 - Never enable Codex fast mode from this skill.
