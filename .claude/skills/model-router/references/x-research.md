@@ -1,6 +1,6 @@
 # Delegating real-time X research to Grok 4.5
 
-Loaded on demand from SKILL.md's routing table and "How to delegate". Grok 4.5 via CLI is the lineup's only live-X route. Grounding: xAI docs sweep + Grok's own verified self-assessment, 2026-07-13 (full reports: `model-orchestrator/model-router-workspace/research-2026-07-13/xdocs-report.md` and `xverify-report.md`).
+Loaded on demand from SKILL.md's "Route selection". Grok 4.5 via CLI is the lineup's only live-X route; its launch command and effort ladder live in the `routing-reference.md` capability registry. Grounding: xAI docs sweep + Grok's own verified self-assessment, 2026-07-13 (full reports: `model-orchestrator/model-router-workspace/research-2026-07-13/xdocs-report.md` and `xverify-report.md`).
 
 Core framing: Grok+X is a **high-velocity signal sampler with citation discipline — not a ground-truth oracle**. It tells you what people are saying right now; what actually *happened* still needs primary sources.
 
@@ -33,9 +33,11 @@ Fast-moving-topic rule: X-first for the *discourse*, then corroborate every fact
 5. **Sentiment vs fact labels** on every bullet; facts need a primary link or official handle, or get marked "X-only rumor".
 6. **Required output structure:** snapshot → evidence (quote·handle·date·prevalence) → competing narratives → confidence & gaps ("what we did NOT find" is signal).
 7. **Stop condition:** max tool rounds, then report with gaps rather than inventing.
-8. **The headless harness note** from SKILL.md Known breakage (final message = complete report; check via `--output-format json`).
+8. **The headless harness note** from `routing-reference.md` "Known route failures" (final message = complete report; check via `--output-format json`).
 
-## Effort by research depth
+## Applying the effort ladder to research depth
+
+The registry's Grok ladder, mapped onto the research depths this file covers:
 
 | Depth | Effort |
 |---|---|
@@ -44,7 +46,7 @@ Fast-moving-topic rule: X-first for the *discourse*, then corroborate every fact
 | Deep criticism/sentiment sweep | `high` |
 | "What changed in the last N days" brief | `medium`–`high` |
 
-Default to `low` unless the brief needs multi-angle criticism depth. Higher effort must buy more diverse queries and stricter citation rules — not longer prose.
+Higher effort must buy more diverse queries and stricter citation rules — not longer prose. If a `high` sweep returns the same three angles at greater length, the prompt is the problem.
 
 ## Prompt skeletons
 

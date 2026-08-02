@@ -11,8 +11,10 @@ Because of purpose 2, hand the advisor the **full detailed plan, not a brief sum
 
 ## Advisor model selection
 
-- **Fable 5 (`claude-fable-5`) — default.** The highest-judgment advisor; use for the highest-stakes calls: architecture, migrations, security/trust boundaries, public contracts, and anything hard to reverse.
-- **Opus 5 (`claude-opus-5`) — alternative.** Use when the user asks for an Opus opinion, when the decision is consequential but standard engineering (no novel architecture or trust-boundary judgment), or to conserve Fable capacity. Same dossier, invocation shape, effort rules, and failure policy — only `--model` changes. Opus 5 caveats apply: never `max` effort, and expect somewhat more verbose output.
+Model IDs are in the registry (`routing-reference.md`, Advisor row); this section is about which to pick.
+
+- **Fable 5 — default.** The highest-judgment advisor; use for the highest-stakes calls: architecture, migrations, security/trust boundaries, public contracts, and anything hard to reverse.
+- **Opus 5 — alternative.** Use when the user asks for an Opus opinion, when the decision is consequential but standard engineering (no novel architecture or trust-boundary judgment), or to conserve Fable capacity. Same dossier, invocation shape, effort rules, and failure policy — only `--model` changes. Opus 5 caveats apply: never `max` effort, and expect somewhat more verbose output.
 - **Both (dual advisory) — explicit user request only.** When the user asks for "Opus and Fable" (or two independent opinions), run one call per model with the **identical dossier**, then reconcile: where they agree, treat it as strong signal; where they disagree, the orchestrator decides and states why. Each call follows the per-call failure policy independently — one failing does not invalidate the other.
 
 Non-Claude orchestrators reach the advisor only through this CLI path. A Claude-host orchestrator may instead spawn a native subagent with the chosen model (Fable or Opus), but the dossier discipline and effort rules below still apply.
@@ -34,25 +36,21 @@ If the decision cannot be expressed as one precise question or a concrete plan t
 
 ## Invocation
 
-Run one fresh call with no tools, no session persistence, and no repository access. Write the dossier to a temp file first, then expand it into the positional prompt at launch:
+Run one fresh call with no tools, no session persistence, and no repository access. The command shape is in the registry (`routing-reference.md`, Advisor row). Write the dossier to a temp file first, then expand it into the registry command's positional prompt at launch:
 
 ```bash
-# 1. Write the non-sensitive dossier to a temp file (avoids quoting/length pitfalls).
-#    (Bash/WSL: DOSSIER=$(mktemp) | PowerShell: $DOSSIER = Join-Path $env:TEMP "dossier.txt")
+# Bash/WSL: DOSSIER=$(mktemp) | PowerShell: $DOSSIER = Join-Path $env:TEMP "dossier.txt"
 DOSSIER=$(mktemp)
-# ... write the full dossier into "$DOSSIER" ...
+# ... write the full non-sensitive dossier into "$DOSSIER" (avoids quoting/length pitfalls) ...
+# Then run the registry's Advisor command with "$(< "$DOSSIER")" as the positional prompt.
+```
 
-# 2. One non-interactive call; the prompt must be present at launch.
-#    --model is the advisor selection: claude-fable-5 (default) or claude-opus-5.
-claude -p \
-  --safe-mode \
-  --model claude-fable-5 \
-  --effort medium \
-  --tools "" \
-  --system-prompt "You are a read-only advisor giving one second opinion on a plan or decision. You have no tools, no shell, and no repository access — only the dossier in the user message. Never call, attempt, describe, or plan any tool, file read, or shell command, and never ask to see the repository. Reply with ONLY the requested output as plain prose (short labeled sections or bullets). Emitting tool-use syntax, or narrating what you would investigate instead of answering, is a total failure." \
-  --output-format json \
-  --no-session-persistence \
-  "$(< "$DOSSIER")"
+### Advisor system prompt (fixed, non-optional)
+
+Pass this verbatim as the registry command's `--system-prompt` value. It is what makes the route work at all — see the rationale below.
+
+```text
+You are a read-only advisor giving one second opinion on a plan or decision. You have no tools, no shell, and no repository access — only the dossier in the user message. Never call, attempt, describe, or plan any tool, file read, or shell command, and never ask to see the repository. Reply with ONLY the requested output as plain prose (short labeled sections or bullets). Emitting tool-use syntax, or narrating what you would investigate instead of answering, is a total failure.
 ```
 
 ### Prompt delivery (headless hosts)
@@ -62,7 +60,7 @@ claude -p \
 - Deliver the dossier as the **positional argument** (temp file + `"$(< file)"` as above) or as **stdin already connected at spawn** (`claude -p ... < "$DOSSIER"`).
 - **Never** launch the process first (PTY or otherwise) and try to write the dossier to stdin afterward — the process has already exited. This is a confirmed failure mode from a Codex host.
 - Run it as a plain non-TTY exec, require exit code 0, and read the answer from the JSON `result` field.
-- There is **no advisor flag**: the route is `--model claude-fable-5` (or `--model claude-opus-5`) on a normal `claude -p` call. Do not invent `--advisor` or similar.
+- There is **no advisor flag**: the route is a normal `claude -p` call whose `--model` carries the chosen advisor ID from the registry. Do not invent `--advisor` or similar.
 - **GPT-5.6 / Codex hosts: run this command outside the sandbox.** The Codex exec sandbox blocks the network and credential access `claude` needs to reach the API, so a sandboxed call dies on auth/network, and per the Failure policy that consultation is then simply skipped — no retry. Request escalated (non-sandboxed) execution for this one read-only command; it needs no filesystem writes beyond reading the dossier temp file.
 
 Why this exact shape (each flag earns its place):

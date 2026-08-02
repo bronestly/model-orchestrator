@@ -17,6 +17,69 @@ if (-not (Test-Path (Join-Path $ClaudeSrc "SKILL.md")) -or -not (Test-Path $Code
     exit 1
 }
 
+# Registry <-> allowlist drift guard (mirrors sync.sh).
+# The capability registry in references/routing-reference.md owns every CLI command
+# the skill prescribes. If one is not pre-authorized in the Claude adapter's
+# allowed-tools, the skill prescribes a call it cannot make. Refuse to install.
+$SkillPath = Join-Path $ClaudeSrc "SKILL.md"
+$RegistryPath = Join-Path $ClaudeSrc "references\routing-reference.md"
+
+# Commands: the first backticked span of each row in the "Invocation shapes" table.
+$RegistryCommands = @()
+$InBlock = $false
+foreach ($Line in Get-Content $RegistryPath) {
+    if ($Line -match '^### Invocation shapes') { $InBlock = $true; continue }
+    if ($InBlock -and $Line -match '^#') { $InBlock = $false }
+    if ($InBlock -and $Line -match '^\|' -and $Line -match '`([^`]+)`') {
+        $RegistryCommands += $Matches[1]
+    }
+}
+
+# Patterns: the contents of each Bash(...) entry, with any trailing glob removed.
+$AllowPatterns = @()
+$InBlock = $false
+foreach ($Line in Get-Content $SkillPath) {
+    if ($Line -match '^allowed-tools:') { $InBlock = $true; continue }
+    if ($InBlock -and $Line -match '^[^ \t-]') { $InBlock = $false }
+    if ($InBlock -and $Line -match 'Bash\(([^)]*)\)') {
+        $Pattern = $Matches[1] -replace '\*$', ''
+        $Pattern = $Pattern.TrimEnd()
+        if ($Pattern) { $AllowPatterns += $Pattern }
+    }
+}
+
+$Drift = $false
+foreach ($Command in $RegistryCommands) {
+    # Compare only the concrete prefix — everything before the first <placeholder>.
+    $Tokens = @()
+    foreach ($Token in ($Command -split '\s+')) {
+        if ($Token.Contains('<')) { break }
+        $Tokens += $Token
+    }
+    if ($Tokens.Count -eq 0) { continue }
+    $Concrete = $Tokens -join ' '
+
+    $Authorized = $false
+    foreach ($Pattern in $AllowPatterns) {
+        # Trailing space on both sides keeps "agy -p" from matching "agy -print".
+        if (("$Concrete ").StartsWith("$Pattern ")) { $Authorized = $true; break }
+    }
+
+    if (-not $Authorized) {
+        Write-Host "Registry command is not in the Claude adapter's allowed-tools:"
+        Write-Host "  registry: $Concrete"
+        Write-Host "  fix:      add 'Bash($Concrete *)' to SKILL.md, with its PowerShell twin."
+        Write-Host "            Any shorter prefix of that command also satisfies the guard;"
+        Write-Host "            prefer the shortest one that stays unambiguous."
+        $Drift = $true
+    }
+}
+
+if ($Drift) {
+    Write-Error "Refusing to install: routing-reference.md and SKILL.md disagree."
+    exit 1
+}
+
 # 1. Install Claude adapter (excluding adapters directory and OS metadata)
 if (Test-Path $ClaudeDest) {
     Remove-Item -Recurse -Force $ClaudeDest

@@ -1,27 +1,18 @@
 # When delegating to Codex (GPT-5.6 Sol / Terra / Luna)
 
-Loaded on demand from SKILL.md's "How to delegate". Sources: field reports from heavy Codex users and the Codex team (X, 2026-07-11→13) plus a two-week community-criticism sweep (full report: `model-orchestrator/model-router-workspace/research-2026-07-13/gpt56-criticism-report.md`). OpenAI's own model card confirms several of these (false verification claims, destructive cleanup, credential overreach) — they are not just anecdotes.
+Loaded on demand from SKILL.md's "Route selection". Invocation shapes, model IDs, and effort ladders live in the `routing-reference.md` capability registry — this file carries only the judgment behind them. Sources: field reports from heavy Codex users and the Codex team (X, 2026-07-11→13) plus a two-week community-criticism sweep (full report: `model-orchestrator/model-router-workspace/research-2026-07-13/gpt56-criticism-report.md`). OpenAI's own model card confirms several of these (false verification claims, destructive cleanup, credential overreach) — they are not just anecdotes.
 
-## Effort by task complexity
+## Effort rationale
 
-| Leg | Effort |
-|---|---|
-| Well-specified, bounded implement/fix/tests | Sol `medium` (default) |
-| Same shape, conserving limits | Sol `low` first (often same quality, far cheaper) |
-| Genuinely complex agentic coding, hard debugging | Sol `high` **plan only** when multi-file/ambiguous; then Sol/Terra `medium` implement (see Plan → execute) |
-| After a failed review — and only after fixing the prompt/tests | Sol `xhigh` |
-| Well-specified implement after a plan (Terra route) | Terra `medium` |
-| Review / PR-triage secondary legs (Terra route) | Terra `high` |
-| Mechanical/bulk (when Luna is the route) | Luna `low`–`medium` |
-| `max` / `ultra` | Never auto; user-request only |
+The ladders and defaults themselves are in the registry (`routing-reference.md`, Codex Sol / Terra / Luna rows). This section is the reasoning behind them — read it when you are tempted to deviate.
 
 Why `medium` is the default for Sol quality legs: field consensus is that medium handles the large majority of legs well; higher efforts mostly buy scope creep and burn, and Codex's multi-agent leak is worst at high/xhigh. Escalating the dial does not fix a wrong approach — identical wrong answers have been reproduced at medium, high, AND xhigh. When a leg fails review, change the prompt or the tests before changing the effort.
 
 **Sol `low` is first-class, not a last resort** (Theo / Codex DX, 2026-07): for well-scoped work it is often as capable as medium at much lower burn. If you are hitting limits on medium/low, escalate to Terra/Luna for secondary legs rather than raising Sol's effort — never enable fast mode to compensate (see Burn control below: it is never used from this skill).
 
-**Inverse effort (Codex family):** smaller model needs higher effort to approach Sol-`medium` quality — practical expression is Terra `high` for review-style legs. Do not chase quality by raising Luna to `xhigh` (costs more than Sol `medium`); keep Luna capped.
+**Inverse effort (Codex family):** a smaller model needs higher effort to approach Sol-`medium` quality — the practical expression is Terra `high` for review-style legs. This is why the registry caps Luna: raising it to chase quality on complex code costs more than Sol `medium` and returns less.
 
-Tier calibration: these defaults assume a $200-tier sub ("sol high if $200 tier, sol low otherwise"). On smaller tiers drop one level; record the owner's tier in `routing-notes.md`.
+Tier calibration: these defaults assume a $200-tier sub ("sol high if $200 tier, sol low otherwise"). On smaller tiers drop one level; record the owner's tier in `routing-notes.local.md`.
 
 ## Plan → execute (complex multi-file legs)
 
@@ -75,10 +66,10 @@ Skip the split for single-file, well-specified fixes — go straight to Sol `med
 
 - **Sol** — the default Codex workhorse, at `medium` (or `low` when conserving). Sol `low` ("Light") is first-class for fast parallel scouting/recon because Sol low overthinks far less than smaller models (OpenAI DX @pvncher).
 - **Terra** — community sentiment is broadly negative ("the useless in-between model"), but our own blinded VS run had 3/3 clean Terra `medium` legs, and high-signal eng reports (2026-07) find Terra `high` notably faster than Sol `low` on review/PR-triage, with negligible quality loss. Reconciliation: Terra earns its keep on (1) well-specified implement *after a plan exists* at `medium`, and (2) review secondary legs at `high` — never as a default, not for design work, not for hard debugging.
-- **Luna** — worker-tier: recon, mechanical edits, review drafts at `low`–`medium`. Never design work (widely panned) or ambiguous multi-ticket queues (invents tickets). **Topology restriction:** Luna does NOT support multi-agent v2 tools (OpenAI DX @pvncher); use Terra or Sol for subagent trees, reserving Luna `xhigh` for standalone single-turn volume/execution.
+- **Luna** — worker-tier: recon, mechanical edits, review drafts. Never design work (widely panned) or ambiguous multi-ticket queues (invents tickets). **Topology restriction:** Luna does NOT support multi-agent v2 tools (OpenAI DX @pvncher) — use Terra or Sol for subagent trees. This is what confines Luna to the standalone single-turn work its registry ladder describes.
 
 ## Harness notes (2026-07-13)
 
 - Prefer pinned headless `codex exec` over the desktop app for orchestration — crash and lost-history reports cluster around the ChatGPT-merge builds. Commit to git after every leg; app/session history is not a backup.
-- Final answer lands in the `-o` file; stdout is transcript (see SKILL.md CLI reference).
+- Final answer lands in the `-o` file; stdout is transcript (registry, `routing-reference.md`).
 

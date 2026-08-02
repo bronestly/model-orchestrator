@@ -4,7 +4,7 @@ Loaded on demand from SKILL.md when the user requests a model comparison **or** 
 
 ## Cost
 
-Before running, state the overhead in relative terms (roughly N× the tokens of a single run for N candidates plus a review pass; +1 if optional Fable taste runs). Never invent dollar figures — this skill deliberately contains no pricing. Prefer small, representative implement tasks (one feature or bugfix), not multi-hour epics.
+Before running, state the overhead in relative terms (roughly N× the tokens of a single run for N candidates plus a review pass; +1 if optional Fable taste runs). Never invent dollar figures: quote a price only when this skill or the user actually states one, and otherwise stay in relative terms. Prefer small, representative implement tasks (one feature or bugfix), not multi-hour epics.
 
 ## How (cross-model)
 
@@ -51,7 +51,7 @@ Use this when validating **steering instructions** rather than model identity �
 
 ### Protocol
 
-1. **Same model, same effort, different prompt envelope.** Default both legs: `gpt-5.6-sol` at `medium` (or the production effort for that task). Do not mix efforts in the first bake-off — isolate the guardrail effect.
+1. **Same model, same effort, different prompt envelope.** Default both legs: Sol at `medium` (or the production effort for that task). Do not mix efforts in the first bake-off — isolate the guardrail effect.
 2. **Candidate A (baseline):** identical goal, context, file allowlist, success criteria, stop rule, and JSON return — **omit** the minimal-code contract, plan→execute split, and bloat-reject re-prompt. Keep pre-existing safety invariants only (no destructive recovery, no nested subagents unless requested, basic scope lock if already shared).
 3. **Candidate B (guardrailed):** same base prompt **plus** the full minimal-code contract. Prefer **contract-only** first. If later testing plan→execute, run that as a **second** bake-off and document the extra structure in the scorecard so it is not a hidden confound.
 4. **Isolation and capture:** each candidate gets its own git worktree + fresh install. Capture full `git diff` and `git diff --stat` for each. Fill `metrics` from those artifacts.
@@ -60,7 +60,7 @@ Use this when validating **steering instructions** rather than model identity �
 
 ### Optional Fable taste check
 
-After both candidates finish and metrics are captured, optionally run **one** read-only Fable call (user opt-in, or when correctness is tied / metrics disagree with the primary reviewer). Full invocation shape: `references/fable-advisor.md`. Blind Fable the same way (strip Sol / baseline / guardrail labels).
+After both candidates finish and metrics are captured, optionally run **one** read-only Fable call (user opt-in, or when correctness is tied / metrics disagree with the primary reviewer). Invocation: the registry's Advisor row plus the dossier and system-prompt discipline in `references/fable-advisor.md`. Blind Fable the same way (strip Sol / baseline / guardrail labels).
 
 ```text
 Goal: <same task goal>

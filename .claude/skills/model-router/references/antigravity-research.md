@@ -10,30 +10,16 @@ Core framing: agy+web is a **broad web synthesizer, not a citation-disciplined v
 |---|---|
 | Recent releases, changelogs, docs sweeps, product comparisons | Live-X discourse, sentiment, launch-day drama → Grok (`x-research.md`) |
 | Multi-source synthesis ("what changed in N weeks across X, Y, Z") | Stable academic/historical knowledge (no delegation needed) |
-| Bulk classification, extraction, file reconnaissance (`-low` slug) | Anything requiring repository write access (not an established route) |
+| Bulk classification, extraction, file reconnaissance (bulk tier) | Anything requiring repository write access (not an established route) |
 | Quick factual lookups with a citable source | Authoritative single numbers you'll act on unverified |
 
-## Verified invocation (agy 1.1.5)
+## Reading agy's output (verified agy 1.1.5)
 
-```
-agy -p "$(cat promptfile)" --model <slug> --print-timeout 15m
-```
+The command and slug ladder are in the registry (`routing-reference.md`). What matters when interpreting a run:
 
-- Write the prompt with a file-write tool, not a heredoc; `-p "$(cat promptfile)"` avoids brittle quoting.
-- Deliverable arrives on **stdout**; exit code is meaningful (server-side failures exit non-zero with stderr, no silent empty successes since 1.1.1).
-- Slugs from `agy models`; effort is encoded in the slug (`gemini-3.6-flash-low|medium|high`). Exclusively use Gemini 3.6 Flash models; do not use Gemini 3.5, 3.1 Pro, or any older Gemini models. Unresolvable `--model` hard-fails listing valid slugs.
-- `--print-timeout` defaults to 5m — raise for deep sweeps.
-- Web search/fetch run headless without prompting. Tools needing approval are **soft-denied** with a stderr notice naming the allow-rule; empty stdout + such a notice = blocked, not model failure. Never reach for `--dangerously-skip-permissions`.
-
-## Model ladder
-
-| Depth | Slug |
-|---|---|
-| Bulk classification/extraction/recon | `gemini-3.6-flash-low` |
-| Quick lookup or standard brief | `gemini-3.6-flash-medium` |
-| Deep multi-source research sweep | `gemini-3.6-flash-high` |
-
-If `gemini-3.6-flash-high` output is insufficient, refine the prompt or route to Grok 4.5 / main context. Do not fall back to Gemini 3.5, 3.1 Pro, or older models. Higher effort tiers must buy more sources and stricter citations, not longer prose.
+- Deliverable arrives on **stdout**; the exit code is meaningful (server-side failures exit non-zero with stderr, and there have been no silent empty successes since 1.1.1).
+- Web search and fetch run headless without prompting. Tools needing approval are **soft-denied** with a stderr notice naming the allow-rule — empty stdout plus such a notice means blocked, not model failure. Grant specific allow-rules in agy `settings.json`; never reach for `--dangerously-skip-permissions`.
+- If the top slug's output is insufficient, refine the prompt or route to Grok 4.5 / main context. Higher tiers must buy more sources and stricter citations, not longer prose — if a `-high` run just returns more words, the prompt is the problem.
 
 ## Delegation-prompt checklist
 

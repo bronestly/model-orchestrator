@@ -1,6 +1,6 @@
 # When delegating to Grok 4.5
 
-Loaded on demand from SKILL.md's "How to delegate" section. Source: Grok 4.5's own root-cause analysis of a blinded VS-run loss (2026-07-12, security-critical SQL/edge-fn task — lost 19–20 on instruction adherence while winning efficiency and test breadth). These are its self-reported failure modes and the steering that prevents them.
+Loaded on demand from SKILL.md's "Route selection". The launch command, model ID, and effort ladder live in the `routing-reference.md` capability registry — this file carries prompt steering and failure forensics only. Source: Grok 4.5's own root-cause analysis of a blinded VS-run loss (2026-07-12, security-critical SQL/edge-fn task — lost 19–20 on instruction adherence while winning efficiency and test breadth). These are its self-reported failure modes and the steering that prevents them.
 
 ## Grok's instruction weighting (put things where it looks)
 
@@ -27,28 +27,21 @@ So: security grants and negative constraints belong in **Success criteria**, not
 9. **Keep performance/algorithm bullets concrete** (SKIP LOCKED, bounded LATERAL, no cross join, claim ≤ limit) — this is where Grok over-delivers; don't dilute those to make room for constraints.
 10. **Keep pure-logic extraction + enumerated test cases** in the deliverable — that's what produced 13 hermetic tests vs the rival's 4. Add a test bullet per critical config scope ("assert per-feed config, not per-shop") when multi-tenancy matters.
 
-## Effort defaults (2026-07-18 recalibration)
+## Why `low` is the default (2026-07-18 recalibration)
 
-- **Mechanical / mid-level implement / quick research → `low`.** Community consensus (and xAI-adjacent tips) is near-zero quality loss vs medium on most tasks, with large quota and latency savings. This is the default for Grok legs.
-- **Engineering-heavy, security-adjacent, or deep X criticism sweeps → `high`.** Raise when cost-of-wrong is high or when matching Sol@high in a VS peer leg — not by default.
-- Lead with the exact task and output format; keep security MUST/NEVER in Success criteria (the ten rules above still bind). Lean prompts help Grok; vague "improve things" prompts do not.
+Community consensus (and xAI-adjacent tips) is near-zero quality loss vs `medium` on mechanical, mid-level implement, and quick-research legs, with large quota and latency savings — and quota is Grok's binding constraint (see Quota burn below). Raise to `high` only when cost-of-wrong is genuinely high or when matching Sol@high in a VS peer leg, never by default.
 
-## Headless write-leg launch recipe (forensic RCA 2026-07-23, updated 2026-07-28)
+Lead with the exact task and output format; keep security MUST/NEVER in Success criteria (the ten rules above still bind). Lean prompts help Grok; vague "improve things" prompts do not.
 
-- **Launch shape (synchronous):**
-  ```bash
-  grok --always-approve --no-subagents --disable-web-search --no-alt-screen --minimal \
-    --output-format json \
-    --reasoning-effort <effort> \
-    --prompt-file /path/to/prompt.txt
-  ```
-  (On Windows, standard temp file path is `$env:TEMP\prompt.txt` or `%TEMP%\prompt.txt`).
-  Run synchronously inside a throwaway worktree. NEVER use background `nohup ... &` in subshell tool invocations (it fails to retain/deliver results reliably in Codex/subagent environments).
-  NEVER `--permission-mode auto` headless — its permission engine auto-cancels any non-whitelisted shell command in ~50 ms without a TTY and ends the whole run as `Cancelled` with empty text (event-level proof across 4 sessions, 2026-07-18 + 07-22).
+## Headless write-leg discipline (forensic RCA 2026-07-23, updated 2026-07-28)
+
+The launch shape is in the registry. What that shape is defending against:
+
+- NEVER `--permission-mode auto` headless — its permission engine auto-cancels any non-whitelisted shell command in ~50 ms without a TTY and ends the whole run as `Cancelled` with empty text (event-level proof across 4 sessions, 2026-07-18 + 07-22). Run inside a throwaway worktree.
 - Every write-leg prompt gets: "Create files with the write tool, never via shell redirection (heredocs, `tee`, `cp`)." Grok reaches for `cat > file << EOF` on long file creation — exactly what permission engines choke on.
 - NEVER pass `--json-schema` on agentic/implement legs — practitioner repro (2026-07-21): it silently suppresses tool use headlessly and returns a schema-shaped one-turn guess, i.e. it manufactures false completions. Single-turn structured answers only.
 
-## CLI gotchas (see also SKILL.md Known breakage)
+## CLI gotchas (see also `routing-reference.md` "Known route failures")
 
 - **Shell trap (zsh & PowerShell):** In zsh, do NOT use `status` as a shell variable name when checking Grok's exit code or result (`status` is reserved in zsh). In PowerShell, check `$LASTEXITCODE` or `$?` instead of `$status`. Use custom names like `grok_status`.
 - Headless runs can end exit-0 with only an opening narration line ("I'll research…") and no deliverable — observed 2026-07-13 on multi-part research prompts with web-fetch chains; verbatim retries and higher `--max-turns` don't help. Always append a harness note: "you are running headless — your FINAL message must be the complete deliverable; ending with narration only is a total failure", and prefer `--output-format json` so the `text` field (and `stopReason`) can be checked programmatically instead of eyeballing stdout.
@@ -56,7 +49,7 @@ So: security grants and negative constraints belong in **Success criteria**, not
 - A dead run may leave `{"type":"error","message":"…max_tokens_truncation…"}` as the entire out.json (no stopReason field) after a runaway-reasoning response — seen once alongside server 500s, 2026-07-22. The session survives: `grok -r <sessionId> -p "continue"` resumes with state intact; mid-flight files on disk are NOT a deliverable.
 - Plan mode silently returns nothing when the prompt references files outside cwd — `cd` to the files first.
 - Tight `--max-turns` fails silently on multi-file analysis; omit it or set generously.
-- Summaries come back on stdout; if you need an artifact file, ask for it explicitly in the prompt (and don't ask for file writes in plan mode — use the headless write-leg launch recipe above, or capture stdout).
+- Summaries come back on stdout; if you need an artifact file, ask for it explicitly in the prompt (and don't ask for file writes in plan mode — use the registry's headless shape, or capture stdout).
 - Phased rollout: some surfaces still serve Grok 4.3 — if quality is suddenly off, confirm model identity before blaming the route.
 
 ## Community-reported failure modes (X sweep 2026-06-29 → 2026-07-13)

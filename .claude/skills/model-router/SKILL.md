@@ -4,17 +4,21 @@ description: "Routes and executes substantial multi-model work at an appropriate
 allowed-tools:
   - Bash(command -v *)
   - Bash(codex exec --skip-git-repo-check -s read-only *)
-  - Bash(grok --permission-mode plan *)
+  - Bash(codex exec --skip-git-repo-check -s workspace-write *)
+  - Bash(grok --always-approve *)
   - Bash(agy -p *)
   - Bash(agy models*)
+  - Bash(claude -p *)
   - PowerShell(Get-Command *)
   - PowerShell(codex exec --skip-git-repo-check -s read-only *)
-  - PowerShell(grok --permission-mode plan *)
+  - PowerShell(codex exec --skip-git-repo-check -s workspace-write *)
+  - PowerShell(grok --always-approve *)
   - PowerShell(agy -p *)
   - PowerShell(agy models*)
+  - PowerShell(claude -p *)
 metadata:
-  version: "0.24.0"
-  updated: "2026-07-29"
+  version: "0.25.0"
+  updated: "2026-08-02"
 ---
 
 # Model Router — Claude Adapter
@@ -29,8 +33,8 @@ Act as the orchestrator. Keep ambiguity resolution, consequential judgment, veri
 | Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5 subagent, then Grok 4.5 (single-file only) |
 | Independent critical review | Fresh Opus 5 subagent (precision primary; add a Codex Sol recall pass for correctness-critical diffs) | Fresh Fable subagent, then Codex Sol |
 | Live-X research, review/criticism sweeps, and small single-file engineering only | Grok 4.5 | Sonnet subagent plus web search |
-| General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity `gemini-3.6-flash` | Grok 4.5, then Sonnet subagent plus web search |
-| Bulk classification, extraction, or file reconnaissance | Antigravity `gemini-3.6-flash-low` or Sol `low` (fast parallel scouting) | Luna `low`–`medium` / `xhigh` (standalone volume; no multi-agent v2), then batched Sonnet |
+| General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Grok 4.5, then Sonnet subagent plus web search |
+| Bulk classification, extraction, or file reconnaissance | Antigravity (bulk tier) or Sol `low` (fast parallel scouting) | Luna (standalone volume), then batched Sonnet |
 | Standard implementation, tests, docs, or writing | Sonnet subagent | Terra (`medium` implement; `high` review) |
 
 Use the cheapest route that comfortably clears the quality bar. For routine work, stay in the main context instead of spending time on routing analysis.
@@ -77,6 +81,7 @@ For write-capable legs, first create a recoverable commit or stash checkpoint. F
 - Trust artifacts, diffs, and real command output—not a worker's completion claim.
 - Spot-check at least one material claim before integration.
 - For Sol/Terra writes: reject out-of-scope or grossly disproportionate diffs (see routing-reference completion gate); re-prompt once with the minimal-code contract before escalating effort.
+- Model IDs, invocation shapes, and effort ladders live only in the `references/routing-reference.md` capability registry; never restate them elsewhere.
 - Retry once only for an apparently transient failure. Do not retry auth, tier, configuration, or empty-deliverable failures.
 - Mark a failed route dead for the session and use its documented fallback.
 - For high-stakes output, use a fresh reviewer from another model family when one is available.
@@ -95,6 +100,8 @@ Read calibration in this order when present:
 Let recent, relevant observations override defaults. Record machine-specific CLI, tier, path, or repository facts only in `routing-notes.local.md`; never sync credentials or secrets. Store full comparison history as a new immutable file under the shared checkout's `events/YYYY/MM/` directory, and keep `calibration.md` to roughly 15 distilled live lessons. Do not push shared state automatically; use this repository's `state.sh` or `state.ps1` when the user asks to synchronize it. Promote a repeated universal lesson only through the approval-gated flow in `references/vs-mode.md`, editing this repository's source rather than an installed copy.
 
 ## Maintenance
+
+Entries below are a dated historical record of what changed at each version, not current guidance. Where one names a model ID, flag, or effort, the `references/routing-reference.md` capability registry is authoritative.
 
 - **2026-07-12 · v0.10.0–v0.11.0:** Lowered Sol effort, bounded nested work, strengthened explicit constraints and evidence review.
 - **2026-07-13 · v0.12.0:** Added short fresh legs, scope locks, write checkpoints, and provider-specific references.
@@ -115,3 +122,4 @@ Let recent, relevant observations override defaults. Record machine-specific CLI
 - **2026-07-29 · v0.22.0:** Updated Antigravity route to exclusively use Gemini 3.6 Flash (`gemini-3.6-flash-low|medium|high`); explicitly deprecated and removed references to Gemini 3.5, 3.1 Pro, or any older Gemini models.
 - **2026-07-29 · v0.23.0:** Added optional private-Git shared calibration for Claude and Codex, per-device local notes, immutable event history, and explicit cross-device state synchronization.
 - **2026-07-29 · v0.24.0:** Integrated GPT-5.6 (Sol/Terra/Luna) and Grok 4.5 practitioner research (OpenAI DX @pashmerepat/@pvncher/@thsottiaux, @theo): Sol `low` scouting pattern, Luna multi-agent v2 topology restriction, anti-"noticed another issue" scope lock, tool-batching recommendation, and Grok orchestrator test re-verification requirement.
+- **2026-08-02 · v0.25.0:** Consolidated every CLI fact into a single **capability registry** in `references/routing-reference.md` (model IDs, invocation shapes, effort mechanisms and ladders, result channels, plus host-native subagent IDs and an explicit unverified-gaps list). An audit found 23 facts duplicated across files and 14 inconsistencies; provider references now carry only judgment, prompt discipline, and failure forensics, and each points at its registry row. Fixed in the sweep: Luna `xhigh` was simultaneously prescribed and banned; four cross-references pointed at a SKILL.md section removed in v0.15.0; the tier-calibration pointer still named legacy `routing-notes.md`; Sonnet had no model ID anywhere. Corrected `allowed-tools` to match the shapes the skill actually prescribes — the pre-authorized Grok entry was `--permission-mode plan`, the one flag every reference forbids as headless-fatal, while `--always-approve`, `-s workspace-write`, and the advisor's `claude -p` were unlisted. `sync.sh`/`sync.ps1` now refuse to install when a registry command has no matching allowlist entry, so this class of drift fails loudly at install time instead of silently at call time.

@@ -16,6 +16,76 @@ if [[ ! -f "$CLAUDE_SRC/SKILL.md" || ! -f "$CODEX_ADAPTER" ]]; then
   exit 1
 fi
 
+# Registry <-> allowlist drift guard.
+# The capability registry in references/routing-reference.md owns every CLI command
+# the skill prescribes. If one of those commands is not pre-authorized in the Claude
+# adapter's allowed-tools, the skill prescribes a call it cannot make — the exact
+# defect this guard exists to catch. Refuse to install rather than ship that.
+REGISTRY="$CLAUDE_SRC/references/routing-reference.md"
+
+# Commands: the first backticked span of each row in the "Invocation shapes" table.
+registry_commands() {
+  awk '
+    /^### Invocation shapes/ { inblock = 1; next }
+    inblock && /^#/          { inblock = 0 }
+    inblock && /^\|/ {
+      if (match($0, /`[^`]+`/)) print substr($0, RSTART + 1, RLENGTH - 2)
+    }
+  ' "$REGISTRY"
+}
+
+# Patterns: the contents of each Bash(...) entry, with any trailing glob removed.
+allowlist_patterns() {
+  awk '
+    /^allowed-tools:/       { inblock = 1; next }
+    inblock && /^[^ \t-]/   { inblock = 0 }
+    inblock && match($0, /Bash\([^)]*\)/) {
+      pattern = substr($0, RSTART + 5, RLENGTH - 6)
+      sub(/\*$/, "", pattern)
+      sub(/[ \t]+$/, "", pattern)
+      if (pattern != "") print pattern
+    }
+  ' "$CLAUDE_SRC/SKILL.md"
+}
+
+ALLOWLIST="$(allowlist_patterns)"
+drift=0
+while IFS= read -r command; do
+  [[ -n "$command" ]] || continue
+  # Compare only the concrete prefix — everything before the first <placeholder>.
+  concrete="$(awk '{
+    for (i = 1; i <= NF; i++) {
+      if (index($i, "<") > 0) break
+      printf "%s%s", (i > 1 ? " " : ""), $i
+    }
+  }' <<<"$command")"
+  [[ -n "$concrete" ]] || continue
+
+  authorized=0
+  while IFS= read -r pattern; do
+    [[ -n "$pattern" ]] || continue
+    # Trailing space on both sides keeps "agy -p" from matching "agy -print".
+    if [[ "$concrete " == "$pattern "* ]]; then
+      authorized=1
+      break
+    fi
+  done <<<"$ALLOWLIST"
+
+  if (( authorized == 0 )); then
+    echo "Registry command is not in the Claude adapter's allowed-tools:" >&2
+    echo "  registry: $concrete" >&2
+    echo "  fix:      add 'Bash($concrete *)' to SKILL.md, with its PowerShell twin." >&2
+    echo "            Any shorter prefix of that command also satisfies the guard;" >&2
+    echo "            prefer the shortest one that stays unambiguous." >&2
+    drift=1
+  fi
+done <<<"$(registry_commands)"
+
+if (( drift != 0 )); then
+  echo "Refusing to install: routing-reference.md and SKILL.md disagree." >&2
+  exit 1
+fi
+
 # Copy logic with fallback if rsync is unavailable (e.g. minimal container environments)
 copy_dir_clean() {
   local src="$1" dest="$2" exclude_pattern="$3"
