@@ -7,6 +7,8 @@ description: "Routes and executes substantial multi-model work from a GPT-5.6 So
 
 Keep GPT-5.6 Sol high as the primary planner, executor, verifier, and integrator. Delegate only an independently bounded leg with a clear cost, speed, context, live-data, or independent-review advantage. Task length and file count alone do not justify delegation.
 
+The transcript is part of the price: cache-read burn compounds on long sessions and is worse after compactions. A leg that can be written as a fresh, self-contained prompt (the delegation contract below is the test) does not need the transcript — once the session has compacted, prefer a fresh `codex exec` leg for bounded work over continuing inline. Judgment, ambiguity resolution, and final integration stay in the main context regardless.
+
 User instructions, repository guidance, available tools, sandbox policy, and approval requirements always override this routing guide. Never assume a model, CLI, native subagent type, or permission is available; probe only a route you are about to use.
 
 When **you** (Sol main) implement or fix code in-session, apply the same **minimal-code contract** as delegated Sol legs (`references/codex-delegation.md`). Prefer plan-high then a fresh medium implement for multi-file work over one long eager transcript.
@@ -63,6 +65,6 @@ Read calibration in this order when present:
 2. Machine-local observations from `routing-notes.local.md` beside that pointer.
 3. Legacy `routing-notes.md` only when no shared state checkout is configured.
 
-Let recent, relevant observations override defaults. Keep machine-specific CLI, tier, path, or repository facts in `routing-notes.local.md`; never sync credentials or secrets. Store full comparison history as a new immutable file under the shared checkout's `events/YYYY/MM/` directory, and keep `calibration.md` to roughly 15 distilled live lessons. Do not push shared state automatically; use the source repository's `state.sh` or `state.ps1` when the user asks to synchronize it.
+Let recent, relevant observations override defaults. Record transcript-tax misses — a bounded leg run inline after compaction that a fresh prompt could have specified — as observations too, so that bias stays measurable rather than anecdotal. Keep machine-specific CLI, tier, path, or repository facts in `routing-notes.local.md`; never sync credentials or secrets. Store full comparison history as a new immutable file under the shared checkout's `events/YYYY/MM/` directory, and keep `calibration.md` to roughly 15 distilled live lessons. Do not push shared state automatically; use the source repository's `state.sh` or `state.ps1` when the user asks to synchronize it.
 
 For substantial work, state the chosen route in one compact line. Do not add routing narration to routine work.
