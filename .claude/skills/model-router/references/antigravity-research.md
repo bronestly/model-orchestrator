@@ -19,7 +19,7 @@ The command and slug ladder are in the registry (`routing-reference.md`). What m
 
 - Deliverable arrives on **stdout**; the exit code is meaningful (server-side failures exit non-zero with stderr, and there have been no silent empty successes since 1.1.1).
 - Web search and fetch run headless without prompting. Tools needing approval are **soft-denied** with a stderr notice naming the allow-rule — empty stdout plus such a notice means blocked, not model failure. Grant specific allow-rules in agy `settings.json`; never reach for `--dangerously-skip-permissions`.
-- If the top slug's output is insufficient, refine the prompt or route to Grok 4.5 / main context. Higher tiers must buy more sources and stricter citations, not longer prose — if a `-high` run just returns more words, the prompt is the problem.
+- If the top slug's output is insufficient, refine the prompt or route to Grok 4.6 / main context. Higher tiers must buy more sources and stricter citations, not longer prose — if a `-high` run just returns more words, the prompt is the problem.
 
 ## Delegation-prompt checklist
 

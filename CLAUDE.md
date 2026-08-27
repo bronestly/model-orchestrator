@@ -1,26 +1,30 @@
 # CLAUDE.md
 
-This repository is the source of truth for the dual-host `model-router` skill,
+This repository is the source of truth for the three-host `model-router` skill,
 not an application. There is no build system.
 
 ## Source layout
 
 - `.claude/skills/model-router/SKILL.md` — Claude adapter; read it fully before editing.
 - `.claude/skills/model-router/adapters/codex.md` — Codex adapter source.
+- `.claude/skills/model-router/adapters/grok.md` — Grok 4.6 adapter source.
+- `.grok/skills/model-router/` — discovery shim for Grok Build in this repo;
+  edit `adapters/grok.md`, not the shim.
 - `.claude/skills/model-router/references/routing-reference.md` — the **capability
   registry**: the single owner of model IDs, invocation shapes, effort mechanisms,
   and effort ladders. Read before any external CLI call.
 - `.claude/skills/model-router/references/` — shared, on-demand provider guidance.
-- `sync.sh` — installs Claude at `~/.claude/skills/model-router/` and Codex at
-  `~/.agents/skills/model-router/` (Linux/macOS/Git Bash).
-- `sync.ps1` — installs both global packages on Windows PowerShell.
+- `sync.sh` — installs Claude at `~/.claude/skills/model-router/`, Codex at
+  `~/.agents/skills/model-router/`, and Grok at `~/.grok/skills/model-router/`
+  (Linux/macOS/Git Bash).
+- `sync.ps1` — installs all three global packages on Windows PowerShell.
 - `state.sh` / `state.ps1` — synchronize the optional shared calibration checkout
   on user request. Never run automatically from the skill.
 
 ## Change rules
 
-- Edit only repository sources, never either installed package.
-- Keep both adapters short and host-specific; move detail into references.
+- Edit only repository sources, never an installed package.
+- Keep each adapter short and host-specific; move detail into references.
 - **The registry owns every CLI fact.** Model IDs, invocation shapes, effort
   mechanisms, and effort ladders belong only in `references/routing-reference.md`.
   Provider references carry judgment, prompt discipline, and failure forensics, and
@@ -33,10 +37,10 @@ not an application. There is no build system.
   and `sync.ps1` refuse to install otherwise. Widening the allowlist is a
   permission-posture decision — get the owner's agreement, don't do it silently to
   make the guard pass.
-- Preserve the Sol-high-first Codex workflow and rare Fable triggers in
-  `references/fable-advisor.md` (architecture / twice-failed approach /
-  rare overbuild taste; plus optional VS taste check — not a default on
-  every Sol write).
+- Preserve the Sol-high-first Codex workflow, the Grok-4.6-first Grok
+  workflow, and rare Fable triggers in `references/fable-advisor.md`
+  (architecture / twice-failed approach / rare overbuild taste; plus
+  optional VS taste check — not a default on every Sol write).
 - Sol/Terra implement/fix legs must include the **minimal-code contract**
   and, for multi-file ambiguous work, the **plan → fresh medium implement**
   split (`references/codex-delegation.md`). Orchestrators reject grossly
@@ -55,7 +59,7 @@ not an application. There is no build system.
 
 ## Verification
 
-Run `bash -n sync.sh`, validate both skill frontmatters, then run `bash sync.sh` (or `.\sync.ps1` on Windows PowerShell)
+Run `bash -n sync.sh`, validate all adapter frontmatters, then run `bash sync.sh` (or `.\sync.ps1` on Windows PowerShell)
 and compare each installed adapter and reference directory with its source.
 
 A non-zero `sync.sh` exit is a real finding, not a broken script: it means a registry

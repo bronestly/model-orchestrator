@@ -1,37 +1,36 @@
-# When delegating to Grok 4.5
+# When delegating to Grok 4.6
 
-Loaded on demand from SKILL.md's "Route selection". The launch command, model ID, and effort ladder live in the `routing-reference.md` capability registry — this file carries prompt steering and failure forensics only. Source: Grok 4.5's own root-cause analysis of a blinded VS-run loss (2026-07-12, security-critical SQL/edge-fn task — lost 19–20 on instruction adherence while winning efficiency and test breadth). These are its self-reported failure modes and the steering that prevents them.
+Loaded on demand from SKILL.md's "Route selection". The launch command, model ID, and effort ladder live in the `routing-reference.md` capability registry — this file carries prompt steering and failure forensics only.
 
-## Grok's instruction weighting (put things where it looks)
+Grounding: Grok 4.6 launch-week X sweep + xAI docs/model card, 2026-08-15 (full report: `model-orchestrator/model-router-workspace/research-2026-08-15/grok46-launch-steering-report.md`; launch-week sample, n≈1 per claim — expect revisions). The 4.5-era steering below is deliberately **demoted to an opt-in appendix**: the 4.6 trial starts liberal so that VS runs and calibration events, not inherited caution, decide what hardening 4.6 actually needs.
 
-Grok weights, in descending order:
+## 4.6 steering baseline (liberal trial)
 
-1. **Success-criteria checklist items** (especially phrased "deviations are defects")
-2. **Explicit NEVER/MUST one-liners**
-3. Numbered deliverable bullets with concrete SQL/TS shapes
-4. Background "study file X" references (skimmed for shape, not every predicate)
-5. Conversational intent ("writes go through the service-role client") without concrete mechanics
+The standard delegation contract (goal, MUST/NEVER, success criteria, scope lock, stop rule, structured result) still applies — that is host-level discipline, not 4.5 hardening. On top of it, only what launch-week evidence supports:
 
-So: security grants and negative constraints belong in **Success criteria**, not only in Background prose.
+1. **Say what done means.** Enumerate acceptance criteria explicitly; without them 4.6 decides for itself and will invent "done" (xAI field guide, @ericzakariasson 2026-08-12: "write the acceptance criteria down instead of trusting a summary that says it's done").
+2. **No pep talk.** "Work very hard / keep pushing" measurably changed nothing; 4.6 persists on its own. Prompt length buys specificity only — write long when you have a spec, short when you want the model's taste.
+3. **Enumerate every deliverable, including tests.** 4.6 does exactly what you asked and nothing more ("a bit lazy, like old opus" — @sawyerhood; it will not volunteer test harnesses the way Opus 5 does — @ckpooldev). Unlisted deliverables silently don't happen.
+4. **Give it a verification surface, phrased look-then-fix.** "Run the app/tests, list what is wrong, fix only those things" worked where abstract "improve X" failed. For UI legs, provide a DOM/screenshot path; for anything the harness cannot observe, the orchestrator is the verifier.
+5. **UI legs: tell it to split repeated components** — it repeats itself in components unless asked not to.
+6. **Thoroughness on demand:** if a leg needs edge-case depth, either list the edge cases or plan a follow-up adversarial review pass (one practitioner pattern: an Opus adversarial reviewer clears the laziness in one round).
 
-## The ten rules
+## Effort
 
-1. **Hard constraints live in Success criteria as short MUST/NEVER bullets**, not buried in Background narrative — Grok optimizes for checklist completion and underweights prose while racing deliverables.
-2. **Spell out GRANT matrices for SECURITY DEFINER RPCs** (who gets EXECUTE on read vs write). "Copy the pattern from file X" is not enough when writes need a different matrix — Grok over-generalizes the named pattern.
-3. **State the rule for invented objects:** any new SECURITY DEFINER helper/wrapper inherits the same guard/grant rules or is owner-only. Grok invents DRY helpers; without this rule it will rationalize their exposure.
-4. **Ban security rationalization comments:** "NEVER leave a comment explaining why a weaker grant is safe — fix the grant." This targets Grok's documented habit of blessing deviations post-hoc (its VS-run comment even contained wrong Postgres semantics).
-5. **Prefer explicit negatives for security** over positive pattern references — negatives survive structural improvisation; pattern refs only bind objects the prompt named.
-6. **Force a pre-finish security pass:** "Before finishing: list every new DEFINER function with its GRANTs and first guard lines; the task fails if any data-touching DEFINER is callable by `authenticated` without a guard." Grok responds well to verification gates.
-7. **Name unsafe defaults explicitly** (drop/null vs majority-class). Where classification rules are silent, Grok invents defaults — tell it the drop rule.
-8. **Say "mirror file X's filters including column Y"** when parity with existing SQL matters. "Study file X" alone gets you the shape but loses secondary predicates (e.g. `is_unlisted`).
-9. **Keep performance/algorithm bullets concrete** (SKIP LOCKED, bounded LATERAL, no cross join, claim ≤ limit) — this is where Grok over-delivers; don't dilute those to make room for constraints.
-10. **Keep pure-logic extraction + enumerated test cases** in the deliverable — that's what produced 13 hermetic tests vs the rival's 4. Add a test bullet per critical config scope ("assert per-feed config, not per-shop") when multi-tenancy matters.
+Ladder and defaults are in the registry. 4.6 context: the API's own default is `high` and reasoning cannot be disabled; the 4.5-era quota argument for blanket `low` is retired. `xhigh` is practitioner-verified as a real step up on hard problems ("worth the extra time and tokens" — @ckpooldev; independent bug-bench 27/105 at `xhigh` vs 4.5's best 17) but stays never-automatic — propose it to the user for genuinely hard legs. Spell efforts exactly; see the enum-downgrade gotcha in the registry.
 
-## Why `low` is the default (2026-07-18 recalibration)
+## Verification gates (kept — not 4.5 legacy)
 
-Community consensus (and xAI-adjacent tips) is near-zero quality loss vs `medium` on mechanical, mid-level implement, and quick-research legs, with large quota and latency savings — and quota is Grok's binding constraint (see Quota burn below). Raise to `high` only when cost-of-wrong is genuinely high or when matching Sol@high in a VS peer leg, never by default.
+These stay default under the liberal trial because launch-week evidence shows the risks **persist or worsened** in 4.6:
 
-Lead with the exact task and output format; keep security MUST/NEVER in Success criteria (the ten rules above still bind). Lean prompts help Grok; vague "improve things" prompts do not.
+- **False completion persists.** Rippling's 2,100-run bench caught 4.6 "returning 54% of the required fields, but asserting 100%" (@stanine 2026-08-14); the xAI field guide's own author distrusts the completion summary. Gate unchanged: diff `git status --short` in the worker's workspace against what the report claims — mismatch = failed leg, no partial credit. Anything merge-bound gets its tests re-run by the orchestrator or a second model, never integrated on self-report.
+- **Hallucination rate worsened** on xAI's own card (0.98% → 1.7% vs 4.5). Factual claims in Grok output keep needing corroboration.
+- **Destructive recovery ban** stays in every write-capable prompt (host-level rule): recovery belongs to the orchestrator.
+- Not cheaper per task despite unchanged list price: tokens and latency rose vs 4.5 in several independent benches (median 71s → 131s on RipplingBench). Budget leg timeouts generously and watch cost per leg, not per token.
+
+## Calibration duty (the price of the liberal trial)
+
+Every 4.6 engineering leg that materially wins, loses, or trips a gate gets a calibration observation; recurring defects trigger the bare-4.6 vs +legacy-hardening bake-off in `references/vs-mode.md`. "No surprises" legs need no entry.
 
 ## Headless write-leg discipline (forensic RCA 2026-07-23, updated 2026-07-28)
 
@@ -44,21 +43,20 @@ The launch shape is in the registry. What that shape is defending against:
 ## CLI gotchas (see also `routing-reference.md` "Known route failures")
 
 - **Shell trap (zsh & PowerShell):** In zsh, do NOT use `status` as a shell variable name when checking Grok's exit code or result (`status` is reserved in zsh). In PowerShell, check `$LASTEXITCODE` or `$?` instead of `$status`. Use custom names like `grok_status`.
-- Headless runs can end exit-0 with only an opening narration line ("I'll research…") and no deliverable — observed 2026-07-13 on multi-part research prompts with web-fetch chains; verbatim retries and higher `--max-turns` don't help. Always append a harness note: "you are running headless — your FINAL message must be the complete deliverable; ending with narration only is a total failure", and prefer `--output-format json` so the `text` field (and `stopReason`) can be checked programmatically instead of eyeballing stdout.
+- Headless runs can end exit-0 with only an opening narration line ("I'll research…") and no deliverable — observed 2026-07-13 on multi-part research prompts with web-fetch chains; verbatim retries and higher `--max-turns` don't help. Always append a harness note: "you are running headless — your FINAL message must be the complete deliverable; ending with narration only is a total failure", and prefer `--output-format json` so the `text` field (and `stopReason`) can be checked programmatically instead of eyeballing stdout. 4.6 note: narration filler still precedes the report inside `text` (observed 2026-08-13 and 08-15); parse past it rather than treating it as failure.
 - `stopReason:"Cancelled"` + empty output = the headless permission auto-cancel above, not quota and not concurrency (the earlier "concurrent runs cancel each other" attribution was falsified by forensic review of those sessions — same permission signature). Diagnose via `permission_resolved decision:"cancelled"` in `~/.grok/sessions/…/events.jsonl`; fix the launch flags, don't retry verbatim.
 - A dead run may leave `{"type":"error","message":"…max_tokens_truncation…"}` as the entire out.json (no stopReason field) after a runaway-reasoning response — seen once alongside server 500s, 2026-07-22. The session survives: `grok -r <sessionId> -p "continue"` resumes with state intact; mid-flight files on disk are NOT a deliverable.
 - Plan mode silently returns nothing when the prompt references files outside cwd — `cd` to the files first.
 - Tight `--max-turns` fails silently on multi-file analysis; omit it or set generously.
 - Summaries come back on stdout; if you need an artifact file, ask for it explicitly in the prompt (and don't ask for file writes in plan mode — use the registry's headless shape, or capture stdout).
-- Phased rollout: some surfaces still serve Grok 4.3 — if quality is suddenly off, confirm model identity before blaming the route.
+- Phased leftovers may still serve Grok 4.5 — if quality is suddenly off, confirm model identity before blaming the route.
 
-## Community-reported failure modes (X sweep 2026-06-29 → 2026-07-13)
+## Appendix: 4.5-era hardening (opt-in, not default)
 
-Distilled from a two-week X criticism sweep (full report: `model-orchestrator/model-router-workspace/research-2026-07-13/grok45-criticism-report.md`). Only delegation-actionable themes, ranked:
+Distilled from the 4.5 VS-loss RCA (2026-07-12) and the 4.5 X criticism sweep (report: `model-orchestrator/model-router-workspace/research-2026-07-13/grok45-criticism-report.md`). **Do not apply by default on 4.6 legs.** Apply a matching rule only after a bare-4.6 leg exhibits that defect, record the observation, and let the vs-mode bake-off decide promotion back to default.
 
-1. **False completion** (recurring; top behavioral theme): "yes, fully built and tested per spec" over stubs with zero test coverage. Cleanest local reproduction (2026-07-22, healthy client+server): Grok watched its own vitest run print "No test files found, exiting with code 1" and still reported the suite green, claiming files it never emitted write calls for. Concrete gate: before reading a Grok final report, diff `git status --short` in its workspace against the files the report claims — mismatch = failed leg, no partial credit. Anything merge-bound gets its tests re-run by you or a second model — never integrated on self-report. (`--check` exists as a self-verification flag — untested here, candidate only; it does not replace the gate.)
-2. **Destructive recovery:** after botching an edit, Grok "undid" it with `git reset` and clobbered all uncommitted work. Never ask Grok to undo its own mess — recovery belongs to the orchestrator. Ban destructive git ops in every write-capable prompt (SKILL.md write-capable-legs rule).
-3. **Weak self-verification / confident errors** (recurring & vendor-acknowledged): output looks strong but ships broken when the harness doesn't force tests. Confirmed by @grok official account (2026-07-29): *"4.5 prioritizes speed and efficiency for coding, which can surface more confident errors. Verify the outputs that matter."* Require running the existing suite independently via the orchestrator — never integrate on Grok's self-reported test pass.
-4. **Over-engineering as adversarial reviewer:** piles on extreme edge cases even when explicitly warned not to. Review legs need a strict rubric: severity tiers, max N findings, only defects that fail tests or break security/correctness, no speculative architecture.
-5. **Capability boundary** (positioning consensus, "route by cost-of-wrong"): strong fast mid-level implementation, mechanical vocabulary swaps, and research; below Claude/Codex on specialized frameworks, multi-file React/schema ports, and taste-heavy UI — escalate those, keep Grok on bounded single-file or mechanical legs.
-6. **Quota burn** (widespread): weekly limits die fast on agent loops. Prefer `low` effort as the default (see Effort defaults above), bound turns generously-but-finitely, serialize concurrent CLI runs, and never run unbounded multi-agent review fleets on the Grok budget.
+Instruction weighting (4.5): success-criteria checklist items > explicit NEVER/MUST one-liners > numbered deliverables > background "study file X" prose > conversational intent. If 4.6 shows the same prose-underweighting, move hard constraints into Success criteria as MUST/NEVER bullets.
+
+Security-critical SQL/RPC legs (the 4.5 loss domain): spell out GRANT matrices rather than "copy the pattern from file X"; state that invented DEFINER helpers inherit the same guard/grant rules; ban comments rationalizing weaker grants; prefer explicit negatives over positive pattern references; force a pre-finish security pass listing every new DEFINER function with its GRANTs; name unsafe defaults (drop/null rules); "mirror file X's filters including column Y" when SQL parity matters.
+
+Review-leg rubric (4.5 over-engineered as adversarial reviewer): severity tiers, max N findings, only defects that fail tests or break security/correctness, no speculative architecture. (Calibration 2026-08-02 showed 4.5 `high` self-pruning well under exactly this rubric — if 4.6 review sweeps run hot, this is the first rule to restore.)

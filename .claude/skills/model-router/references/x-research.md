@@ -1,6 +1,6 @@
-# Delegating real-time X research to Grok 4.5
+# Delegating real-time X research to Grok 4.6
 
-Loaded on demand from SKILL.md's "Route selection". Grok 4.5 via CLI is the lineup's only live-X route; its launch command and effort ladder live in the `routing-reference.md` capability registry. Grounding: xAI docs sweep + Grok's own verified self-assessment, 2026-07-13 (full reports: `model-orchestrator/model-router-workspace/research-2026-07-13/xdocs-report.md` and `xverify-report.md`).
+Loaded on demand from SKILL.md's "Route selection". Grok 4.6 via CLI is the lineup's only live-X route; its launch command and effort ladder live in the `routing-reference.md` capability registry. Grounding: xAI docs sweep + Grok's own verified self-assessment, 2026-07-13 (full reports: `model-orchestrator/model-router-workspace/research-2026-07-13/xdocs-report.md` and `xverify-report.md`); cutoff re-confirmed against Grok 4.6 docs on 2026-08-13.
 
 Core framing: Grok+X is a **high-velocity signal sampler with citation discipline — not a ground-truth oracle**. It tells you what people are saying right now; what actually *happened* still needs primary sources.
 
@@ -18,8 +18,9 @@ Fast-moving-topic rule: X-first for the *discourse*, then corroborate every fact
 
 ## Capability limits to plan around (verified 2026-07-13)
 
-- Grok 4.5's training cutoff is 2026-02-01; the live search tools are the only freshness layer — force their use with explicit research instructions.
+- Grok 4.6's training cutoff is 2026-02-01; the live search tools are the only freshness layer — force their use with explicit research instructions.
 - X search tools return roughly ≤10 results per call: depth comes from many angles, not one big query.
+- Native X search can rate-limit (`429`) for a whole turn (observed 2026-08-15); Grok then falls back to `site:x.com` web discovery plus post-page fetches. The report survives but the low-engagement practitioner pass thins out — treat prevalence claims from such runs as weaker and note the degradation in the deliverable.
 - Keyword operators (`from:`, `since:`/`until:`, `min_faves:N`, `filter:…`, OR) work in the CLI runtime; hard date windows are the most reliable filter.
 - A citations list means "sources encountered", not "claims grounded" — inline citation is optional model behavior, not a contract.
 - No continuous monitoring: "right now" means "as of this turn's tool calls".

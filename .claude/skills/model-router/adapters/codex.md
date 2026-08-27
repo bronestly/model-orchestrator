@@ -22,8 +22,8 @@ When **you** (Sol main) implement or fix code in-session, apply the same **minim
 | Well-specified independent implementation | Terra `medium` (minimal-code contract) | Main Sol with contract |
 | Fresh independent implementation review | Terra `high` | Main Sol with a clean review pass |
 | Bulk extraction, classification, or reconnaissance | Luna (standalone volume) or Sol `low` (fast parallel scouting) | Antigravity (bulk tier), then main Sol |
-| Live-X research or bounded alternative engineering angle | Grok 4.5 | Web research or main Sol |
-| General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Grok 4.5, then web research in main Sol |
+| Live-X research or bounded engineering legs (4.6 liberal trial — see grok-delegation) | Grok 4.6 | Web research or main Sol |
+| General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Grok 4.6, then web research in main Sol |
 | Parallel independent legs explicitly permitted by the user/environment | Native Codex subagents using available models (Sol/Terra) | External CLIs or sequential main-context work |
 
 Before an external worker call, read [references/routing-reference.md](references/routing-reference.md) — its capability registry is the only place model IDs, invocation shapes, and effort ladders are stated. Then read only the chosen provider reference, which carries judgment and failure modes rather than command shapes:

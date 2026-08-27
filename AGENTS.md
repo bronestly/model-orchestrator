@@ -1,6 +1,6 @@
 # AGENTS.md
 
-This repository is the source of truth for the dual-host `model-router` skill,
+This repository is the source of truth for the three-host `model-router` skill,
 not an application. There is no build system.
 
 ## Source layout
@@ -8,17 +8,23 @@ not an application. There is no build system.
 - `.claude/skills/model-router/SKILL.md` — thin Claude adapter.
 - `.claude/skills/model-router/adapters/codex.md` — thin Codex adapter source;
   read it fully before editing.
+- `.claude/skills/model-router/adapters/grok.md` — thin Grok 4.6 adapter source;
+  read it fully before editing.
+- `.grok/skills/model-router/` — discovery shim for Grok Build in this repo;
+  edit `adapters/grok.md`, not the shim.
 - `.claude/skills/model-router/references/` — shared references loaded only when relevant.
-- `sync.sh` — installs Claude at `~/.claude/skills/model-router/` and Codex at
-  `~/.agents/skills/model-router/` (Linux/macOS/Git Bash).
-- `sync.ps1` — installs both global packages on Windows PowerShell.
+- `sync.sh` — installs Claude at `~/.claude/skills/model-router/`, Codex at
+  `~/.agents/skills/model-router/`, and Grok at `~/.grok/skills/model-router/`
+  (Linux/macOS/Git Bash).
+- `sync.ps1` — installs all three global packages on Windows PowerShell.
 - `state.sh` / `state.ps1` — configure and explicitly synchronize optional
   private shared calibration state.
 
 ## Change rules
 
-- Edit repository sources, never either installed package.
+- Edit repository sources, never an installed package.
 - Keep Sol high as Codex's planner, executor, verifier, and final synthesizer.
+- Keep Grok 4.6 as Grok Build's planner, executor, verifier, and final synthesizer.
 - Delegate only independently bounded work with a clear advantage.
 - When Sol (or Terra) implements or fixes code — main session or delegated —
   apply the **minimal-code contract** from `references/codex-delegation.md`.
@@ -33,13 +39,13 @@ not an application. There is no build system.
 - VS mode can A/B the same model (Sol baseline vs +minimal-code contract);
   see `references/vs-mode.md`.
 - Never enable Codex fast mode or automatically select `ultra` effort.
-- Preserve existing calibration history. Both hosts may read configured shared
+- Preserve existing calibration history. All hosts may read configured shared
   calibration; device-specific observations remain local and shared-state
   pushes are always explicit.
 
 ## Verification
 
-Run `bash -n sync.sh state.sh`, validate both skill frontmatters, then run
+Run `bash -n sync.sh state.sh`, validate all adapter frontmatters, then run
 `bash sync.sh` (or `.\sync.ps1` on Windows PowerShell) and compare each
 installed adapter and reference directory with its source. Exercise the
 configured state checkout with `bash state.sh status` without pushing.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Install both model-router host adapters from this repository.
+# Install all model-router host adapters from this repository.
 # Global skill directories are build artifacts; edit this repository, then run:
 #   bash sync.sh
 set -euo pipefail
@@ -7,11 +7,13 @@ set -euo pipefail
 REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 CLAUDE_SRC="$REPO_ROOT/.claude/skills/model-router"
 CODEX_ADAPTER="$CLAUDE_SRC/adapters/codex.md"
+GROK_ADAPTER="$CLAUDE_SRC/adapters/grok.md"
 CLAUDE_DEST="$HOME/.claude/skills/model-router"
 CODEX_DEST="$HOME/.agents/skills/model-router"
+GROK_DEST="$HOME/.grok/skills/model-router"
 LOGDIR="$HOME/.claude/model-router"
 
-if [[ ! -f "$CLAUDE_SRC/SKILL.md" || ! -f "$CODEX_ADAPTER" ]]; then
+if [[ ! -f "$CLAUDE_SRC/SKILL.md" || ! -f "$CODEX_ADAPTER" || ! -f "$GROK_ADAPTER" ]]; then
   echo "Missing a required model-router adapter under $CLAUDE_SRC" >&2
   exit 1
 fi
@@ -107,30 +109,37 @@ copy_dir_clean() {
   fi
 }
 
-# Claude receives its adapter and the shared references, not the Codex source.
+# Claude receives its adapter and the shared references, not the other host sources.
 mkdir -p "$CLAUDE_DEST"
 copy_dir_clean "$CLAUDE_SRC" "$CLAUDE_DEST" "adapters/"
 
-# Codex receives its adapter as SKILL.md plus the same shared references.
-CODEX_STAGE="$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/model-router-codex.XXXXXX")"
-if [[ -z "$CODEX_STAGE" || ! -d "$CODEX_STAGE" ]]; then
-  echo "Could not create the Codex staging directory" >&2
-  exit 1
-fi
-trap 'rm -rf -- "$CODEX_STAGE"' EXIT
-mkdir -p "$CODEX_STAGE/references" "$CODEX_DEST"
-cp "$CODEX_ADAPTER" "$CODEX_STAGE/SKILL.md"
-if command -v rsync >/dev/null 2>&1; then
-  rsync -a --exclude '.DS_Store' "$CLAUDE_SRC/references/" "$CODEX_STAGE/references/"
-  rsync -a --delete "$CODEX_STAGE/" "$CODEX_DEST/"
-else
-  cp -R "$CLAUDE_SRC/references/." "$CODEX_STAGE/references/"
-  rm -f "$CODEX_STAGE/references/.DS_Store"
-  copy_dir_clean "$CODEX_STAGE" "$CODEX_DEST" ""
-fi
+# Codex and Grok each receive their adapter as SKILL.md plus the same shared references.
+stage_and_install_host() {
+  local adapter_src="$1" dest="$2" label="$3"
+  local stage
+  stage="$(mktemp -d "${TMPDIR:-${TEMP:-/tmp}}/model-router-${label}.XXXXXX")"
+  if [[ -z "$stage" || ! -d "$stage" ]]; then
+    echo "Could not create the $label staging directory" >&2
+    exit 1
+  fi
+  mkdir -p "$stage/references" "$dest"
+  cp "$adapter_src" "$stage/SKILL.md"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --exclude '.DS_Store' "$CLAUDE_SRC/references/" "$stage/references/"
+    rsync -a --delete "$stage/" "$dest/"
+  else
+    cp -R "$CLAUDE_SRC/references/." "$stage/references/"
+    rm -f "$stage/references/.DS_Store"
+    copy_dir_clean "$stage" "$dest" ""
+  fi
+  rm -rf -- "$stage"
+}
+
+stage_and_install_host "$CODEX_ADAPTER" "$CODEX_DEST" "codex"
+stage_and_install_host "$GROK_ADAPTER" "$GROK_DEST" "grok"
 
 # Preserve machine-local state and source pointer. Shared state is configured
-# separately with state.sh and is never copied into either installed package.
+# separately with state.sh and is never copied into an installed package.
 mkdir -p "$LOGDIR"
 printf '%s\n' "$REPO_ROOT" > "$LOGDIR/source-repo"
 if [[ ! -f "$LOGDIR/routing-notes.local.md" ]]; then
@@ -148,4 +157,5 @@ fi
 
 echo "Installed Claude adapter: $CLAUDE_DEST"
 echo "Installed Codex adapter:  $CODEX_DEST"
+echo "Installed Grok adapter:   $GROK_DEST"
 echo "Source repo registered:   $REPO_ROOT"

@@ -1,4 +1,4 @@
-# Install both model-router host adapters from this repository (Windows PowerShell).
+# Install all model-router host adapters from this repository (Windows PowerShell).
 # Global skill directories are build artifacts; edit this repository, then run:
 #   .\sync.ps1
 $ErrorActionPreference = "Stop"
@@ -6,13 +6,15 @@ $ErrorActionPreference = "Stop"
 $RepoRoot = $PSScriptRoot
 $ClaudeSrc = Join-Path $RepoRoot ".claude\skills\model-router"
 $CodexAdapter = Join-Path $ClaudeSrc "adapters\codex.md"
+$GrokAdapter = Join-Path $ClaudeSrc "adapters\grok.md"
 
 $UserHome = if ($HOME) { $HOME } else { $env:USERPROFILE }
 $ClaudeDest = Join-Path $UserHome ".claude\skills\model-router"
 $CodexDest  = Join-Path $UserHome ".agents\skills\model-router"
+$GrokDest   = Join-Path $UserHome ".grok\skills\model-router"
 $LogDir     = Join-Path $UserHome ".claude\model-router"
 
-if (-not (Test-Path (Join-Path $ClaudeSrc "SKILL.md")) -or -not (Test-Path $CodexAdapter)) {
+if (-not (Test-Path (Join-Path $ClaudeSrc "SKILL.md")) -or -not (Test-Path $CodexAdapter) -or -not (Test-Path $GrokAdapter)) {
     Write-Error "Missing a required model-router adapter under $ClaudeSrc"
     exit 1
 }
@@ -90,29 +92,40 @@ Get-ChildItem -Path $ClaudeSrc -Exclude "adapters", ".DS_Store" | ForEach-Object
     Copy-Item -Path $_.FullName -Destination $ClaudeDest -Recurse -Force
 }
 
-# 2. Stage and install Codex adapter
-$StageDir = Join-Path (if ($env:TEMP) { $env:TEMP } else { "C:\Windows\Temp" }) "model-router-codex-$([Guid]::NewGuid().ToString('N').Substring(0,8))"
-if (Test-Path $StageDir) {
+# 2. Stage and install Codex and Grok adapters
+function Install-HostAdapter {
+    param(
+        [string]$AdapterSrc,
+        [string]$Dest,
+        [string]$Label
+    )
+    $TempRoot = if ($env:TEMP) { $env:TEMP } else { "C:\Windows\Temp" }
+    $StageDir = Join-Path $TempRoot "model-router-$Label-$([Guid]::NewGuid().ToString('N').Substring(0,8))"
+    if (Test-Path $StageDir) {
+        Remove-Item -Recurse -Force $StageDir
+    }
+    New-Item -ItemType Directory -Force -Path (Join-Path $StageDir "references") | Out-Null
+
+    Copy-Item -Path $AdapterSrc -Destination (Join-Path $StageDir "SKILL.md") -Force
+    Get-ChildItem -Path (Join-Path $ClaudeSrc "references") -Exclude ".DS_Store" | ForEach-Object {
+        Copy-Item -Path $_.FullName -Destination (Join-Path $StageDir "references") -Recurse -Force
+    }
+
+    if (Test-Path $Dest) {
+        Remove-Item -Recurse -Force $Dest
+    }
+    New-Item -ItemType Directory -Force -Path $Dest | Out-Null
+    Get-ChildItem -Path $StageDir | ForEach-Object {
+        Copy-Item -Path $_.FullName -Destination $Dest -Recurse -Force
+    }
     Remove-Item -Recurse -Force $StageDir
 }
-New-Item -ItemType Directory -Force -Path (Join-Path $StageDir "references") | Out-Null
 
-Copy-Item -Path $CodexAdapter -Destination (Join-Path $StageDir "SKILL.md") -Force
-Get-ChildItem -Path (Join-Path $ClaudeSrc "references") -Exclude ".DS_Store" | ForEach-Object {
-    Copy-Item -Path $_.FullName -Destination (Join-Path $StageDir "references") -Recurse -Force
-}
-
-if (Test-Path $CodexDest) {
-    Remove-Item -Recurse -Force $CodexDest
-}
-New-Item -ItemType Directory -Force -Path $CodexDest | Out-Null
-Get-ChildItem -Path $StageDir | ForEach-Object {
-    Copy-Item -Path $_.FullName -Destination $CodexDest -Recurse -Force
-}
-Remove-Item -Recurse -Force $StageDir
+Install-HostAdapter -AdapterSrc $CodexAdapter -Dest $CodexDest -Label "codex"
+Install-HostAdapter -AdapterSrc $GrokAdapter -Dest $GrokDest -Label "grok"
 
 # 3. Preserve machine-local state and source pointer. Shared state is configured
-# separately with state.ps1 and is never copied into either installed package.
+# separately with state.ps1 and is never copied into an installed package.
 New-Item -ItemType Directory -Force -Path $LogDir | Out-Null
 Set-Content -Path (Join-Path $LogDir "source-repo") -Value $RepoRoot -NoNewline
 
@@ -133,4 +146,5 @@ paths, or repository quirks. Never put credentials or secrets here.
 
 Write-Host "Installed Claude adapter: $ClaudeDest"
 Write-Host "Installed Codex adapter:  $CodexDest"
+Write-Host "Installed Grok adapter:   $GrokDest"
 Write-Host "Source repo registered:   $RepoRoot"

@@ -1,6 +1,6 @@
 # Model Router Skill
 
-Source repository for a minimal dual-host model router. It keeps each host's
+Source repository for a minimal three-host model router. It keeps each host's
 entry prompt small, shares detailed provider guidance, and uses other models
 only when they offer a clear advantage.
 
@@ -8,6 +8,10 @@ only when they offer a clear advantage.
 
 - `.claude/skills/model-router/SKILL.md` — thin Claude adapter.
 - `.claude/skills/model-router/adapters/codex.md` — thin Codex adapter source.
+- `.claude/skills/model-router/adapters/grok.md` — thin Grok 4.6 adapter source.
+- `.grok/skills/model-router/` — discovery shim so Grok Build in this repo
+  loads the Grok adapter instead of the Claude project skill. Edit
+  `adapters/grok.md`, not the shim.
 - `.claude/skills/model-router/references/` — shared guidance loaded on demand.
 - `sync.sh` — copy-based installer for Linux, macOS, and Git Bash.
 - `sync.ps1` — copy-based installer for Windows PowerShell.
@@ -31,8 +35,9 @@ The installer materializes:
 
 - Claude: `~/.claude/skills/model-router/` (or `%USERPROFILE%\.claude\skills\model-router\`)
 - Codex: `~/.agents/skills/model-router/` (or `%USERPROFILE%\.agents\skills\model-router\`)
+- Grok: `~/.grok/skills/model-router/` (or `%USERPROFILE%\.grok\skills\model-router\`)
 
-Always edit this repository, then rerun `bash sync.sh` or `.\sync.ps1`; both installed packages are build artifacts.
+Always edit this repository, then rerun `bash sync.sh` or `.\sync.ps1`; installed packages are build artifacts.
 
 ## Shared state across devices
 
@@ -77,6 +82,7 @@ remote repository.
 - VS mode can compare models **or** same-model prompt variants (Sol baseline
   vs +minimal-code contract), with a `code_minimalism` score and optional
   Fable taste pass — `references/vs-mode.md`.
-- Claude and Codex read distilled calibration from the configured private state
-  checkout. Full history lives in immutable `events/` files; device-specific
-  observations remain local at `~/.claude/model-router/routing-notes.local.md`.
+- Claude, Codex, and Grok read distilled calibration from the configured
+  private state checkout. Full history lives in immutable `events/` files;
+  device-specific observations remain local at
+  `~/.claude/model-router/routing-notes.local.md`.
