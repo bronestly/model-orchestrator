@@ -14,10 +14,10 @@ Read this only before using an external CLI route. Keep calls short, fresh, self
 | Codex Terra | `gpt-5.6-terra` | same | **`medium`** implement-after-plan · `high` review/PR-triage | same |
 | Codex Luna | `gpt-5.6-luna` | same | **`low`**–`medium` · `xhigh` for standalone single-turn volume only | same |
 | Grok | `grok-4.6` | `--reasoning-effort` | `low` (quick snapshots, recon) · **`medium`** (bounded eng, standard brief) · `high` (multi-file implement, deep criticism/research sweeps, security-adjacent) · `xhigh` (never automatic; propose for genuinely hard legs) | stdout, JSON `text` field |
-| Antigravity | `gemini-3.6-flash-low\|medium\|high` | encoded in the model slug | **`-low`** bulk/recon · `-medium` quick research · `-high` deep multi-source sweep | stdout |
+| Antigravity | `gemini-3.7-flash-low\|medium\|high` | encoded in the model slug | **`-low`** bulk/recon · `-medium` quick research · `-high` deep multi-source sweep | stdout |
 | Advisor | `claude-fable-5` (default) / `claude-opus-5` | `--effort` | **`medium`** · `high` only for hard-to-reverse or high-blast-radius calls | stdout, JSON `result` field |
 
-`ultra`, `max`, and Grok `xhigh` are never selected automatically (`ultra` is a Codex-only tier and is not valid for `claude -p`). Never enable Codex fast mode from this skill. Only Gemini 3.6 Flash slugs are in use — not Gemini 3.5, 3.1 Pro, or any older Gemini model.
+`ultra`, `max`, and Grok `xhigh` are never selected automatically (`ultra` is a Codex-only tier and is not valid for `claude -p`). Never enable Codex fast mode from this skill. Only Gemini 3.7 Flash slugs are in use — not Gemini 3.5, 3.1 Pro, or any older Gemini model.
 
 Luna `xhigh` is permitted only for standalone single-turn volume or execution work. Never raise Luna to chase quality on complex code — it costs more than Sol `medium` for worse results.
 
@@ -56,7 +56,7 @@ On a Claude host these run as subagents rather than CLI calls. The IDs are the s
 Two facts are not established. Treat them as open, and never fill them with a guess:
 
 - **Grok leftover 4.5.** CLI 1.0.3 `grok models` (2026-08-13) lists `grok-4.6` as default and still offers `grok-4.5`; a `[models] default` override can serve the older ID. Pin `-m` to the registry ID, and confirm identity before blaming quality on the route — the result JSON's `modelUsage` object names the actually-served model (e.g. `grok-4.6-build`, observed 2026-08-15).
-- **Codex CLI version.** agy is pinned at 1.1.5 and Grok anchored at 1.0.3 (2026-08-13); the Codex CLI has no version anchor here. Record one in `routing-notes.local.md` when observed.
+- **Codex CLI version.** agy is verified at 1.1.22 (2026-08-27) and Grok anchored at 1.0.3 (2026-08-13); the Codex CLI has no version anchor here. Record one in `routing-notes.local.md` when observed.
 
 ## Permissions
 
