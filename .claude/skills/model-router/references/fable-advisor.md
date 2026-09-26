@@ -1,6 +1,6 @@
-# Advisor mode — cross-model plan review (Fable 5 / Opus 5)
+# Advisor mode — cross-model plan review (Fable 5.1 / Opus 5.5)
 
-A read-only second opinion that **any orchestrator model** — Claude main, Codex Sol, Grok, or another — can request from an advisor model — **Fable 5 or Opus 5** — to pressure-test a plan or a consequential decision before committing to implementation. The requesting model invokes `claude -p` and forwards a self-contained dossier. The advisor sees **only that dossier** — never the orchestrator's transcript and never the repository — so the dossier must carry everything needed to judge the plan on its merits.
+A read-only second opinion that **any orchestrator model** — Claude main, Codex Sol / Astra, Grok, or another — can request from an advisor model — **Fable 5.1 or Opus 5.5** — to pressure-test a plan or a consequential decision before committing to implementation. The requesting model invokes `claude -p` and forwards a self-contained dossier. The advisor sees **only that dossier** — never the orchestrator's transcript and never the repository — so the dossier must carry everything needed to judge the plan on its merits.
 
 The advisor's output serves two purposes, and the dossier should be built for both:
 
@@ -13,12 +13,13 @@ Because of purpose 2, hand the advisor the **full detailed plan, not a brief sum
 
 Model IDs are in the registry (`routing-reference.md`, Advisor row); this section is about which to pick.
 
-- **Fable 5 — default.** The highest-judgment advisor; use for the highest-stakes calls: architecture, migrations, security/trust boundaries, public contracts, and anything hard to reverse.
-- **Opus 5 — alternative.** Use when the user asks for an Opus opinion, when the decision is consequential but standard engineering (no novel architecture or trust-boundary judgment), or to conserve Fable capacity. Same dossier, invocation shape, effort rules, and failure policy — only `--model` changes. Opus 5 caveats apply: never `max` effort, and expect somewhat more verbose output.
+- **Fable 5.1 (`claude-fable-5-1`) — frontier default.** The highest-judgment advisor; use for the highest-stakes calls: novel architecture, database migrations, security/trust boundaries, public wire contracts, and twice-failed approaches.
+- **Opus 5.5 (`claude-opus-5-5`) — pragmatic codebase advisor.** Outstanding for codebase-level architecture, deep code review, refactoring strategy, and maintainability checks. 20% cheaper than Opus 5 ($4/$20 per MTok) with 60% cheaper cache reads ($0.20 per MTok), clearer prose, fewer false-positive bug flags, and matching/beating Opus 5 `high` results at `medium` effort.
 - **Both (dual advisory) — explicit user request only.** When the user asks for "Opus and Fable" (or two independent opinions), run one call per model with the **identical dossier**, then reconcile: where they agree, treat it as strong signal; where they disagree, the orchestrator decides and states why. Each call follows the per-call failure policy independently — one failing does not invalidate the other.
-- **Same-model advisory (orchestrator = advisor).** When the orchestrator is already the chosen advisor model — a Fable 5 session consulting Fable, an Opus session consulting Opus — the call still delivers something real: a dossier-only reviewer with none of the transcript's accumulated framing or sunk-cost bias. But it is a fresh-context check, not the cross-model opinion this file otherwise provides. When the trigger is about independence (twice-failed approach, resolving a fork the orchestrator cannot settle from evidence), prefer the other advisor model; when it is about a clean read of a plan (overbuild taste, missing-assumption sweep), same-model is acceptable. Say which kind was run when reporting the result.
+- **Legacy baselines:** `claude-fable-5` and `claude-opus-5` remain available in the registry as backwards-compatible options.
+- **Same-model advisory (orchestrator = advisor).** When the orchestrator is already the chosen advisor model — a Fable session consulting Fable, an Opus session consulting Opus — the call still delivers something real: a dossier-only reviewer with none of the transcript's accumulated framing or sunk-cost bias. But it is a fresh-context check, not the cross-model opinion this file otherwise provides. When the trigger is about independence (twice-failed approach, resolving a fork the orchestrator cannot settle from evidence), prefer the other advisor model; when it is about a clean read of a plan (overbuild taste, missing-assumption sweep), same-model is acceptable. Say which kind was run when reporting the result.
 
-Non-Claude orchestrators reach the advisor only through this CLI path. A Claude-host orchestrator may instead spawn a native subagent with the chosen model (Fable or Opus), but the dossier discipline and effort rules below still apply.
+Non-Claude orchestrators reach the advisor only through this CLI path. A Claude-host orchestrator may instead spawn a native subagent with the chosen model (Fable 5.1 or Opus 5.5), but the dossier discipline and effort rules below still apply.
 
 Also used as an **optional taste layer** in VS mode when comparing a baseline vs a minimal-code-contract variant (see `vs-mode.md`). VS taste checks follow the same invocation and failure rules.
 
@@ -51,7 +52,7 @@ DOSSIER=$(mktemp)
 Pass this verbatim as the registry command's `--system-prompt` value. It is what makes the route work at all — see the rationale below.
 
 ```text
-You are a read-only advisor giving one second opinion on a plan or decision. You have no tools, no shell, and no repository access — only the dossier in the user message. Never call, attempt, describe, or plan any tool, file read, or shell command, and never ask to see the repository. Reply with ONLY the requested output as plain prose (short labeled sections or bullets). Emitting tool-use syntax, or narrating what you would investigate instead of answering, is a total failure.
+You are a read-only advisor giving one second opinion on a plan or decision. You have no tools, no shell, and no repository access — only the dossier in the user message. Never call, attempt, describe, or plan any tool, file read, or shell command, and never ask to see the repository. Provide only direct, reasoned assessment and actionable recommendations as plain prose (short labeled sections or concise bullets). Emitting tool-use syntax or narrating what you would investigate is not accepted.
 ```
 
 ### Prompt delivery (headless hosts)
@@ -62,12 +63,12 @@ You are a read-only advisor giving one second opinion on a plan or decision. You
 - **Never** launch the process first (PTY or otherwise) and try to write the dossier to stdin afterward — the process has already exited. This is a confirmed failure mode from a Codex host.
 - Run it as a plain non-TTY exec, require exit code 0, and read the answer from the JSON `result` field.
 - There is **no advisor flag**: the route is a normal `claude -p` call whose `--model` carries the chosen advisor ID from the registry. Do not invent `--advisor` or similar.
-- **GPT-5.6 / Codex hosts: run this command outside the sandbox.** The Codex exec sandbox blocks the network and credential access `claude` needs to reach the API, so a sandboxed call dies on auth/network, and per the Failure policy that consultation is then simply skipped — no retry. Request escalated (non-sandboxed) execution for this one read-only command; it needs no filesystem writes beyond reading the dossier temp file.
+- **Codex hosts: run this command outside the sandbox.** The Codex exec sandbox blocks the network and credential access `claude` needs to reach the API, so a sandboxed call dies on auth/network, and per the Failure policy that consultation is then simply skipped — no retry. Request escalated (non-sandboxed) execution for this one read-only command; it needs no filesystem writes beyond reading the dossier temp file.
 
 Why this exact shape (each flag earns its place):
 
 - `--tools ""` removes every tool, which is the actual read-only guarantee; `--safe-mode` strips this repo's `CLAUDE.md`, skills, hooks, and MCP so nothing leaks into the advisor context.
-- `--system-prompt` replaces Claude Code's default coding-agent prompt with a pure advisor persona. **This is required for either advisor model.** Without it, the default agent framing makes the advisor try to investigate the repo first, and with no tools it emits *attempted tool instructions instead of a recommendation* (the exact narration-only failure this route hit before).
+- `--system-prompt` replaces Claude Code's default coding-agent prompt with a pure advisor persona. **This is required for either advisor model.** Without it, the default agent framing makes the advisor try to investigate the repo first, and with no tools it emits attempted tool instructions instead of a recommendation (the exact narration-only failure this route hit before).
 - **Do not add `--permission-mode plan`.** With no tools it gates nothing, and it reintroduces the "investigate, then present a plan" framing (via a missing `ExitPlanMode`) that produced the tool-instruction narration.
 - Read the answer from the JSON `result` field. Verified 2026-07-23: this shape returns the requested sections in one turn (`stop_reason: end_turn`), no tool-use attempts.
 
@@ -75,9 +76,9 @@ Why this exact shape (each flag earns its place):
 
 Pick effort by blast radius, not by prompt length:
 
-- **`medium` (default).** Almost every plan review, architecture second opinion, and overbuild/taste check. Either advisor's judgment at `medium` is already strong for reviewing a plan it did not have to author.
+- **`medium` (default).** Almost every plan review, architecture second opinion, and overbuild/taste check. Either advisor's judgment at `medium` is exceptionally strong for reviewing a plan it did not have to author. Fable 5.1 at `medium` matches Fable 5 `high` quality; Opus 5.5 at `medium` matches or beats Opus 5 `high`.
 - **`high` — one step up, reserved.** Use only when the decision is genuinely hard to reverse or high-blast-radius (data-model or schema migration, a security/trust boundary, a public API or wire contract, a cross-cutting refactor), **or** when a `medium` pass came back hedged or shallow on a decision that carries real rework, **or** when the user asks for it.
-- **Never `xhigh`, `max`, or `ultra`.** A single read-only advisory does not justify frontier-max compute. If a question seems to need that much, the fix is more evidence, a sharper question, or decomposition — not more effort. (`ultra` is a Codex-only tier and is not even valid for `claude -p`; it is named here so no cross-host orchestrator reaches for it.)
+- **Never `xhigh`, `max`, or `ultra`.** A single read-only advisory does not justify frontier-max compute. If a question seems to need that much, the fix is more evidence, a sharper question, or decomposition — not more effort. (`ultra` is a Codex-only tier and is not valid for `claude -p`.)
 
 ## Dossier
 
@@ -99,7 +100,7 @@ Alternatives considered: Approaches weighed and why they were set aside (if any)
 Open questions: What the orchestrator is unsure about.
 Decision(s) for the advisor: The specific calls to review.
 
-Return as short labeled sections (not one prose blob):
+Return as short labeled sections:
 1. Verdict — proceed / revise / reconsider-approach.
 2. Ranked risks & objections — strongest first, each with why it matters.
 3. Missing facts or unstated assumptions the plan depends on.
@@ -120,8 +121,8 @@ Constraints: What must remain true?
 Evidence: What repository facts, errors, or tradeoffs matter?
 Question: What single consequential decision should the advisor review?
 
-Return at most five bullets: recommendation, strongest objection,
-missing fact, risk mitigation, and proceed/revise verdict.
+Return concise labeled sections: recommendation, strongest objection,
+unstated assumption or missing fact, risk mitigation, and proceed/revise verdict.
 Do not implement anything.
 ```
 
@@ -134,14 +135,14 @@ Evidence: git diff --stat and only the key hunks (labels stripped in VS mode).
 Question: Is this the minimal complete solution? What machinery can be
 deleted without losing the goal? Any correctness risk if we lean harder?
 
-Return at most five bullets: more-minimal verdict (or X vs Y in VS mode),
-concrete deletions, correctness risk, missing fact, proceed/revise/hybrid.
+Return concise labeled sections: more-minimal verdict (or X vs Y in VS mode),
+concrete deletions, correctness risk, missing fact, and proceed/revise/hybrid verdict.
 Do not implement anything.
 ```
 
 ### How much context to send
 
-Give the advisor enough to judge on the merits — the full plan, the real constraints, and the relevant code facts. **Under-contextualizing is the main failure mode of this route:** a thin dossier yields generic advice. Fable has a large (1M-token) context window, so err toward completeness for plan reviews; for an Opus 5 advisory the same completeness bias applies (recent Opus tiers are also 1M-class), but if a very large dossier is rejected for length, trim the longest code excerpts first while keeping the plan itself verbatim.
+Give the advisor enough to judge on the merits — the full plan, the real constraints, and the relevant code facts. **Under-contextualizing is the main failure mode of this route:** a thin dossier yields generic advice. Both Fable 5.1 and Opus 5.5 have 1M-token context windows, so err toward completeness for plan reviews; if an extraordinarily large dossier is rejected for length, trim long peripheral code excerpts first while keeping the plan and core invariants verbatim.
 
 Still never forward credentials, secrets, tokens, environment values, or unrelated proprietary material; redact those from any excerpt. For the terse taste check, keep it to `git diff --stat` plus the key hunks.
 

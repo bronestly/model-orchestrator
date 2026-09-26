@@ -25,13 +25,14 @@ Model Router unifies your multi-model toolbox into a single capability registry:
 
 | Route / Target | Active Model | Cost & Speed | Best For (Superpowers) | How Output Arrives |
 |---|---|---|---|---|
-| **Codex Sol** | `gpt-5.6-sol` | 💎 Standard<br>⏱️ Medium | Complex agentic coding, hard bug reproduction, multi-file refactoring under the **minimal-code contract**. | Written to `-o <outfile>` |
+| **Codex Astra** | `gpt-6-astra` | 💎 Frontier<br>⏱️ Deep | Frontier intelligence for testing as an **orchestrator** (`codex -m gpt-6-astra`), high-level architectural decomposition, and complex multi-leg synthesis. | Written to `-o <outfile>` |
+| **Codex Sol** | `gpt-6-sol`<br>*(5.6 baseline)* | 💎 Standard<br>⏱️ Medium | Complex agentic coding, hard bug reproduction, multi-file refactoring under the **minimal-code contract**; dynamic reasoning updates. | Written to `-o <outfile>` |
 | **Codex Terra** | `gpt-5.6-terra` | 💎 Inexpensive<br>⏱️ Fast | Implementing straightforward tasks from a plan; PR triage and code review. | Written to `-o <outfile>` |
-| **Codex Luna** | `gpt-5.6-luna` | 🪙 Lowest<br>⚡ Ultra-Fast | Standalone high-volume processing, batch file extraction, single-turn data tasks. | Written to `-o <outfile>` |
+| **Codex Luna** | `gpt-6-luna`<br>*(5.6 baseline)* | 🪙 Lowest<br>⚡ Ultra-Fast | Standalone high-volume processing, batch file extraction, single-turn data tasks. | Written to `-o <outfile>` |
 | **Grok** | `grok-4.7`<br>*(4.6 for bake-offs)* | 💎 Moderate<br>⏱️ Medium | Live-X / social search, independent critical code review, long-horizon bug repair (500k context). | stdout (JSON `text`) |
 | **Antigravity** | `gemini-3.8-flash`<br>*(low / med / high)* | 🪙 Ultra-Cheap<br>⚡ Ultra-Fast | High-speed web search, official documentation sweeps, multimodal analysis, bulk reconnaissance. | stdout |
-| **Fable Advisor** | `claude-fable-5`<br>*(or Opus 5)* | 💎 Frontier<br>⏱️ Deep | Second opinions for hard-to-reverse architectural forks, twice-failed recovery strategies, overbuild checks. | stdout (JSON `result`) |
-| **Native Subagents** | `claude-opus-5`<br>`claude-sonnet-5` | 💎 Standard<br>⏱️ Fast | In-session Claude subagents for precision review, tests, writing, and standard documentation. | Subagent message |
+| **Advisor (Fable & Opus)** | `claude-fable-5-1`<br>`claude-opus-5-5` | 💎 Frontier / Pragmatic<br>⏱️ Deep | Second opinions: **Fable 5.1** for novel architecture and security boundaries; **Opus 5.5** for pragmatic codebase review, maintainability, and cost-effective plan analysis ($4/$20). | stdout (JSON `result`) |
+| **Native Subagents** | `claude-opus-5-5`<br>`claude-fable-5-1`<br>`claude-sonnet-5` | 💎 Standard<br>⏱️ Fast | In-session Claude subagents for precision review, high-stakes verification, tests, and writing. | Subagent message |
 
 ---
 
@@ -42,14 +43,19 @@ You don't need to remember complex CLI flags. Simply instruct your active assist
 ### 🛠️ Precision Coding & Bugfixing (Sol + Minimal-Code Contract)
 > *"Delegate this backend bugfix to Sol under the minimal-code contract. Plan it first, make the smallest possible diff, and do not create any unnecessary helper abstractions."*
 
+### 👑 Frontier Orchestrator Testing (Codex Astra)
+> *"Run Codex using Astra as orchestrator to break down this complex multi-service migration into bounded implementation tickets, delegating the implementation legs to Sol."*
+
 ### 🔍 Fast Web & Documentation Sweeps (Antigravity / Gemini 3.8 Flash)
 > *"Use Antigravity to do a rapid documentation sweep of the latest Supabase Auth migration guide and summarize breaking changes."*
 
 ### 🌐 Live Social Sentiment & Criticism (Grok 4.7)
 > *"Have Grok scout live discussions on X from the past 48 hours regarding issues with Next.js 15 app router caching."*
 
-### 🏛️ High-Stakes Architectural Second Opinions (Fable Advisor)
-> *"We're debating whether to migrate this table to a distributed SQLite setup or stick with Postgres. Prepare an architectural dossier and consult the Fable Advisor for a second opinion."*
+### 🏛️ High-Stakes Architectural & Codebase Reviews (Fable 5.1 & Opus 5.5 Advisors)
+> *"Prepare an architectural dossier and consult Fable 5.1 for a second opinion on this database migration plan."*  
+> *"Have Opus 5.5 review this refactoring proposal as advisor to check for maintainability risks and overengineering."*  
+> *"Run a dual advisory with both Fable 5.1 and Opus 5.5 on this distributed auth proposal and reconcile where they agree and disagree."*
 
 ### ⚔️ Side-by-Side Model Bake-Off (VS Mode)
 > *"Run a VS bake-off between Grok 4.6 and Grok 4.7 on this algorithm optimization task. Score them on task completion honesty, token burn, and code minimalism."*

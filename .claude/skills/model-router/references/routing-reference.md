@@ -10,14 +10,21 @@ Read this only before using an external CLI route. Keep calls short, fresh, self
 
 | Route | Model ID | Effort mechanism | Ladder (**default**) | Result arrives on |
 |---|---|---|---|---|
-| Codex Sol | `gpt-5.6-sol` | `-c model_reasoning_effort="<effort>"` | `low` (scouting/recon, conserving) · **`medium`** · `high` (plan-only, multi-file/ambiguous) · `xhigh` (only after fixing a failed prompt or test) | the `-o` file; stdout is a transcript |
+| Codex Astra | `gpt-6-astra` | `-c model_reasoning_effort="<effort>"` | `low` (conserving) · **`medium`** · `high` (orchestrator test / complex decomposition) | the `-o` file; stdout is a transcript |
+| Codex Sol | `gpt-6-sol` (active) / `gpt-5.6-sol` (baseline) | same | `low` (scouting/recon, conserving) · **`medium`** · `high` (plan-only, multi-file/ambiguous) · `xhigh` (only after fixing a failed prompt or test) | same |
 | Codex Terra | `gpt-5.6-terra` | same | **`medium`** implement-after-plan · `high` review/PR-triage | same |
-| Codex Luna | `gpt-5.6-luna` | same | **`low`**–`medium` · `xhigh` for standalone single-turn volume only | same |
+| Codex Luna | `gpt-6-luna` (active) / `gpt-5.6-luna` (baseline) | same | **`low`**–`medium` · `xhigh` for standalone single-turn volume only | same |
 | Grok | `grok-4.7` | `--reasoning-effort` | `low` (quick snapshots, recon, simple tools) · **`medium`** (bounded eng, standard brief, review) · `high` (multi-file implement, deep criticism/research sweeps, security-adjacent; API default) · `xhigh` (never automatic; propose for genuinely hard legs) | stdout, JSON `text` field |
 | Antigravity | `gemini-3.8-flash-low\|medium\|high` | encoded in the model slug | **`-low`** bulk/recon · `-medium` quick research · `-high` deep multi-source sweep | stdout |
-| Advisor | `claude-fable-5` (default) / `claude-opus-5` | `--effort` | **`medium`** · `high` only for hard-to-reverse or high-blast-radius calls | stdout, JSON `result` field |
+| Advisor | `claude-fable-5-1` (frontier default) / `claude-opus-5-5` (pragmatic default) | `--effort` | **`medium`** · `high` only for hard-to-reverse or high-blast-radius calls | stdout, JSON `result` field |
 
-`ultra`, `max`, and Grok `xhigh` are never selected automatically (`ultra` is a Codex-only tier and is not valid for `claude -p`). Never enable Codex fast mode from this skill. Grok 4.7 (`grok-4.7`) is the active default; 4.6 remains available for generational VS bake-offs. Gemini 3.8 Flash slugs (`gemini-3.8-flash-low|medium|high`) are the active default; 3.7 Flash slugs (`gemini-3.7-flash-low|medium|high`) remain available for generational VS bake-offs. Older models (Grok 4.5, Gemini 3.5, 3.1 Pro) remain deprecated.
+`ultra`, `max`, and Grok `xhigh` are never selected automatically (`ultra` is a Codex-only tier that enables automatic subagent delegation, multiplying token burn, and is not valid for `claude -p`). Never enable Codex fast mode from this skill.
+
+**Codex models (CLI 0.157.1):** `gpt-6-sol` is the active coding workhorse; `gpt-6-luna` is the active fast/economical tier for bulk and recon. `gpt-6-astra` is OpenAI's top frontier intelligence tier: expensive per token, not for routine delegated legs, but permitted for testing as an orchestrator (`codex -m gpt-6-astra`) for high-level decomposition and architectural synthesis. GPT-6 models support dynamic reasoning updates during a turn and 272k base / 872k max context. `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna` remain active generational baselines. `gpt-5.5` retires October 14, 2026.
+
+**Advisor models (Claude Code 2.1.283):** `claude-fable-5-1` is the active frontier advisor default for critical architecture, trust boundaries, and novel migrations. `claude-opus-5-5` is the active pragmatic advisor for codebase review, maintainability, and standard engineering decisions ($4/$20 per MTok; $0.20 cache read; default effort `medium`). Older `claude-fable-5` and `claude-opus-5` remain available as legacy aliases.
+
+Grok 4.7 (`grok-4.7`) is the active default; 4.6 remains available for generational VS bake-offs. Gemini 3.8 Flash slugs (`gemini-3.8-flash-low|medium|high`) are the active default; 3.7 Flash slugs (`gemini-3.7-flash-low|medium|high`) remain available for generational VS bake-offs. Older models (Grok 4.5, Gemini 3.5, 3.1 Pro) remain deprecated.
 
 Luna `xhigh` is permitted only for standalone single-turn volume or execution work. Never raise Luna to chase quality on complex code — it costs more than Sol `medium` for worse results.
 
@@ -34,7 +41,7 @@ Luna `xhigh` is permitted only for standalone single-turn volume or execution wo
 
 Per-route qualifiers:
 
-- **Codex** — `-m` takes the Sol/Terra/Luna ID above. The sandbox is a per-leg decision, not a property of the route: read-only for research and review, `workspace-write` only when the leg must edit files.
+- **Codex** — `-m` takes the Astra/Sol/Terra/Luna ID above. The sandbox is a per-leg decision, not a property of the route: read-only for research and review, `workspace-write` only when the leg must edit files.
 - **Grok** — pin `-m` to the registry ID; do not rely on the CLI default. Add `--disable-web-search` for code/engineering legs; omit it for live-X research. Read-only legs are contained by an explicit read-only prompt contract rather than a sandbox flag (see Permissions). `--permission-mode plan` is interactive-only. Never pass `--json-schema` on agentic legs. Run synchronously from a throwaway worktree. Effort spelling: CLI validates `--reasoning-effort` and hard-fails bad values with exit 1 listing `xhigh, high, medium, low` (verified 2026-08-15); the raw API instead silently downgrades unrecognized strings to `high` (practitioner-verified 2026-08-12) — that trap applies to non-CLI harnesses only. 4.7's API-side default is `high` and reasoning cannot be disabled. Context window is 500,000 tokens (re-pricing threshold cliff at 200,000 prompt tokens doubles pricing on all tokens).
 - **Antigravity** — `--print-timeout` defaults to 5m (0 waits indefinitely); raise it (e.g. `15m`) for deep sweeps. Write the prompt to a file and pass `-p "$(cat promptfile)"` rather than a heredoc. In headless runs, unconstrained prompts risk agy attempting shell commands, which are soft-denied to stderr causing empty stdout; always prepend an explicit tool rule (e.g. `TOOL RULE: use ONLY built-in web search and fetch tools; do NOT execute terminal or shell commands`) to prevent tool-denial empty deliverables.
 - **Advisor** — the `--system-prompt` body is fixed and non-optional; it lives in `fable-advisor.md` with the dossier discipline and launch-validation rules. Codex hosts must run this call outside the exec sandbox.
@@ -47,16 +54,19 @@ On a Claude host these run as subagents rather than CLI calls. The IDs are the s
 
 | Codename | Model ID | Role and caveats |
 |---|---|---|
-| Fable 5 | `claude-fable-5` | Advisor default; highest-stakes review escalation |
-| Opus 5 | `claude-opus-5` | Coding fallback and precision-review primary. Never `max` effort by default; do not route bulk or trivially simple legs here (verbosity/latency tax) |
-| Sonnet | `claude-sonnet-5` | Standard implementation, tests, docs, writing; batched bulk fallback |
+| Fable 5.1 | `claude-fable-5-1` | Advisor default for frontier architecture, security/trust boundaries, novel migrations |
+| Opus 5.5 | `claude-opus-5-5` | Pragmatic advisor and precision-review primary. Default `medium` effort; never `max` effort by default; economical ($4/$20) with high fidelity |
+| Sonnet 5 | `claude-sonnet-5` | Standard implementation, tests, docs, writing; batched bulk fallback |
+| Fable 5 (legacy) | `claude-fable-5` | Previous-generation advisor baseline |
+| Opus 5 (legacy) | `claude-opus-5` | Previous-generation precision-review baseline |
 
 ### Unverified gaps
 
-Two facts are not established. Treat them as open, and never fill them with a guess:
+One fact is not established. Treat it as open, and never fill it with a guess:
 
 - **Grok versions.** `grok models` lists `grok-4.7` (2026-09-26) as active default, offering `grok-4.6` and legacy `grok-4.5`. Pin `-m` to the registry ID, and confirm identity before blaming quality on the route — the result JSON's `modelUsage` object names the actually-served model (e.g. `grok-4.7`, observed 2026-09-26).
-- **Codex CLI version.** agy is verified at 1.2.11 (2026-09-26, Gemini 3.8 Flash) and Grok anchored at 1.0.41 (2026-09-26); the Codex CLI has no version anchor here. Record one in `routing-notes.local.md` when observed.
+
+*(Codex CLI version is verified at 0.157.1, 2026-09-26; agy is verified at 1.2.11, 2026-09-26; Grok anchored at 1.0.41, 2026-09-26).*
 
 ## Permissions
 

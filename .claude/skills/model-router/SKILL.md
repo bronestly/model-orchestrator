@@ -17,7 +17,7 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.33.0"
+  version: "0.34.0"
   updated: "2026-09-26"
 ---
 
@@ -30,30 +30,30 @@ Act as the orchestrator. Keep ambiguity resolution, consequential judgment, veri
 | Work | Primary | Fallback |
 |---|---|---|
 | Decomposition, high-stakes judgment, final integration | Main Claude context | Never delegate |
-| Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5 subagent, then Grok 4.7 `high` |
-| Independent critical review | Fresh Opus 5 subagent (precision primary; add a Codex Sol recall pass for correctness-critical diffs) | Fresh Fable subagent, then Codex Sol |
+| Complex agentic coding, hard debugging, precise code generation | Codex Sol (`gpt-6-sol` active; `medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5.5 subagent, then Grok 4.7 `high` |
+| Independent critical review | Fresh Opus 5.5 subagent (precision primary; add a Codex Sol recall pass for correctness-critical diffs) | Fresh Fable 5.1 subagent, then Codex Sol |
 | Live-X research, review/criticism sweeps, and bounded engineering legs (4.7 active default; 4.6 for bake-offs — see grok-delegation) | Grok 4.7 | Sonnet subagent plus web search |
 | General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Grok 4.7, then Sonnet subagent plus web search |
-| Bulk classification, extraction, or file reconnaissance | Antigravity (bulk tier) or Sol `low` (fast parallel scouting) | Luna (standalone volume), then batched Sonnet |
+| Bulk classification, extraction, or file reconnaissance | Antigravity (bulk tier) or Sol `low` (fast parallel scouting) | Luna (`gpt-6-luna` standalone volume), then batched Sonnet |
 | Standard implementation, tests, docs, or writing | Sonnet subagent | Terra (`medium` implement; `high` review) |
 
-Use the cheapest route that comfortably clears the quality bar — and count the orchestrator's own tier in that calculus: on a frontier-priced orchestrator (e.g. a Fable 5 session), mechanical or bulk work done in the main context is itself the expensive route. For routine judgment-light work that is not bulk, still stay in the main context instead of spending time on routing analysis.
+Use the cheapest route that comfortably clears the quality bar — and count the orchestrator's own tier in that calculus: on a frontier-priced orchestrator (e.g. a Fable 5.1 session), mechanical or bulk work done in the main context is itself the expensive route. For routine judgment-light work that is not bulk, still stay in the main context instead of spending time on routing analysis.
 
 The transcript is part of the price. A leg that can be written as a fresh, self-contained prompt — the delegation contract below is the test — does not need the transcript, and running it inline charges the whole transcript as overhead anyway; that overhead grows with every turn and compaction. After a compaction or a context-pressure warning, flip the default for bounded legs: fresh context (subagent or CLI) unless the leg genuinely needs the accumulated session. Judgment, ambiguity resolution, and final integration stay in the main context regardless — they are what the transcript is for.
 
-Opus 5 legs (trial, day-0 evidence 2026-07-24): default `medium`/`high` effort, never `max` by default; do not route bulk or trivially simple work to Opus 5 (verbosity/latency tax vs 4.8); never auto-enable fast mode on any provider.
+Opus 5.5 legs (adopted 2026-09-26): default `medium` effort (thinking cannot be disabled; $4/$20 per MTok; cache reads $0.20), never `max` by default; do not route bulk or trivially simple work to Opus 5.5; never auto-enable fast mode on any provider.
 
 Grok engineering legs (4.7 active default, adopted 2026-09-26): multi-file implement/fix legs continue under the standard delegation contract with 500k context. 4.7's larger base model and self-verification show substantial endurance gains on multi-hour tasks (Terminal-Bench 4.0 37.6%, DeepSWE 71.0%), but burn roughly 1.5–2× reasoning tokens vs 4.6 at high. Every Grok engineering leg maintains the verification gates in `references/grok-delegation.md` (git-status-vs-claims, orchestrator-run tests), and 4.6 remains available for generational VS bake-offs (`references/vs-mode.md`).
 
 Before an external CLI call, read [references/routing-reference.md](references/routing-reference.md). Then read only the provider reference selected by the route:
 
-- Codex Sol/Terra/Luna: [references/codex-delegation.md](references/codex-delegation.md)
+- Codex Sol/Terra/Luna/Astra: [references/codex-delegation.md](references/codex-delegation.md)
 - Grok engineering: [references/grok-delegation.md](references/grok-delegation.md)
 - Grok live-X research: [references/x-research.md](references/x-research.md)
 - Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
 - Explicit model comparison, including Sol with vs without the minimal-code contract: [references/vs-mode.md](references/vs-mode.md)
 
-Normal tasks must not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor plan review — a full-plan dossier for a consequential decision, returning a verdict plus implementor steering notes. The advisor model is Fable 5 by default; Opus 5 is available on request or for consequential-but-standard engineering calls, and both may be consulted (identical dossier each) when the user explicitly asks for a dual opinion. When the orchestrator is already the chosen advisor model (e.g. a Fable 5 session consulting Fable), the advisory is a fresh-context check — free of the transcript's sunk-cost framing but not an independent model's opinion; prefer the other advisor when independence is the point. On this host, prefer a native subagent with the chosen model over the CLI shape; the dossier, effort, and failure rules apply either way.
+Normal tasks must not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor plan review — a full-plan dossier for a consequential decision, returning a verdict plus implementor steering notes. The advisor model is Fable 5.1 by default; Opus 5.5 is available as a pragmatic codebase advisor, and both may be consulted (identical dossier each) when the user explicitly asks for a dual opinion. When the orchestrator is already the chosen advisor model (e.g. a Fable session consulting Fable), the advisory is a fresh-context check — free of the transcript's sunk-cost framing but not an independent model's opinion; prefer the other advisor when independence is the point. On this host, prefer a native subagent with the chosen model over the CLI shape; the dossier, effort, and failure rules apply either way.
 
 ## Delegation contract
 
@@ -135,3 +135,4 @@ Entries below are a dated historical record of what changed at each version, not
 - **2026-08-27 · v0.31.0:** Updated Antigravity route to exclusively use Gemini 3.7 Flash (`gemini-3.7-flash-low|medium|high`); smoke-tested against agy 1.1.22. Removed all older model references.
 - **2026-09-26 · v0.32.0:** Upgraded Antigravity route from Gemini 3.7 Flash to Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`, smoke-tested on agy 1.2.11). Grounding and prompting rules updated in `references/antigravity-research.md` (native internal reasoning trust, no manual step-by-step overprompting, context-first ordering, headless tool rules to avoid shell auto-denial). Archived 3.7 empirical findings into a distinct historical baseline; separated calibration records by model generation; added generational transition VS mode protocol in `references/vs-mode.md` so the 3.8 track record is built through empirical comparison rather than inherited 3.7 assumptions.
 - **2026-09-26 · v0.33.0:** Upgraded Grok route from Grok 4.6 to Grok 4.7 (`grok-4.7`, smoke-tested on Grok Build CLI 1.0.41 via RelayModels). Completed an in-depth Grok 4.7 research sweep (`model-router-workspace/research-2026-09-26/grok47-steering-report.md`) establishing 500k context (200k prompt pricing threshold), larger base model architecture, and ~1.5–2× reasoning token burn profile at `high`/`xhigh`. Updated `references/grok-delegation.md` with 4.7 steering: concise constraint-heavy prompts, defining done with observables, negative constraint lists, anti-bloat rules (no unsolicited helper layers or repeated components), review contract (max 5 defects with concrete repros, no speculative nits), cost/token awareness. Retained false-completion git-status gate and orchestrator-run tests. Added Grok 4.7 vs 4.6 generational bake-off protocol in `references/vs-mode.md`.
+- **2026-09-26 · v0.34.0:** Integrated Codex GPT-6 family (`gpt-6-sol` active workhorse, `gpt-6-luna` fast tier, `gpt-6-astra` frontier orchestrator test; smoke-tested on Codex CLI 0.157.1) and Claude 5.1/5.5 advisor generation (`claude-fable-5-1`, `claude-opus-5-5`; smoke-tested on Claude Code 2.1.283). Verified Codex CLI model catalog: `gpt-6-sol` active coding workhorse with mid-turn dynamic reasoning updates, `gpt-6-astra` frontier intelligence permitted for testing as an orchestrator (`codex -m gpt-6-astra`) while delegating bounded execution legs. Verified Claude model catalog: `claude-opus-5-5` ($4/$20 per MTok; $0.20 cache read; default `medium` effort) added as first-class pragmatic codebase and review advisor alongside frontier `claude-fable-5-1`. Modernized `references/fable-advisor.md` system prompt and dossier templates in accordance with official Anthropic prompt-audit guidelines (neutral authoritative framing, removal of negative pressure language, removal of arbitrary numeric bullet clamps).
