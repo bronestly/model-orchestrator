@@ -7,7 +7,7 @@ not an application. There is no build system.
 
 - `.claude/skills/model-router/SKILL.md` — Claude adapter; read it fully before editing.
 - `.claude/skills/model-router/adapters/codex.md` — Codex adapter source.
-- `.claude/skills/model-router/adapters/grok.md` — Grok 4.6 adapter source.
+- `.claude/skills/model-router/adapters/grok.md` — Grok adapter source.
 - `.grok/skills/model-router/` — discovery shim for Grok Build in this repo;
   edit `adapters/grok.md`, not the shim.
 - `.claude/skills/model-router/references/routing-reference.md` — the **capability
@@ -37,8 +37,8 @@ not an application. There is no build system.
   and `sync.ps1` refuse to install otherwise. Widening the allowlist is a
   permission-posture decision — get the owner's agreement, don't do it silently to
   make the guard pass.
-- Preserve the Sol-high-first Codex workflow, the Grok-4.6-first Grok
-  workflow, and rare Fable triggers in `references/fable-advisor.md`
+- Preserve the Sol-high-first Codex workflow, the Grok-first Grok
+  workflow (4.7 active default; 4.6 for bake-offs), and rare Fable triggers in `references/fable-advisor.md`
   (architecture / twice-failed approach / rare overbuild taste; plus
   optional VS taste check — not a default on every Sol write).
 - Sol/Terra implement/fix legs must include the **minimal-code contract**

@@ -24,7 +24,8 @@ not an application. There is no build system.
 
 - Edit repository sources, never an installed package.
 - Keep Sol high as Codex's planner, executor, verifier, and final synthesizer.
-- Keep Grok 4.6 as Grok Build's planner, executor, verifier, and final synthesizer.
+- Keep Grok (4.7 active default, 4.6 available for bake-offs) as Grok Build's
+  planner, executor, verifier, and final synthesizer.
 - Delegate only independently bounded work with a clear advantage.
 - When Sol (or Terra) implements or fixes code — main session or delegated —
   apply the **minimal-code contract** from `references/codex-delegation.md`.

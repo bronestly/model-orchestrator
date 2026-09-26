@@ -8,7 +8,7 @@ only when they offer a clear advantage.
 
 - `.claude/skills/model-router/SKILL.md` — thin Claude adapter.
 - `.claude/skills/model-router/adapters/codex.md` — thin Codex adapter source.
-- `.claude/skills/model-router/adapters/grok.md` — thin Grok 4.6 adapter source.
+- `.claude/skills/model-router/adapters/grok.md` — thin Grok adapter source.
 - `.grok/skills/model-router/` — discovery shim so Grok Build in this repo
   loads the Grok adapter instead of the Claude project skill. Edit
   `adapters/grok.md`, not the shim.

@@ -93,18 +93,23 @@ The 4.6 engineering row was widened on 2026-08-15 with deliberately liberal stee
 - A second-generation steering bake-off (Grok 4.6 bare vs Grok 4.6 + the legacy 4.5 hardening rules in `grok-delegation.md`) follows the same-model prompt-variant protocol above; run it only after bare-4.6 legs have produced at least one recurring defect worth testing a guardrail against.
 - Re-tightening the routing row (or promoting 4.5-era rules back to default) goes through the approval-gated flow below, citing the accumulated events.
 
-## Generational model transition bake-offs (e.g. Gemini 3.7 vs 3.8 Flash)
+## Generational model transition bake-offs (e.g. Grok 4.6 vs 4.7, Gemini 3.7 vs 3.8 Flash)
 
-When upgrading a route to a new model generation (such as Gemini 3.7 Flash → 3.8 Flash), do not carry over historical failure assumptions or prompt workarounds without empirical testing. Use VS mode to test the new generation against the old:
+When upgrading a route to a new model generation (such as Grok 4.6 → 4.7 or Gemini 3.7 Flash → 3.8 Flash), do not carry over historical failure assumptions or prompt workarounds without empirical testing. Use VS mode to test the new generation against the old:
 
-1. **Protocol:** Send an identical research or bulk prompt to both models (e.g. `gemini-3.7-flash-medium` vs `gemini-3.8-flash-medium`) using the standard registry invocation shape.
-2. **Evaluation focus:**
+1. **Protocol:** Send an identical task, coding brief, or research prompt to both models (e.g. `grok-4.6` vs `grok-4.7` at `--reasoning-effort medium`, or `gemini-3.7-flash-medium` vs `gemini-3.8-flash-medium`) using the standard registry invocation shape.
+2. **Evaluation focus for Grok 4.6 vs 4.7:**
+   - **Task-Completion Honesty vs Narrative:** Does 4.7 deliver 100% of required fields/deliverables, or does its self-check training merely produce more convincing summaries of incomplete work?
+   - **Token Consumption & Cost Ratio:** Measure actual reasoning and output tokens consumed. 4.7 burns ~1.5–2× tokens at `high` and `xhigh` is a significant extra step; verify whether the quality gain justifies the token surge for bounded tasks.
+   - **Code Minimalism & Component Structure:** Does 4.7 avoid unsolicited helper modules, repeated components, or scope creep?
+   - **Long-Horizon Endurance & Bug Repair:** Test multi-file or multi-step logic tasks where 4.7 claims large benchmark jumps (DeepSWE, Terminal-Bench).
+3. **Evaluation focus for Gemini 3.7 vs 3.8 Flash:**
    - **Citation & Link Fidelity:** Does 3.8 Flash eliminate 3.7's tendency to reconstruct 404 deep links or fall back to generic homepages?
    - **Factual Hallucination / Mechanism Invention:** Check whether plausible-sounding but fabricated technical mechanisms (observed in 3.7) persist in 3.8.
    - **Reasoning Depth & Speed:** Measure latency and output quality across effort levels (`low`, `medium`, `high`).
    - **Tool Discipline:** Check whether 3.8 respects prompt tool constraints without attempting unapproved shell commands.
-3. **Scoring & Ledger:** Record the unblinded scorecard in `<state-repo>/events/YYYY/MM/<timestamp>-<device-id>.md` or `routing-notes.local.md`, clearly tagging candidate versions (`gemini-3.7-flash-<effort>` vs `gemini-3.8-flash-<effort>`).
-4. **Calibration Separation:** Keep track records strictly partitioned by model version. Lessons learned for 3.7 remain archived under 3.7; lessons for 3.8 must be earned through empirical 3.8 or 3.7-vs-3.8 VS runs.
+4. **Scoring & Ledger:** Record the unblinded scorecard in `<state-repo>/events/YYYY/MM/<timestamp>-<device-id>.md` or `routing-notes.local.md`, clearly tagging candidate versions (`grok-4.6-<effort>` vs `grok-4.7-<effort>`).
+5. **Calibration Separation:** Keep track records strictly partitioned by model version. Lessons learned for 4.6 remain archived under 4.6; lessons for 4.7 must be earned through empirical 4.7 or 4.6-vs-4.7 VS runs.
 
 ## Self-improvement (approval-gated)
 

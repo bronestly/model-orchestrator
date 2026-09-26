@@ -1,36 +1,37 @@
-# When delegating to Grok 4.6
+# When delegating to Grok (4.7 active default; 4.6 baseline)
 
 Loaded on demand from SKILL.md's "Route selection". The launch command, model ID, and effort ladder live in the `routing-reference.md` capability registry — this file carries prompt steering and failure forensics only.
 
-Grounding: Grok 4.6 launch-week X sweep + xAI docs/model card, 2026-08-15 (full report: `model-orchestrator/model-router-workspace/research-2026-08-15/grok46-launch-steering-report.md`; launch-week sample, n≈1 per claim — expect revisions). The 4.5-era steering below is deliberately **demoted to an opt-in appendix**: the 4.6 trial starts liberal so that VS runs and calibration events, not inherited caution, decide what hardening 4.6 actually needs.
+Grounding: Grok 4.7 launch sweep + xAI docs/pricing/benchmarks, 2026-09-26 (full report: `model-orchestrator/model-router-workspace/research-2026-09-26/grok47-steering-report.md`) and Grok 4.6 launch baseline (report: `model-orchestrator/model-router-workspace/research-2026-08-15/grok46-launch-steering-report.md`). Grok 4.7 is the active default with Grok 4.6 retained for generational VS bake-offs (`references/vs-mode.md`). The 4.5-era steering remains an opt-in appendix.
 
-## 4.6 steering baseline (liberal trial)
+## 4.7 steering baseline (active default)
 
-The standard delegation contract (goal, MUST/NEVER, success criteria, scope lock, stop rule, structured result) still applies — that is host-level discipline, not 4.5 hardening. On top of it, only what launch-week evidence supports:
+The standard delegation contract (goal, MUST/NEVER, success criteria, scope lock, stop rule, structured result) still applies — that is host-level discipline, not model hardening. On top of it, what empirical 4.7 research confirms:
 
-1. **Say what done means.** Enumerate acceptance criteria explicitly; without them 4.6 decides for itself and will invent "done" (xAI field guide, @ericzakariasson 2026-08-12: "write the acceptance criteria down instead of trusting a summary that says it's done").
-2. **No pep talk.** "Work very hard / keep pushing" measurably changed nothing; 4.6 persists on its own. Prompt length buys specificity only — write long when you have a spec, short when you want the model's taste.
-3. **Enumerate every deliverable, including tests.** 4.6 does exactly what you asked and nothing more ("a bit lazy, like old opus" — @sawyerhood; it will not volunteer test harnesses the way Opus 5 does — @ckpooldev). Unlisted deliverables silently don't happen.
-4. **Give it a verification surface, phrased look-then-fix.** "Run the app/tests, list what is wrong, fix only those things" worked where abstract "improve X" failed. For UI legs, provide a DOM/screenshot path; for anything the harness cannot observe, the orchestrator is the verifier.
-5. **UI legs: tell it to split repeated components** — it repeats itself in components unless asked not to.
-6. **Thoroughness on demand:** if a leg needs edge-case depth, either list the edge cases or plan a follow-up adversarial review pass (one practitioner pattern: an Opus adversarial reviewer clears the laziness in one round).
+1. **Say what done means as observables.** Enumerate acceptance criteria explicitly (which commands must exit 0, which tests/assertions must pass, which file paths may change). 4.7's self-verification RL makes its completion narrative more persuasive, but narrative is not evidence.
+2. **No pep talk.** "Work very hard / keep pushing" measurably changed nothing across 4.6 and 4.7; 4.7 persists on its own. Prompt length buys specificity only — write long when you have an exact spec, short when you want the model's taste. Vague length hurts instruction following.
+3. **Enumerate every deliverable, including tests.** Grok does exactly what you asked and does not volunteer extra test harnesses, abstractions, or refactors. Unlisted deliverables silently don't happen.
+4. **Negative constraints as a literal, testable list.** Put anti-bloat rules directly in MUST/NEVER: "Do not add helper files/modules. Do not add unasked abstractions. Do not touch files outside scope. Do not duplicate components (split/reuse instead)."
+5. **Give it a verification surface, phrased look-then-fix.** "Run the app/tests, list what is wrong, fix only those things" worked where abstract "improve X" failed. For UI legs, provide a DOM/screenshot path; for anything the harness cannot observe, the orchestrator is the verifier.
+6. **Review legs contract (cap at 5 concrete defects).** Prompt: "Report defects that fail a stated invariant, a test, a type error, or a concrete input. Cap at 5. Include file and line, the broken behavior, and one command that triggers it. Skip style, naming, and speculative hardening." Self-check training creates confident commentary; unconstrained review prompts hallucinate noisy nitpicks.
+7. **Token burn & effort realism.** 4.7 burns ~1.5–2× reasoning tokens vs 4.6 at `high`. `xhigh` is a significant extra cost step (~81k output tokens on benchmark tasks); never select `xhigh` automatically. Context window is 500k, but crossing 200k prompt tokens doubles pricing on all tokens. Temperature: 0.0–0.3 for code/math. Do not pass `stop` or presence/frequency penalties (API errors).
 
 ## Effort
 
-Ladder and defaults are in the registry. 4.6 context: the API's own default is `high` and reasoning cannot be disabled; the 4.5-era quota argument for blanket `low` is retired. `xhigh` is practitioner-verified as a real step up on hard problems ("worth the extra time and tokens" — @ckpooldev; independent bug-bench 27/105 at `xhigh` vs 4.5's best 17) but stays never-automatic — propose it to the user for genuinely hard legs. Spell efforts exactly; see the enum-downgrade gotcha in the registry.
+Ladder and defaults are in the registry. 4.7 context: the API's own default is `high` and reasoning cannot be disabled. Skill default for bounded engineering and review legs is **`medium`** (conserving tokens while preserving reasoning depth); select `high` for deep multi-file implement or research sweeps. `xhigh` is never automatic — propose it only for genuinely hard legs where quality outranks token cost. Spell efforts exactly (`low, medium, high, xhigh`); see the enum-downgrade gotcha in the registry.
 
 ## Verification gates (kept — not 4.5 legacy)
 
-These stay default under the liberal trial because launch-week evidence shows the risks **persist or worsened** in 4.6:
+These stay default because 4.7's improved self-verification does not eliminate task-level completion risk:
 
-- **False completion persists.** Rippling's 2,100-run bench caught 4.6 "returning 54% of the required fields, but asserting 100%" (@stanine 2026-08-14); the xAI field guide's own author distrusts the completion summary. Gate unchanged: diff `git status --short` in the worker's workspace against what the report claims — mismatch = failed leg, no partial credit. Anything merge-bound gets its tests re-run by the orchestrator or a second model, never integrated on self-report.
-- **Hallucination rate worsened** on xAI's own card (0.98% → 1.7% vs 4.5). Factual claims in Grok output keep needing corroboration.
+- **False completion persists.** 4.7 writes more polished self-checks, but completion claims still require independent proof. Gate unchanged: diff `git status --short` in the worker's workspace against what the report claims — mismatch = failed leg, no partial credit. Anything merge-bound gets its tests re-run by the orchestrator or a second model, never integrated on self-report.
+- **Factuality & grounding.** Knowledge cutoff is May 2026; live facts require search tools. Corroborate factual claims or label them unverified.
 - **Destructive recovery ban** stays in every write-capable prompt (host-level rule): recovery belongs to the orchestrator.
-- Not cheaper per task despite unchanged list price: tokens and latency rose vs 4.5 in several independent benches (median 71s → 131s on RipplingBench). Budget leg timeouts generously and watch cost per leg, not per token.
+- Budget leg timeouts generously (client timeout 3600s in xAI examples); tight foreground timeouts kill healthy reasoning runs.
 
-## Calibration duty (the price of the liberal trial)
+## Calibration duty
 
-Every 4.6 engineering leg that materially wins, loses, or trips a gate gets a calibration observation; recurring defects trigger the bare-4.6 vs +legacy-hardening bake-off in `references/vs-mode.md`. "No surprises" legs need no entry.
+Every 4.7 engineering leg that materially wins, loses, or trips a gate gets a calibration observation; generational comparisons against 4.6 follow the bake-off protocol in `references/vs-mode.md`. "No surprises" legs need no entry.
 
 ## Headless write-leg discipline (forensic RCA 2026-07-23, updated 2026-07-28)
 

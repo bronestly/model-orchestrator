@@ -17,7 +17,7 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.32.0"
+  version: "0.33.0"
   updated: "2026-09-26"
 ---
 
@@ -30,10 +30,10 @@ Act as the orchestrator. Keep ambiguity resolution, consequential judgment, veri
 | Work | Primary | Fallback |
 |---|---|---|
 | Decomposition, high-stakes judgment, final integration | Main Claude context | Never delegate |
-| Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5 subagent, then Grok 4.6 `high` |
+| Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5 subagent, then Grok 4.7 `high` |
 | Independent critical review | Fresh Opus 5 subagent (precision primary; add a Codex Sol recall pass for correctness-critical diffs) | Fresh Fable subagent, then Codex Sol |
-| Live-X research, review/criticism sweeps, and bounded engineering legs (4.6 liberal trial — see grok-delegation) | Grok 4.6 | Sonnet subagent plus web search |
-| General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Grok 4.6, then Sonnet subagent plus web search |
+| Live-X research, review/criticism sweeps, and bounded engineering legs (4.7 active default; 4.6 for bake-offs — see grok-delegation) | Grok 4.7 | Sonnet subagent plus web search |
+| General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Grok 4.7, then Sonnet subagent plus web search |
 | Bulk classification, extraction, or file reconnaissance | Antigravity (bulk tier) or Sol `low` (fast parallel scouting) | Luna (standalone volume), then batched Sonnet |
 | Standard implementation, tests, docs, or writing | Sonnet subagent | Terra (`medium` implement; `high` review) |
 
@@ -43,7 +43,7 @@ The transcript is part of the price. A leg that can be written as a fresh, self-
 
 Opus 5 legs (trial, day-0 evidence 2026-07-24): default `medium`/`high` effort, never `max` by default; do not route bulk or trivially simple work to Opus 5 (verbosity/latency tax vs 4.8); never auto-enable fast mode on any provider.
 
-Grok 4.6 engineering legs (liberal trial, opened 2026-08-15): the 4.5-era single-file-only cap is retired — multi-file implement/fix legs are allowed under the standard delegation contract. The trial's price is evidence: every Grok 4.6 engineering leg gets the verification gates in `references/grok-delegation.md` (git-status-vs-claims, orchestrator-run tests), and material wins or losses are recorded to calibration so VS runs can re-tighten the row if 4.6 re-earns the old restriction.
+Grok engineering legs (4.7 active default, adopted 2026-09-26): multi-file implement/fix legs continue under the standard delegation contract with 500k context. 4.7's larger base model and self-verification show substantial endurance gains on multi-hour tasks (Terminal-Bench 4.0 37.6%, DeepSWE 71.0%), but burn roughly 1.5–2× reasoning tokens vs 4.6 at high. Every Grok engineering leg maintains the verification gates in `references/grok-delegation.md` (git-status-vs-claims, orchestrator-run tests), and 4.6 remains available for generational VS bake-offs (`references/vs-mode.md`).
 
 Before an external CLI call, read [references/routing-reference.md](references/routing-reference.md). Then read only the provider reference selected by the route:
 
@@ -134,3 +134,4 @@ Entries below are a dated historical record of what changed at each version, not
 - **2026-08-15 · v0.30.0:** Opened the Grok 4.6 liberal trial off a launch-week X sweep + xAI docs (report: `model-router-workspace/research-2026-08-15/grok46-launch-steering-report.md`; run by Grok 4.6 itself, native X search 429-limited so prevalence is weak). Retired the 4.5-era single-file-only engineering cap in both worker rows — consistent with calibration (4.5/4.6 `high` won blinded implement VS runs 08-05 and 08-11), not just vendor claims. `grok-delegation.md` rebuilt: liberal 4.6 baseline (say-what-done-means acceptance criteria, no pep-talk prompting, enumerate all deliverables incl. tests — 4.6 does exactly what's asked and won't volunteer more, look-then-fix verification loops, split-components hint); the 4.5 ten-rules/security hardening and review rubric demoted to an opt-in appendix applied only after a bare-4.6 leg exhibits the matching defect. Kept as default: false-completion git-status gate and orchestrator-run tests (Rippling caught 4.6 asserting 100% on 54% of fields; card hallucination rate worsened 0.98%→1.7%). Registry: engineering effort default moves `low`→`medium` (`high` for multi-file/sweeps; API default is `high`, reasoning non-disableable), exact-spelling rule for `xhigh` (API silently downgrades bad enums to `high`; smoke test same day: CLI 1.0.3 hard-fails bad values with exit 1, so the trap is non-CLI-harness-only), long-runtime gotcha (latency ~doubled vs 4.5), and `modelUsage` in the result JSON as the served-model identity check. `vs-mode.md` gains the trial's feedback loop: suggest Grok-as-candidate VS on overlapping rows, log material wins/losses/gate-trips as calibration events, bare-4.6 vs +legacy-hardening bake-off once a defect recurs, approval-gated re-tightening.
 - **2026-08-27 · v0.31.0:** Updated Antigravity route to exclusively use Gemini 3.7 Flash (`gemini-3.7-flash-low|medium|high`); smoke-tested against agy 1.1.22. Removed all older model references.
 - **2026-09-26 · v0.32.0:** Upgraded Antigravity route from Gemini 3.7 Flash to Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`, smoke-tested on agy 1.2.11). Grounding and prompting rules updated in `references/antigravity-research.md` (native internal reasoning trust, no manual step-by-step overprompting, context-first ordering, headless tool rules to avoid shell auto-denial). Archived 3.7 empirical findings into a distinct historical baseline; separated calibration records by model generation; added generational transition VS mode protocol in `references/vs-mode.md` so the 3.8 track record is built through empirical comparison rather than inherited 3.7 assumptions.
+- **2026-09-26 · v0.33.0:** Upgraded Grok route from Grok 4.6 to Grok 4.7 (`grok-4.7`, smoke-tested on Grok Build CLI 1.0.41 via RelayModels). Completed an in-depth Grok 4.7 research sweep (`model-router-workspace/research-2026-09-26/grok47-steering-report.md`) establishing 500k context (200k prompt pricing threshold), larger base model architecture, and ~1.5–2× reasoning token burn profile at `high`/`xhigh`. Updated `references/grok-delegation.md` with 4.7 steering: concise constraint-heavy prompts, defining done with observables, negative constraint lists, anti-bloat rules (no unsolicited helper layers or repeated components), review contract (max 5 defects with concrete repros, no speculative nits), cost/token awareness. Retained false-completion git-status gate and orchestrator-run tests. Added Grok 4.7 vs 4.6 generational bake-off protocol in `references/vs-mode.md`.

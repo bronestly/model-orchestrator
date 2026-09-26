@@ -1,11 +1,11 @@
 ---
 name: model-router
-description: "Routes and executes substantial multi-model work from a Grok 4.6 session. Use when the user asks to route, delegate, compare models, consult Fable, conserve limits, or when a task has an independently bounded bulk, web-research, implementation, or review leg with a clear model advantage. Skip routine single-model work and trivial tasks."
+description: "Routes and executes substantial multi-model work from a Grok session (4.7 active default; 4.6 for bake-offs). Use when the user asks to route, delegate, compare models, consult Fable, conserve limits, or when a task has an independently bounded bulk, web-research, implementation, or review leg with a clear model advantage. Skip routine single-model work and trivial tasks."
 ---
 
 # Model Router — Grok Adapter
 
-Keep Grok 4.6 as the primary planner, executor, verifier, and integrator. Delegate only an independently bounded leg with a clear cost, speed, context, or independent-review advantage. Task length and file count alone do not justify delegation.
+Keep Grok (4.7 active default; 4.6 for generational bake-offs) as the primary planner, executor, verifier, and integrator. Delegate only an independently bounded leg with a clear cost, speed, context, or independent-review advantage. Task length and file count alone do not justify delegation.
 
 Grok is a frontier-priced host and quota is the binding constraint: bulk or mechanical work done in this main context is itself the expensive route. Do not nest a second Grok CLI loop for Grok-shaped work — live-X, judgment, and integrated coding stay here. A fresh Grok CLI leg is only for transcript-tax after a compaction or context-pressure warning, when the leg can be written as a self-contained prompt.
 
@@ -26,7 +26,7 @@ When **you** (Grok main) implement or fix code, apply the steering in `reference
 | General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Main Grok (web tools), then web research in main context |
 | Parallel independent legs explicitly permitted by the user/environment | Native Grok subagents | External CLIs or sequential main-context work |
 
-Do not send live-X research or a Grok engineering worker-leg to a nested Grok CLI from this host — that is the same model. Other hosts' Grok-worker steering (`references/grok-delegation.md`, 4.6 liberal trial) applies when another host delegates *to* Grok, not to Grok-as-host.
+Do not send live-X research or a Grok engineering worker-leg to a nested Grok CLI from this host — that is the same model. Other hosts' Grok-worker steering (`references/grok-delegation.md`) applies when another host delegates *to* Grok, not to Grok-as-host.
 
 Before an external worker call, read [references/routing-reference.md](references/routing-reference.md) — its capability registry is the only place model IDs, invocation shapes, and effort ladders are stated. Then read only the chosen provider reference, which carries judgment and failure modes rather than command shapes:
 
