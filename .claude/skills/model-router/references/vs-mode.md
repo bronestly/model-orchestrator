@@ -93,6 +93,19 @@ The 4.6 engineering row was widened on 2026-08-15 with deliberately liberal stee
 - A second-generation steering bake-off (Grok 4.6 bare vs Grok 4.6 + the legacy 4.5 hardening rules in `grok-delegation.md`) follows the same-model prompt-variant protocol above; run it only after bare-4.6 legs have produced at least one recurring defect worth testing a guardrail against.
 - Re-tightening the routing row (or promoting 4.5-era rules back to default) goes through the approval-gated flow below, citing the accumulated events.
 
+## Generational model transition bake-offs (e.g. Gemini 3.7 vs 3.8 Flash)
+
+When upgrading a route to a new model generation (such as Gemini 3.7 Flash → 3.8 Flash), do not carry over historical failure assumptions or prompt workarounds without empirical testing. Use VS mode to test the new generation against the old:
+
+1. **Protocol:** Send an identical research or bulk prompt to both models (e.g. `gemini-3.7-flash-medium` vs `gemini-3.8-flash-medium`) using the standard registry invocation shape.
+2. **Evaluation focus:**
+   - **Citation & Link Fidelity:** Does 3.8 Flash eliminate 3.7's tendency to reconstruct 404 deep links or fall back to generic homepages?
+   - **Factual Hallucination / Mechanism Invention:** Check whether plausible-sounding but fabricated technical mechanisms (observed in 3.7) persist in 3.8.
+   - **Reasoning Depth & Speed:** Measure latency and output quality across effort levels (`low`, `medium`, `high`).
+   - **Tool Discipline:** Check whether 3.8 respects prompt tool constraints without attempting unapproved shell commands.
+3. **Scoring & Ledger:** Record the unblinded scorecard in `<state-repo>/events/YYYY/MM/<timestamp>-<device-id>.md` or `routing-notes.local.md`, clearly tagging candidate versions (`gemini-3.7-flash-<effort>` vs `gemini-3.8-flash-<effort>`).
+4. **Calibration Separation:** Keep track records strictly partitioned by model version. Lessons learned for 3.7 remain archived under 3.7; lessons for 3.8 must be earned through empirical 3.8 or 3.7-vs-3.8 VS runs.
+
 ## Self-improvement (approval-gated)
 
 After every VS run, compare the scorecard's `routing_implication` against the routing table **and** against the Sol minimal-code / plan→execute guidance in `codex-delegation.md`:
