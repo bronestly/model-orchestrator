@@ -85,6 +85,12 @@ For Sol/Terra **write** legs, also reject **code bloat** as a failed deliverable
 - Spot-check: any new helper used only once should usually have been inlined.
 - Require `git diff --stat` (or equivalent) in evidence when files changed.
 
+For **review** legs, also reject **review bloat / ungrounded nits** as a failed deliverable:
+
+- Findings must stay within the pinned diff range (`git diff <base>...<head>`); reject critiques of untouched lines.
+- Reject speculative nits lacking a concrete failure scenario or repro command; re-prompt under the `Code-review contract`.
+- Require structured output with severity (P0/P1/P2) and file:line citations; if no blocking defects exist, require explicit `VERDICT: APPROVE (No blocking issues found)`.
+
 For high-risk work, require a fresh review from another model family where practical. The orchestrator remains responsible for the final decision.
 
 ## Known route failures

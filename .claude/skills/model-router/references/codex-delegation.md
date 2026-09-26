@@ -64,12 +64,42 @@ Skip the split for single-file, well-specified fixes — go straight to Sol `med
 
 **VS validation:** same-model bake-off (baseline vs +contract) is defined in `vs-mode.md`. Prefer measuring the contract alone before stacking plan→execute as a second confound.
 
+8. **Review pedantry / inability to approve** (Sottiaux et al., CodeRabbit 2026): OpenAI trained Codex review on the same base weights with dedicated evaluator training, intentionally trading recall to drop false alarms. But unconstrained Codex still over-reports: CodeRabbit measured Sol achieving 69.7% recall (+7.4pp) at the cost of 31.6% precision (231 comments and 61 nitpicks). Without a contract, Sol invents style critiques, comments on untouched lines, and refuses to approve clean code. Steer explicitly along the precision curve: mandate P0/P1 only with repro commands, strictly pin the diff range (`git diff <base>...<head>`), and enforce the clean-bill-of-health rule.
+
+### Code-review contract (paste into every Sol/Terra/Astra code review prompt)
+
+```text
+## Code-review contract (MUST)
+- Pinned diff scope: Review ONLY the explicitly provided diff range (git diff <base>...<head>) and direct callers/callees. Do NOT critique untouched code or suggest drive-by refactors.
+- Repro-backed findings ("Prove It" rule): Every reported issue MUST include:
+  1) Exact file and line number.
+  2) Concrete failure scenario: trigger input, execution path, and resulting failure state.
+  3) Reproducible test or command that proves the failure.
+  4) Minimal fix (1–3 lines).
+  If you cannot construct a concrete failure trace and repro command, DO NOT report it.
+- Strict severity tiers:
+  * P0 (Blocking): Crashes, data corruption, auth/security bypass, race conditions, breaking API changes.
+  * P1 (Important): Logic errors, performance regressions on realistic workloads, unhandled edge cases.
+  * P2 (Advisory): Genuine maintainability concerns (strictly capped at 2 comments max).
+  * FORBIDDEN: Cosmetic nits, whitespace/formatting, and alternative style preferences.
+- Clean bill of health: If no P0 or P1 bugs exist, explicitly return "VERDICT: APPROVE (No blocking issues found)". Do not invent suggestions to fill space.
+- Noise clamp: Maximum 5 total issues reported per review. Rank strictly by severity.
+- Read-only sandbox: Do not modify files, run destructive commands, or spawn subagents.
+```
+
 ## Within-family choice
 
-- **Sol (`gpt-6-sol`, active; `gpt-5.6-sol`, baseline)** — the default Codex workhorse, at `medium` (or `low` when conserving). `gpt-6-sol` supports dynamic reasoning-effort updates and 272k/872k context. Sol `low` ("Light") is first-class for fast parallel scouting/recon because Sol low overthinks far less than smaller models.
-- **Astra (`gpt-6-astra`)** — frontier intelligence tier. High per-token cost; reserved for testing Codex as an **orchestrator** (`codex -m gpt-6-astra`) for high-level architecture and multi-leg decomposition, delegating implementation legs to Sol/Terra.
+- **Sol (`gpt-6-sol`, active; `gpt-5.6-sol`, baseline)** — the default Codex workhorse, at `medium` (or `low` when conserving). `gpt-6-sol` supports dynamic reasoning-effort updates and 272k/872k context. Sol `low` ("Light") is first-class for fast parallel scouting/recon because Sol low overthinks far less than smaller models. For code review: Sol `medium` is the fast, cost-effective daily driver (~10× cheaper per bug hunt than 5.6 Sol; Huryn 2026). For high-stakes correctness where missing a bug is costly, retain `gpt-5.6-sol` at `high` or escalate to Astra.
+- **Astra (`gpt-6-astra`)** — frontier intelligence tier. High per-token cost; reserved for testing Codex as an **orchestrator** (`codex -m gpt-6-astra`) for high-level architecture and multi-leg decomposition, delegating implementation legs to Sol/Terra. In code review: Astra catches the highest number of subtle bugs (Huryn 2026: 45 vs Sol 6's 29.3 on 105 hidden bugs), making it the frontier escalation for critical security/concurrency reviews.
 - **Terra (`gpt-5.6-terra`)** — balanced implementer: earns its keep on (1) well-specified implement *after a plan exists* at `medium`, and (2) review secondary legs at `high` — never as a default, not for design work, not for hard debugging.
 - **Luna (`gpt-6-luna`, active; `gpt-5.6-luna`, baseline)** — worker-tier: recon, mechanical edits, review drafts, bulk extraction. Never design work or ambiguous multi-ticket queues. **Topology restriction:** Luna does NOT support multi-agent v2 tools — use Terra or Sol for subagent trees. This is what confines Luna to the standalone single-turn work its registry ladder describes.
+
+### Asymmetric dual-pass review pattern
+
+The strongest industry review pairing is asymmetric across model families (Cross-Model LLM Code Review 2026):
+1. **Precision & architectural intent:** Claude Opus 5.5 subagent verifies overall architecture, intent, and maintainability with high signal and low false-alarm noise.
+2. **Edge-case recall & proof:** Codex Sol (`gpt-6-sol` medium or `gpt-5.6-sol` high) under the code-review contract stress-tests concurrency, boundary values, error branches, and requires a concrete failing command.
+Merge findings that provide a verified repro command; discard speculative nits.
 
 ## Harness notes (2026-07-13)
 

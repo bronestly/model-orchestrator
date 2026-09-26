@@ -84,6 +84,22 @@ Rules:
 - One Fable call max per VS run; on any failure, skip (same as fable-advisor Failure policy).
 - User-facing summary: unblind A/B, **bold the winner**, and if Fable ran, state whether it agreed with the primary reviewer.
 
+### Code-review bake-off protocol
+
+Use this when validating review steering (e.g. Sol baseline review vs Sol + `code-review contract`) or comparing reviewer models (e.g. `gpt-6-sol` vs `claude-opus-5-5` vs `grok-4.7`).
+
+1. **Test target:** Select a real PR or multi-file diff containing:
+   - 1–2 real logic, concurrency, or edge-case defects (ground-truth target bugs).
+   - Clean, working code that invites cosmetic or stylistic nitpicking.
+   - Pinned diff: Provide exact `git diff <base>...<head>` and repository context; never pass an open-ended review prompt.
+2. **Review metrics (recorded in the event scorecard):**
+   - `true_positives`: real reproducible bugs found (P0/P1).
+   - `false_positives`: hallucinated defects or invalid failure claims.
+   - `noise_count`: cosmetic, formatting, or stylistic nits.
+   - `repro_quality`: percentage of reported bugs accompanied by an executable repro command or concrete failure trace.
+   - `clean_approval`: correctly returned `VERDICT: APPROVE` when clean.
+3. **Winner determination:** The winning reviewer maximizes bug recall while maintaining high precision (`noise_count` ≤ 2, zero false-alarm P0s). Cite concrete repro commands in decisive evidence. Distill persistent implications into `<state-repo>/calibration.md`.
+
 ## Grok 4.6 liberal-trial calibration (while the trial row is open)
 
 The 4.6 engineering row was widened on 2026-08-15 with deliberately liberal steering so that VS evidence — not inherited 4.5 caution — decides where 4.6 actually belongs. While that trial is open:
