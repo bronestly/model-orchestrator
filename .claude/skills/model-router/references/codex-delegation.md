@@ -49,4 +49,4 @@ A runnable repro is strong evidence when practical, but requiring one for every 
 - For write legs, create a recoverable checkpoint before delegation. Forbid destructive recovery, mass deletion, force-push, and credentials or production access outside explicit task scope.
 - Trust the diff, files, and real command output over a worker's completion claim. Require `git diff --stat` or equivalent when files changed; run at least one appropriate verification or inspect the relevant result before integration.
 - A read-only review must not edit files. A code change needs a relevant diff and verification; a research or review leg needs substantive findings, not a diff.
-- Keep returned summaries concise: change/findings, files, checks and results, remaining risk or blocker. Do not require a large JSON envelope unless a downstream tool parses it.
+- Keep returned summaries concise: change/findings, files, checks and results, remaining risk or blocker. For a single Codex leg this concise summary is enough. When the orchestrator aggregates several legs, as in a pipeline, use the host adapter's JSON result instead, so results can be compared field by field.

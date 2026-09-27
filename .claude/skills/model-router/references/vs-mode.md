@@ -15,6 +15,7 @@ Before running, state the overhead in relative terms (roughly N× the tokens of 
 {
   "date": "YYYY-MM-DD",
   "task_type": "<routing-table row this task belongs to>",
+  "orchestrator": "<orchestrator model, e.g. opus-5.5 or fable-5.1>",
   "candidates": {"A": "<model>", "B": "<model>"},
   "scores_1to5": {
     "correctness":           {"A": 0, "B": 0},
@@ -126,6 +127,13 @@ When upgrading a route to a new model generation (such as Grok 4.6 → 4.7 or Ge
    - **Tool Discipline:** Check whether 3.8 respects prompt tool constraints without attempting unapproved shell commands.
 4. **Scoring & Ledger:** Record the unblinded scorecard in `<state-repo>/events/YYYY/MM/<timestamp>-<device-id>.md` or `routing-notes.local.md`, clearly tagging candidate versions (`grok-4.6-<effort>` vs `grok-4.7-<effort>`).
 5. **Calibration Separation:** Keep track records strictly partitioned by model version. Lessons learned for 4.6 remain archived under 4.6; lessons for 4.7 must be earned through empirical 4.7 or 4.6-vs-4.7 VS runs.
+
+## Orchestrator trials (suggest, never auto-run)
+
+These are untested ideas from outside guidance (2026-09-27). Suggest one only when a real task fits, and record the result as an event tagged with the orchestrator model:
+
+- **Advisor on the spec.** Run a pipeline with and without one advisor pass over the written spec before the legs launch. Measure how many seam-review MAJORs trace back to the spec. This tests Anthropic's executor-plus-advisor pattern against the skill's rare-Fable rule.
+- **Clock for Opus 5.5 multi-agent runs.** Add `elapsed Ns / budget Ns` to the orchestrator's turns and compare wall time and tool count. Never run this with a Fable orchestrator: its guidance says budget countdowns cause early wrap-up.
 
 ## Self-improvement (approval-gated)
 

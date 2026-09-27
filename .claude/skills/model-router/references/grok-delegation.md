@@ -54,9 +54,9 @@ The launch shape is in the registry. What that shape is defending against:
 
 ## Appendix: 4.5-era hardening (opt-in, not default)
 
-Distilled from the 4.5 VS-loss RCA (2026-07-12) and the 4.5 X criticism sweep (report: `model-orchestrator/model-router-workspace/research-2026-07-13/grok45-criticism-report.md`). **Do not apply by default on 4.6 legs.** Apply a matching rule only after a bare-4.6 leg exhibits that defect, record the observation, and let the vs-mode bake-off decide promotion back to default.
+Distilled from the 4.5 VS-loss RCA (2026-07-12) and the 4.5 X criticism sweep (report: `model-orchestrator/model-router-workspace/research-2026-07-13/grok45-criticism-report.md`). **Do not apply by default on 4.7 legs (or 4.6 bake-off legs).** Apply a matching rule only after a bare-4.7 leg exhibits that defect, record the observation, and let the vs-mode bake-off decide promotion back to default.
 
-Instruction weighting (4.5): success-criteria checklist items > explicit NEVER/MUST one-liners > numbered deliverables > background "study file X" prose > conversational intent. If 4.6 shows the same prose-underweighting, move hard constraints into Success criteria as MUST/NEVER bullets.
+Instruction weighting (4.5): success-criteria checklist items > explicit NEVER/MUST one-liners > numbered deliverables > background "study file X" prose > conversational intent. If 4.7 shows the same prose-underweighting, move hard constraints into Success criteria as MUST/NEVER bullets.
 
 Security-critical SQL/RPC legs (the 4.5 loss domain): spell out GRANT matrices rather than "copy the pattern from file X"; state that invented DEFINER helpers inherit the same guard/grant rules; ban comments rationalizing weaker grants; prefer explicit negatives over positive pattern references; force a pre-finish security pass listing every new DEFINER function with its GRANTs; name unsafe defaults (drop/null rules); "mirror file X's filters including column Y" when SQL parity matters.
 

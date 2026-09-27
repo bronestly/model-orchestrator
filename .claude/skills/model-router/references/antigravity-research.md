@@ -65,5 +65,5 @@ These historical observations serve as hypotheses to test in 3.7 vs 3.8 VS bake-
 
 - Deliverable arrives on **stdout**; exit code 0 indicates success. Server-side or tool failures exit non-zero (often exit 3 on permission or auth failures) with stderr.
 - Tools needing approval are **soft-denied** with a stderr notice naming the allow-rule — empty stdout plus such a notice means blocked, not model failure.
-- If output is insufficient, refine constraints or effort, or route to Grok 4.6 / main context. Higher effort must buy deeper sources and stricter verification, not mere prose length.
+- If output is insufficient, refine constraints or effort, or route to Grok 4.7 / main context. Higher effort must buy deeper sources and stricter verification, not mere prose length.
 - The orchestrator still spot-checks decisive claims on primary sources before final integration.

@@ -13,7 +13,10 @@ not an application. There is no build system.
 - `.claude/skills/model-router/references/routing-reference.md` — the **capability
   registry**: the single owner of model IDs, invocation shapes, effort mechanisms,
   and effort ladders. Read before any external CLI call.
-- `.claude/skills/model-router/references/` — shared, on-demand provider guidance.
+- `.claude/skills/model-router/references/` — shared, on-demand provider guidance
+  (`claude-delegation.md` covers native Sonnet/Opus/Fable subagent legs).
+- `CHANGELOG.md` — dated version history, moved out of `SKILL.md` in v0.37.0 so the
+  always-loaded adapter stays small.
 - `sync.sh` — installs Claude at `~/.claude/skills/model-router/`, Codex at
   `~/.agents/skills/model-router/`, and Grok at `~/.grok/skills/model-router/`
   (Linux/macOS/Git Bash).
@@ -55,7 +58,8 @@ not an application. There is no build system.
   `~/.claude/model-router/routing-notes.md`, read only when no shared checkout is
   configured. Preserve the legacy file. Keep machine-specific CLI, tier, path, and
   repository facts device-local, and never sync credentials or secrets.
-- For non-trivial changes, bump the Claude adapter version and maintenance note.
+- For non-trivial changes, bump the Claude adapter version and add a dated entry to
+  `CHANGELOG.md`. Do not grow `SKILL.md` with history.
 
 ## Verification
 
@@ -75,7 +79,8 @@ grep -rnE '(codex exec|grok|agy|claude -p)[^|]*--[a-z-]+[^|]*--[a-z-]+' \
   | grep -v 'references/routing-reference.md:'
 ```
 
-Two hits are expected and correct — `SKILL.md`'s v0.18.3 changelog entry and
-`references/fable-advisor.md`, both explaining that `--advisor` is *not* a real flag.
+One hit is expected and correct — `references/fable-advisor.md`, explaining that
+`--advisor` is *not* a real flag (the v0.18.3 changelog entry saying the same now
+lives in `CHANGELOG.md`, outside the grep path).
 Anything else is a command shape that has leaked out of the registry: move it back and
 leave a pointer.
