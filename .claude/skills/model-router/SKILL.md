@@ -3,22 +3,22 @@ name: model-router
 description: "Routes and executes substantial multi-model work at an appropriate cost, speed, and quality. Use when the user asks to route, delegate, compare models, use subagents, conserve model limits, or when a task has independent bulk, research, implementation, or review legs that clearly benefit from different models. Also use for Sol with-vs-without guardrail bake-offs. Skip routine single-model work and trivial tasks."
 allowed-tools:
   - Bash(command -v *)
-  - Bash(codex exec --skip-git-repo-check -s read-only *)
-  - Bash(codex exec --skip-git-repo-check -s workspace-write *)
+  - Bash(codex exec -s read-only *)
+  - Bash(codex exec -s workspace-write *)
   - Bash(grok --always-approve *)
   - Bash(agy -p *)
   - Bash(agy models*)
   - Bash(claude -p *)
   - PowerShell(Get-Command *)
-  - PowerShell(codex exec --skip-git-repo-check -s read-only *)
-  - PowerShell(codex exec --skip-git-repo-check -s workspace-write *)
+  - PowerShell(codex exec -s read-only *)
+  - PowerShell(codex exec -s workspace-write *)
   - PowerShell(grok --always-approve *)
   - PowerShell(agy -p *)
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.35.0"
-  updated: "2026-09-26"
+  version: "0.36.0"
+  updated: "2026-09-27"
 ---
 
 # Model Router — Claude Adapter
@@ -30,12 +30,12 @@ Act as the orchestrator. Keep ambiguity resolution, consequential judgment, veri
 | Work | Primary | Fallback |
 |---|---|---|
 | Decomposition, high-stakes judgment, final integration | Main Claude context | Never delegate |
-| Complex agentic coding, hard debugging, precise code generation | Codex Sol (`gpt-6-sol` active; `medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5.5 subagent, then Grok 4.7 `high` |
+| Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5.5 subagent, then Grok 4.7 `high` |
 | Independent critical review | Fresh Opus 5.5 subagent (precision primary; add a Codex Sol recall pass with code-review contract for correctness-critical diffs) | Fresh Fable 5.1 subagent, then Codex Sol with contract |
 | Live-X research, review/criticism sweeps, and bounded engineering legs (4.7 active default; 4.6 for bake-offs — see grok-delegation) | Grok 4.7 | Sonnet subagent plus web search |
 | General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Grok 4.7, then Sonnet subagent plus web search |
-| Bulk classification, extraction, or file reconnaissance | Antigravity (bulk tier) or Sol `low` (fast parallel scouting) | Luna (`gpt-6-luna` standalone volume), then batched Sonnet |
-| Standard implementation, tests, docs, or writing | Sonnet subagent | Terra (`medium` implement; `high` review) |
+| Bulk classification, extraction, or file reconnaissance | Antigravity (bulk tier) or Luna `low` (Codex file work) | Sol `low`, then batched Sonnet |
+| Standard implementation, tests, docs, or writing | Sonnet subagent | Luna `low`/`medium` for clear scoped work; Terra only when calibration shows an advantage |
 
 Use the cheapest route that comfortably clears the quality bar — and count the orchestrator's own tier in that calculus: on a frontier-priced orchestrator (e.g. a Fable 5.1 session), mechanical or bulk work done in the main context is itself the expensive route. For routine judgment-light work that is not bulk, still stay in the main context instead of spending time on routing analysis.
 
@@ -47,7 +47,7 @@ Grok engineering legs (4.7 active default, adopted 2026-09-26): multi-file imple
 
 Before an external CLI call, read [references/routing-reference.md](references/routing-reference.md). Then read only the provider reference selected by the route:
 
-- Codex Sol/Terra/Luna/Astra: [references/codex-delegation.md](references/codex-delegation.md)
+- Codex Sol/Luna/Terra: [references/codex-delegation.md](references/codex-delegation.md)
 - Grok engineering: [references/grok-delegation.md](references/grok-delegation.md)
 - Grok live-X research: [references/x-research.md](references/x-research.md)
 - Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
@@ -64,8 +64,8 @@ Each worker receives one fresh, self-contained task with:
 3. Concrete success criteria and required evidence.
 4. Scope lock: allowed files/actions, no unrelated abstractions or refactors.
 5. Stop rule: if the same gate fails twice with the same error, return blocked.
-6. For **Sol/Terra implement/fix** legs: the **minimal-code contract** from `references/codex-delegation.md` (smallest change, reuse before invent, no drive-by machinery).
-7. For **Sol/Terra/Astra code review** legs: the **code-review contract** from `references/codex-delegation.md` (pinned diff scope, repro-backed proof, P0/P1 only, max 5 issues, clean-bill-of-health rule).
+6. For **Codex implement/fix** legs: the **minimal-code contract** from `references/codex-delegation.md` (smallest complete change, reuse before invent, no unrelated cleanup).
+7. For **Sol/Terra code review** legs: the **code-review contract** from `references/codex-delegation.md` (pinned diff scope, concrete evidence, P0/P1 only, max 5 issues, clean-bill-of-health rule).
 8. A concise structured result:
 
 ```json
@@ -85,7 +85,7 @@ For write-capable legs, first create a recoverable commit or stash checkpoint. F
 
 - Trust artifacts, diffs, and real command output—not a worker's completion claim.
 - Spot-check at least one material claim before integration.
-- For Sol/Terra writes: reject out-of-scope or grossly disproportionate diffs (see routing-reference completion gate); re-prompt once with the minimal-code contract before escalating effort.
+- For Codex writes: reject out-of-scope or grossly disproportionate diffs (see routing-reference completion gate); re-prompt once with the minimal-code contract before escalating effort.
 - For code reviews: reject ungrounded nits or reviews of unpinned diffs (see routing-reference completion gate); re-prompt once with the code-review contract.
 - Model IDs, invocation shapes, and effort ladders live only in the `references/routing-reference.md` capability registry; never restate them elsewhere.
 - Retry once only for an apparently transient failure. Do not retry auth, tier, configuration, or empty-deliverable failures.
@@ -139,3 +139,4 @@ Entries below are a dated historical record of what changed at each version, not
 - **2026-09-26 · v0.33.0:** Upgraded Grok route from Grok 4.6 to Grok 4.7 (`grok-4.7`, smoke-tested on Grok Build CLI 1.0.41 via RelayModels). Completed an in-depth Grok 4.7 research sweep (`model-router-workspace/research-2026-09-26/grok47-steering-report.md`) establishing 500k context (200k prompt pricing threshold), larger base model architecture, and ~1.5–2× reasoning token burn profile at `high`/`xhigh`. Updated `references/grok-delegation.md` with 4.7 steering: concise constraint-heavy prompts, defining done with observables, negative constraint lists, anti-bloat rules (no unsolicited helper layers or repeated components), review contract (max 5 defects with concrete repros, no speculative nits), cost/token awareness. Retained false-completion git-status gate and orchestrator-run tests. Added Grok 4.7 vs 4.6 generational bake-off protocol in `references/vs-mode.md`.
 - **2026-09-26 · v0.34.0:** Integrated Codex GPT-6 family (`gpt-6-sol` active workhorse, `gpt-6-luna` fast tier, `gpt-6-astra` frontier orchestrator test; smoke-tested on Codex CLI 0.157.1) and Claude 5.1/5.5 advisor generation (`claude-fable-5-1`, `claude-opus-5-5`; smoke-tested on Claude Code 2.1.283). Verified Codex CLI model catalog: `gpt-6-sol` active coding workhorse with mid-turn dynamic reasoning updates, `gpt-6-astra` frontier intelligence permitted for testing as an orchestrator (`codex -m gpt-6-astra`) while delegating bounded execution legs. Verified Claude model catalog: `claude-opus-5-5` ($4/$20 per MTok; $0.20 cache read; default `medium` effort) added as first-class pragmatic codebase and review advisor alongside frontier `claude-fable-5-1`. Modernized `references/fable-advisor.md` system prompt and dossier templates in accordance with official Anthropic prompt-audit guidelines (neutral authoritative framing, removal of negative pressure language, removal of arbitrary numeric bullet clamps).
 - **2026-09-26 · v0.35.0:** Added formal Code-Review Contract and review-tier model selection to `references/codex-delegation.md` based on developer consensus research on X (OpenAI evaluator training, Sottiaux et al.; CodeRabbit recall vs precision benchmark; Paweł Huryn 105-bug hunt; Paul Hudson bug-finding evals). Integrated review bloat / ungrounded nits completion gate in `references/routing-reference.md`. Updated review rows in `SKILL.md` and `adapters/codex.md` to mandate the code-review contract (pinned diff range, concrete repro commands, P0/P1 severity tiers, clean-bill-of-health approval).
+- **2026-09-27 · v0.36.0:** Removed Astra from active routing, corrected Codex CLI output and Git-check guidance, and made Luna the low-cost Codex route for clear scoped work. Terra is conditional on measured advantage. Simplified Codex prompts and review evidence rules against current official guidance.

@@ -10,30 +10,29 @@ Read this only before using an external CLI route. Keep calls short, fresh, self
 
 | Route | Model ID | Effort mechanism | Ladder (**default**) | Result arrives on |
 |---|---|---|---|---|
-| Codex Astra | `gpt-6-astra` | `-c model_reasoning_effort="<effort>"` | `low` (conserving) · **`medium`** · `high` (orchestrator test / complex decomposition) | the `-o` file; stdout is a transcript |
-| Codex Sol | `gpt-6-sol` (active) / `gpt-5.6-sol` (baseline) | same | `low` (scouting/recon, conserving) · **`medium`** · `high` (plan-only, multi-file/ambiguous) · `xhigh` (only after fixing a failed prompt or test) | same |
-| Codex Terra | `gpt-5.6-terra` | same | **`medium`** implement-after-plan · `high` review/PR-triage | same |
-| Codex Luna | `gpt-6-luna` (active) / `gpt-5.6-luna` (baseline) | same | **`low`**–`medium` · `xhigh` for standalone single-turn volume only | same |
+| Codex Sol | `gpt-6-sol` (active) / `gpt-5.6-sol` (comparison baseline) | `-c model_reasoning_effort="<effort>"` | `low` (simple scoped work) · **`medium`** (coding/review) · `high` (ambiguous plan or hard debugging); raise further only on measured need | final message on stdout and copied to `-o` file |
+| Codex Luna | `gpt-6-luna` (active) / `gpt-5.6-luna` (comparison baseline) | same | **`low`** (fine-grained edits, recon, extraction) · `medium` (clear coordinated updates); `high` only if representative results justify it | same |
+| Codex Terra | `gpt-5.6-terra` (conditional baseline) | same | **`medium`** implement-after-plan · `high` review, only where calibration shows an advantage | same |
 | Grok | `grok-4.7` | `--reasoning-effort` | `low` (quick snapshots, recon, simple tools) · **`medium`** (bounded eng, standard brief, review) · `high` (multi-file implement, deep criticism/research sweeps, security-adjacent; API default) · `xhigh` (never automatic; propose for genuinely hard legs) | stdout, JSON `text` field |
 | Antigravity | `gemini-3.8-flash-low\|medium\|high` | encoded in the model slug | **`-low`** bulk/recon · `-medium` quick research · `-high` deep multi-source sweep | stdout |
 | Advisor | `claude-fable-5-1` (frontier default) / `claude-opus-5-5` (pragmatic default) | `--effort` | **`medium`** · `high` only for hard-to-reverse or high-blast-radius calls | stdout, JSON `result` field |
 
-`ultra`, `max`, and Grok `xhigh` are never selected automatically (`ultra` is a Codex-only tier that enables automatic subagent delegation, multiplying token burn, and is not valid for `claude -p`). Never enable Codex fast mode from this skill.
+`ultra`, `max`, and Grok `xhigh` are never selected automatically (`ultra` can trigger proactive delegation and multiply token use; it is not valid for `claude -p`). Never enable Codex fast mode from this skill.
 
-**Codex models (CLI 0.157.1):** `gpt-6-sol` is the active coding workhorse; `gpt-6-luna` is the active fast/economical tier for bulk and recon. `gpt-6-astra` is OpenAI's top frontier intelligence tier: expensive per token, not for routine delegated legs, but permitted for testing as an orchestrator (`codex -m gpt-6-astra`) for high-level decomposition and architectural synthesis. GPT-6 models support dynamic reasoning updates during a turn and 272k base / 872k max context. `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna` remain active generational baselines. `gpt-5.5` retires October 14, 2026.
+**Codex models (CLI 0.157.1; official model guidance checked 2026-09-27):** `gpt-6-sol` is the active workhorse for demanding coding; `gpt-6-luna` is the low-cost tier for clear, scoped work, including small edits. `gpt-5.6-sol`, `gpt-5.6-terra`, and `gpt-5.6-luna` remain comparison baselines. **Astra is deliberately excluded from this skill's active routes: do not select or escalate to `gpt-6-astra` automatically.** Published API token prices list GPT-6 Sol at $2 input / $10 output per million and GPT-5.6 Terra at $2 / $12, so Terra cannot be assumed cheaper than Sol. Subscription usage and per-task cost may differ; use local calibration rather than API pricing alone to choose conditional baselines. GPT-6 context is up to 1.05M tokens; prompts above 272k input incur a higher API price tier.
 
 **Advisor models (Claude Code 2.1.283):** `claude-fable-5-1` is the active frontier advisor default for critical architecture, trust boundaries, and novel migrations. `claude-opus-5-5` is the active pragmatic advisor for codebase review, maintainability, and standard engineering decisions ($4/$20 per MTok; $0.20 cache read; default effort `medium`). Older `claude-fable-5` and `claude-opus-5` remain available as legacy aliases.
 
 Grok 4.7 (`grok-4.7`) is the active default; 4.6 remains available for generational VS bake-offs. Gemini 3.8 Flash slugs (`gemini-3.8-flash-low|medium|high`) are the active default; 3.7 Flash slugs (`gemini-3.7-flash-low|medium|high`) remain available for generational VS bake-offs. Older models (Grok 4.5, Gemini 3.5, 3.1 Pro) remain deprecated.
 
-Luna `xhigh` is permitted only for standalone single-turn volume or execution work. Never raise Luna to chase quality on complex code — it costs more than Sol `medium` for worse results.
+For ambiguous or complex coding, choose Sol rather than raising Luna effort by default. Measure representative tasks before changing a route's effort or promoting a baseline model.
 
 ### Invocation shapes
 
 | Route | Command |
 |---|---|
-| Codex — read-only leg | `codex exec --skip-git-repo-check -s read-only -m <model-id> -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` |
-| Codex — write leg | `codex exec --skip-git-repo-check -s workspace-write -m <model-id> -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` |
+| Codex — read-only leg | `codex exec -s read-only -m <model-id> -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` |
+| Codex — write leg | `codex exec -s workspace-write -m <model-id> -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` |
 | Grok — headless | `grok --always-approve --no-subagents --no-alt-screen --minimal --output-format json -m <model-id> --reasoning-effort <effort> --prompt-file <path>` |
 | Antigravity | `agy -p "<prompt>" --model <slug> --print-timeout <duration>` |
 | Antigravity — slug discovery | `agy models` |
@@ -41,12 +40,12 @@ Luna `xhigh` is permitted only for standalone single-turn volume or execution wo
 
 Per-route qualifiers:
 
-- **Codex** — `-m` takes the Astra/Sol/Terra/Luna ID above. The sandbox is a per-leg decision, not a property of the route: read-only for research and review, `workspace-write` only when the leg must edit files.
+- **Codex** — `-m` takes a listed Sol/Luna/Terra ID. Run from the intended Git worktree; do not bypass the repository check by default. Use `--skip-git-repo-check` only for an intentionally trusted non-Git directory after checking the environment. The sandbox is a per-leg decision: read-only for research and review, `workspace-write` only when edits are needed. The final message appears on stdout and is also copied to the `-o` file; progress goes to stderr. For a multiline prompt, pass a file as stdin with `codex exec ... - < prompt.txt`.
 - **Grok** — pin `-m` to the registry ID; do not rely on the CLI default. Add `--disable-web-search` for code/engineering legs; omit it for live-X research. Read-only legs are contained by an explicit read-only prompt contract rather than a sandbox flag (see Permissions). `--permission-mode plan` is interactive-only. Never pass `--json-schema` on agentic legs. Run synchronously from a throwaway worktree. Effort spelling: CLI validates `--reasoning-effort` and hard-fails bad values with exit 1 listing `xhigh, high, medium, low` (verified 2026-08-15); the raw API instead silently downgrades unrecognized strings to `high` (practitioner-verified 2026-08-12) — that trap applies to non-CLI harnesses only. 4.7's API-side default is `high` and reasoning cannot be disabled. Context window is 500,000 tokens (re-pricing threshold cliff at 200,000 prompt tokens doubles pricing on all tokens).
 - **Antigravity** — `--print-timeout` defaults to 5m (0 waits indefinitely); raise it (e.g. `15m`) for deep sweeps. Write the prompt to a file and pass `-p "$(cat promptfile)"` rather than a heredoc. In headless runs, unconstrained prompts risk agy attempting shell commands, which are soft-denied to stderr causing empty stdout; always prepend an explicit tool rule (e.g. `TOOL RULE: use ONLY built-in web search and fetch tools; do NOT execute terminal or shell commands`) to prevent tool-denial empty deliverables.
 - **Advisor** — the `--system-prompt` body is fixed and non-optional; it lives in `fable-advisor.md` with the dossier discipline and launch-validation rules. Codex hosts must run this call outside the exec sandbox.
 
-Do not guess additional flags. For multiline prompts use a file — `--prompt-file` (Grok), `-p "$(cat …)"` (agy), `"$(< …)"` (advisor) — rather than brittle shell quoting.
+Do not guess additional flags. For multiline prompts use a file — stdin with `-` (Codex), `--prompt-file` (Grok), `-p "$(cat …)"` (agy), `"$(< …)"` (advisor) — rather than brittle shell quoting.
 
 ### Host-native subagent routes
 
@@ -78,7 +77,7 @@ One fact is not established. Treat it as open, and never fill it with a guess:
 
 A worker result counts only when it includes relevant artifacts and real verification. Reject empty output, narration-only output, unverifiable completion claims, or changes outside the scope lock.
 
-For Sol/Terra **write** legs, also reject **code bloat** as a failed deliverable (not a soft style note):
+For Codex **write** legs, also reject **code bloat** as a failed deliverable (not a soft style note):
 
 - Diff must stay within the scope lock; no unexplained new packages or files.
 - Net LOC / new symbols grossly disproportionate to the task (e.g. large helper layers for a small fix) → reject once and re-prompt with the minimal-code contract from `codex-delegation.md` plus: "Delete the unnecessary machinery; do not add more."
@@ -87,9 +86,9 @@ For Sol/Terra **write** legs, also reject **code bloat** as a failed deliverable
 
 For **review** legs, also reject **review bloat / ungrounded nits** as a failed deliverable:
 
-- Findings must stay within the pinned diff range (`git diff <base>...<head>`); reject critiques of untouched lines.
-- Reject speculative nits lacking a concrete failure scenario or repro command; re-prompt under the `Code-review contract`.
-- Require structured output with severity (P0/P1/P2) and file:line citations; if no blocking defects exist, require explicit `VERDICT: APPROVE (No blocking issues found)`.
+- Findings must be caused by the pinned diff range (`git diff <base>...<head>`); direct callers/callees may be inspected to establish impact.
+- Reject speculative nits lacking a concrete failure scenario and supporting trace, test, or command when feasible; re-prompt under the `Code-review contract`.
+- Require structured output with severity (P0/P1) and file:line citations; if no blocking defects exist, require explicit `VERDICT: APPROVE (No blocking issues found)`.
 
 For high-risk work, require a fresh review from another model family where practical. The orchestrator remains responsible for the final decision.
 

@@ -1,6 +1,6 @@
 # Advisor mode — cross-model plan review (Fable 5.1 / Opus 5.5)
 
-A read-only second opinion that **any orchestrator model** — Claude main, Codex Sol / Astra, Grok, or another — can request from an advisor model — **Fable 5.1 or Opus 5.5** — to pressure-test a plan or a consequential decision before committing to implementation. The requesting model invokes `claude -p` and forwards a self-contained dossier. The advisor sees **only that dossier** — never the orchestrator's transcript and never the repository — so the dossier must carry everything needed to judge the plan on its merits.
+A read-only second opinion that **any orchestrator model** — Claude main, Codex Sol, Grok, or another — can request from an advisor model — **Fable 5.1 or Opus 5.5** — to pressure-test a plan or a consequential decision before committing to implementation. The requesting model invokes `claude -p` and forwards a self-contained dossier. The advisor sees **only that dossier** — never the orchestrator's transcript and never the repository — so the dossier must carry everything needed to judge the plan on its merits.
 
 The advisor's output serves two purposes, and the dossier should be built for both:
 

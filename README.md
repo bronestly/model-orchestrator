@@ -25,10 +25,9 @@ Model Router unifies your multi-model toolbox into a single capability registry:
 
 | Route / Target | Active Model | Cost & Speed | Best For (Superpowers) | How Output Arrives |
 |---|---|---|---|---|
-| **Codex Astra** | `gpt-6-astra` | 💎 Frontier<br>⏱️ Deep | Frontier intelligence for testing as an **orchestrator** (`codex -m gpt-6-astra`), high-level architectural decomposition, and complex multi-leg synthesis. | Written to `-o <outfile>` |
-| **Codex Sol** | `gpt-6-sol`<br>*(5.6 baseline)* | 💎 Standard<br>⏱️ Medium | Complex agentic coding, hard bug reproduction, multi-file refactoring under the **minimal-code contract**; dynamic reasoning updates. | Written to `-o <outfile>` |
-| **Codex Terra** | `gpt-5.6-terra` | 💎 Inexpensive<br>⏱️ Fast | Implementing straightforward tasks from a plan; PR triage and code review. | Written to `-o <outfile>` |
-| **Codex Luna** | `gpt-6-luna`<br>*(5.6 baseline)* | 🪙 Lowest<br>⚡ Ultra-Fast | Standalone high-volume processing, batch file extraction, single-turn data tasks. | Written to `-o <outfile>` |
+| **Codex Sol** | `gpt-6-sol`<br>*(5.6 comparison baseline)* | 💎 Standard<br>⏱️ Medium | Complex agentic coding, hard bug reproduction, and judgment-heavy review under the **minimal-code contract**. | Final stdout; copied to `-o <outfile>` |
+| **Codex Luna** | `gpt-6-luna`<br>*(5.6 comparison baseline)* | 🪙 Lowest<br>⚡ Fast | Clear small edits, batch extraction, and scoped native subagent work. | Final stdout; copied to `-o <outfile>` |
+| **Codex Terra** | `gpt-5.6-terra` | 📊 Conditional baseline | Use only where local calibration shows an advantage; published API output-token pricing is higher than GPT-6 Sol. | Final stdout; copied to `-o <outfile>` |
 | **Grok** | `grok-4.7`<br>*(4.6 for bake-offs)* | 💎 Moderate<br>⏱️ Medium | Live-X / social search, independent critical code review, long-horizon bug repair (500k context). | stdout (JSON `text`) |
 | **Antigravity** | `gemini-3.8-flash`<br>*(low / med / high)* | 🪙 Ultra-Cheap<br>⚡ Ultra-Fast | High-speed web search, official documentation sweeps, multimodal analysis, bulk reconnaissance. | stdout |
 | **Advisor (Fable & Opus)** | `claude-fable-5-1`<br>`claude-opus-5-5` | 💎 Frontier / Pragmatic<br>⏱️ Deep | Second opinions: **Fable 5.1** for novel architecture and security boundaries; **Opus 5.5** for pragmatic codebase review, maintainability, and cost-effective plan analysis ($4/$20). | stdout (JSON `result`) |
@@ -41,10 +40,9 @@ Model Router unifies your multi-model toolbox into a single capability registry:
 You don't need to remember complex CLI flags. Simply instruct your active assistant in plain English:
 
 ### 🛠️ Precision Coding & Bugfixing (Sol + Minimal-Code Contract)
-> *"Delegate this backend bugfix to Sol under the minimal-code contract. Plan it first, make the smallest possible diff, and do not create any unnecessary helper abstractions."*
+> *"Delegate this ambiguous backend bugfix to Sol. Make a read-only plan first, then implement the smallest complete change under the minimal-code contract and report the checks run."*
 
-### 👑 Frontier Orchestrator Testing (Codex Astra)
-> *"Run Codex using Astra as orchestrator to break down this complex multi-service migration into bounded implementation tickets, delegating the implementation legs to Sol."*
+Codex Astra is deliberately excluded from this skill's active routes and automatic escalations.
 
 ### 🔍 Fast Web & Documentation Sweeps (Antigravity / Gemini 3.8 Flash)
 > *"Use Antigravity to do a rapid documentation sweep of the latest Supabase Auth migration guide and summarize breaking changes."*
@@ -60,8 +58,8 @@ You don't need to remember complex CLI flags. Simply instruct your active assist
 ### ⚔️ Side-by-Side Model Bake-Off (VS Mode)
 > *"Run a VS bake-off between Grok 4.6 and Grok 4.7 on this algorithm optimization task. Score them on task completion honesty, token burn, and code minimalism."*
 
-### 📦 Standalone Bulk Processing (Luna)
-> *"Use Luna to parse and extract structured metadata from all 50 markdown files in the docs folder."*
+### 📦 Scoped Codex Work (Luna)
+> *"Use Luna for these small, clearly specified file edits or to extract structured metadata from the docs folder. Return the files touched and checks run."*
 
 ---
 
@@ -69,7 +67,7 @@ You don't need to remember complex CLI flags. Simply instruct your active assist
 
 Model Router operates under four core principles to protect your codebase and your budget:
 
-1. **The Minimal-Code Contract**: Sol and Terra implement/fix legs must produce the smallest viable diff. Any unsolicited helper classes, wrapper files, or premature abstractions are treated as a failed deliverable and rejected once with re-prompting before escalating effort.
+1. **The Minimal-Code Contract**: Codex implement/fix legs must produce the smallest complete diff. Unrelated changes and disproportionate helper layers are rejected once with a specific re-prompt before escalating effort.
 2. **The Transcript-Tax Rule**: When your active session experiences context pressure or compaction, bounded tasks are automatically diverted to clean, fresh contexts (subagents or CLI calls) instead of dragging the entire chat history along.
 3. **Headless Safety Locks**:
    - **Grok** headless calls always run with `--always-approve` synchronously from throwaway worktrees. (Headless `--permission-mode plan` or `auto` are forbidden as they auto-cancel tool calls).
@@ -233,5 +231,4 @@ Run these three quick checks whenever making changes to the references or adapte
      .claude/skills/model-router --include='*.md' \
      | grep -v 'references/routing-reference.md:'
    ```
-   *(Two hits are expected: `SKILL.md` changelog and `fable-advisor.md` notice).*
-
+   Review any hits and keep active command recipes in the capability registry.

@@ -20,9 +20,9 @@ When **you** (Grok main) implement or fix code, apply the steering in `reference
 | Planning, ambiguity, integrated coding, live-X, final verification | Main Grok context | Do not delegate |
 | Consequential architecture decision or twice-failed approach | One advisor call (Fable 5 default; Opus 5 on request), if available | Grok self-review |
 | Complex multi-file or hard debugging with a documented Sol advantage | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement) | Main Grok |
-| Well-specified independent implementation | Terra `medium` (minimal-code contract) | Main Grok |
-| Fresh independent implementation review | Terra `high` or Opus 5 | Main Grok with a clean review pass |
-| Bulk extraction, classification, or reconnaissance | Antigravity (bulk tier) or Sol `low` | Luna (standalone volume), then main Grok |
+| Small, clear independent implementation | Luna `low`/`medium` (minimal-code contract) | Sol `low`/`medium`; Terra when calibrated |
+| Fresh independent implementation review | Sol `medium` or Opus 5.5 | Terra `high` when calibrated, then main Grok with a clean review pass |
+| Bulk extraction, classification, or reconnaissance | Antigravity (bulk tier) or Luna `low` | Sol `low`, then main Grok |
 | General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Main Grok (web tools), then web research in main context |
 | Parallel independent legs explicitly permitted by the user/environment | Native Grok subagents | External CLIs or sequential main-context work |
 
@@ -46,10 +46,10 @@ Give each worker one fresh, self-contained task containing:
 2. Explicit MUST/NEVER constraints and permission boundaries.
 3. Success criteria and the evidence required to count as done.
 4. Scope lock and a clear stop condition.
-5. For Sol/Terra implement/fix: the **minimal-code contract** from `references/codex-delegation.md`.
+5. For Codex implement/fix: the **minimal-code contract** from `references/codex-delegation.md`.
 6. A concise result with changes/findings, artifacts, verification (include `git diff --stat` when files changed), confidence, and remaining risks.
 
-For write-capable legs, first create a recoverable checkpoint and forbid destructive recovery. Unless the user explicitly requests nested agents, tell external Codex workers not to spawn subagents. Integrate only after checking the returned artifacts or evidence. Reject grossly disproportionate Sol/Terra diffs once and re-prompt under the contract before raising effort.
+For write-capable legs, first create a recoverable checkpoint and forbid destructive recovery. Unless the user explicitly requests nested agents, tell external Codex workers not to spawn subagents. Integrate only after checking the returned artifacts or evidence. Reject grossly disproportionate Codex diffs once and re-prompt under the contract before raising effort.
 
 ## Failure policy
 
