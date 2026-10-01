@@ -69,3 +69,5 @@ Dated history of what changed at each version, newest last. This is a historical
     - an explicit no-extras scope line in the native template;
     - Fable 5.1's price and the effort-by-phase guidance in the registry.
     It also added a Fable "lead" role in the orchestrator profile, for unsupervised long runs and heavy fan-out.
+
+- **2026-10-01 · v0.38.0:** Replaced active Sol with GPT-6.1 Sol, retaining GPT-6 Sol and 5.6 as explicit comparison baselines. Added natural-language reviewer overrides and Opus-vs-Codex review triggers to all hosts; kept automatic routing and Sol-high orchestration. Added the read/search-only Claude code-review CLI route, separate from Advisor. Expanded the evidence-based review contract to P0–P2 with clean/incomplete verdicts and frozen local/PR snapshots. Added review-specific VS scorecards, unknown-recall handling, ties/inconclusive results, and follow-up experiment prompts. Updated worker prompting from official GPT-6 guidance while labelling Astra observations as hypotheses for Sol; made verification proportional while retaining multi-leg integration gates. Preserved existing calibration and historical scorecards.

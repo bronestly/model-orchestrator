@@ -1,6 +1,6 @@
 ---
 name: model-router
-description: "Routes and executes substantial multi-model work at an appropriate cost, speed, and quality. Use when the user asks to route, delegate, compare models, use subagents, conserve model limits, or when a task has independent bulk, research, implementation, or review legs that clearly benefit from different models. Also use for Sol with-vs-without guardrail bake-offs. Skip routine single-model work and trivial tasks."
+description: "Routes and executes substantial multi-model work at an appropriate cost, speed, and quality. Use when the user asks to route, delegate, compare models, review with Codex or a named reviewer, compare code reviews, use subagents, conserve model limits, or when a task has independent bulk, research, implementation, or review legs that clearly benefit from different models. Also use for Sol with-vs-without guardrail bake-offs. Skip routine single-model work and trivial tasks."
 allowed-tools:
   - Bash(command -v *)
   - Bash(codex exec -s read-only *)
@@ -17,13 +17,17 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.37.0"
-  updated: "2026-09-27"
+  version: "0.38.0"
+  updated: "2026-10-01"
 ---
 
 # Model Router — Claude Adapter
 
 Act as the orchestrator. Keep ambiguity resolution, consequential judgment, verification, and final integration in the main context. Delegate only a bounded leg with a clear cost, speed, context, or independent-review advantage. Do not route merely because a task is long or touches many files: parallel legs buy latency at extra token cost, not savings.
+
+## Explicit code-review requests
+
+User-selected reviewers override automatic routing: “review with Codex” uses the registry's active Sol default in a fresh context; a named available model/effort overrides it. “Opus vs Codex code review” invokes the review protocol in [references/vs-mode.md](references/vs-mode.md). “Compare these reviews” evaluates supplied artifacts without rerunning candidates. Shared request, snapshot, and P0–P2 result rules live in [references/codex-delegation.md](references/codex-delegation.md). Keep reviews read-only and never silently replace a requested unavailable reviewer.
 
 ## Route selection
 
@@ -64,7 +68,7 @@ These hold for any orchestrator model. Each comes from repeated measured runs (c
 - **Freeze cross-leg contracts before launch.** Write shared types, keys, and SQL predicates yourself and parse-test them, because every worker copies them faithfully — including their bugs.
 - **State invariants as guards the worker must implement** (a WHERE clause, a skip rule, a literal token), because prose invariants get folded away by minimal-diff workers.
 - **Launch independent legs in one response and keep working while they run;** wait for background legs before declaring done, since a finished turn is only a report.
-- **Run the whole suite and build after each leg,** not the leg's own test glob — per-leg green has repeatedly hidden sibling breakage and build-only failures.
+- **Run required repository gates appropriate to each change.** For multi-leg code pipelines, run the whole available suite/build at integration — per-leg green has repeatedly hidden sibling breakage and build-only failures. Do not invent a build gate in repositories without one.
 - **Always budget a fresh whole-diff seam review after a multi-leg pipeline,** aimed at cross-leg interactions (targets in `claude-delegation.md`); per-leg gates have never caught those defects.
 - **Take a reviewer's diagnosis seriously and its prescription as a hypothesis;** test proposed fixes and deletions against real data before applying them, and after MAJOR findings re-check the design rather than patching findings narrowly.
 - **Audit every claim in your final report against a tool result from this session,** labelling what is verified and what is inferred.
@@ -90,7 +94,7 @@ Each worker receives one fresh, self-contained task with:
 5. Stop rule: if the task cannot be done as specified, or the same gate fails twice with the same error, return BLOCKED with the reason. Never tell a worker not to ask or never to stop — an impossible task then turns into incomplete work reported as complete.
 6. For **native Claude** legs: the template in `references/claude-delegation.md`.
 7. For **Codex implement/fix** legs: the **minimal-code contract** from `references/codex-delegation.md` (smallest complete change, reuse before invent, no unrelated cleanup).
-8. For **Codex code review** legs: the **code-review contract** from `references/codex-delegation.md` (pinned diff scope, concrete evidence, P0/P1 only, max 5 issues, clean-bill-of-health rule). Grok review legs use the equivalent contract in `references/grok-delegation.md`. Claude reviewers follow severity filters literally and under-report, so they report every issue with severity and confidence instead, and the orchestrator filters.
+8. For **Codex code review** legs: the **code-review contract** from `references/codex-delegation.md` (pinned diff scope, concrete evidence, P0–P2, max 5 issues, clean-bill-of-health rule). Grok review legs use the equivalent contract in `references/grok-delegation.md`. Claude reviewers follow severity filters literally and under-report, so they collect broader issues with severity, confidence, and evidence, then the orchestrator applies the shared P0–P2 criteria and cap.
 9. A concise structured result. Native and pipeline legs return this JSON inline; a single Codex leg may use the lighter summary in `codex-delegation.md`:
 
 ```json
@@ -114,7 +118,7 @@ For write-capable legs, first create a recoverable commit or stash checkpoint, a
 - For code reviews: reject ungrounded nits or reviews of unpinned diffs (see routing-reference completion gate); re-prompt once with the code-review contract.
 - Model IDs, invocation shapes, and effort ladders live only in the `references/routing-reference.md` capability registry; never restate them elsewhere.
 - Retry once only for an apparently transient failure. Auth, tier, configuration, and empty-deliverable failures fail the same way on retry, so reroute instead.
-- Mark a failed route dead for the session and use its documented fallback.
+- Mark a failed route dead for the session and use its documented fallback for automatic routing. Explicit reviewer choices stay unavailable/incomplete; never silently substitute.
 - For high-stakes output, use a fresh reviewer from another model family when one is available.
 - Never stall solely because an external CLI is unavailable.
 

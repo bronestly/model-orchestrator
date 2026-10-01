@@ -4,9 +4,11 @@ Loaded on demand from SKILL.md when the user requests a model comparison **or** 
 
 ## Cost
 
-Before running, state the overhead in relative terms (roughly N× the tokens of a single run for N candidates plus a review pass; +1 if optional Fable taste runs). Never invent dollar figures: quote a price only when this skill or the user actually states one, and otherwise stay in relative terms. Prefer small, representative implement tasks (one feature or bugfix), not multi-hour epics.
+Before running, state the overhead in relative terms (roughly N× the tokens of a single run for N candidates plus a review pass; +1 if optional Fable taste runs). Never invent dollar figures: quote a price only when this skill or the user actually states one, and otherwise stay in relative terms. Prefer small, representative tasks or review scopes, not multi-hour epics. Review VS uses N candidate reviews plus orchestrator adjudication; add a paid judge only when justified or requested, and disclose that extra call. Supplied-review comparison makes no candidate calls.
 
-## How (cross-model)
+## How (cross-model implementation/output comparison)
+
+Code-review requests use the dedicated protocol below; do not apply this implementation scorecard or require editing worktrees for read-only reviews.
 
 1. Pick 2–3 models from overlapping routing-table rows. Send each the identical prompt, success criteria, and summary format so outputs are directly comparable. If candidates edit files, give each its own isolated git worktree with a fresh dependency install (e.g. `npm ci`) so tests run hermetically, and capture each result as a diff — diffs are what get blinded and reviewed.
 2. Have a reviewer from a different family (or a blinded fresh subagent, if only one family is reachable) compare the outputs. Blind the reviewer: strip model names from filenames and content before it looks. The reviewer must return exactly this scorecard — standardization is what makes runs comparable across sessions:
@@ -87,19 +89,68 @@ Rules:
 
 ### Code-review bake-off protocol
 
-Use this when validating review steering (e.g. Sol baseline review vs Sol + `code-review contract`) or comparing reviewer models (e.g. `gpt-6-sol` vs `claude-opus-5-5` vs `grok-4.7`).
+Use this for ordinary PR/diff reviews, comparisons of reviewer models (such as Opus vs Codex), and same-model review steering or effort tests. Model aliases, exact IDs, and effort defaults come from the registry. Existing implementation scorecards and historical events keep their format.
 
-1. **Test target:** Select a real PR or multi-file diff containing:
-   - 1–2 real logic, concurrency, or edge-case defects (ground-truth target bugs).
-   - Clean, working code that invites cosmetic or stylistic nitpicking.
-   - Pinned diff: Provide exact `git diff <base>...<head>` and repository context; never pass an open-ended review prompt.
-2. **Review metrics (recorded in the event scorecard):**
-   - `true_positives`: real reproducible bugs found (P0/P1).
-   - `false_positives`: hallucinated defects or invalid failure claims.
-   - `noise_count`: cosmetic, formatting, or stylistic nits.
-   - `repro_quality`: percentage of reported bugs accompanied by an executable repro command or concrete failure trace.
-   - `clean_approval`: correctly returned `VERDICT: APPROVE` when clean.
-3. **Winner determination:** The winning reviewer maximizes bug recall while maintaining high precision (`noise_count` ≤ 2, zero false-alarm P0s). Cite concrete repro commands in decisive evidence. Distill persistent implications into `<state-repo>/calibration.md`.
+1. **Select and freeze.** Resolve 2–3 requested candidates and the exact scope using `codex-delegation.md`. An unspecified Codex reviewer is active Sol; an unspecified Opus reviewer is the registry's current Opus. Accept other explicitly requested available models. Use identical requirements, frozen source/patch, repository instructions, and initial verification evidence. Read-only candidates need no dependency reinstall unless a concrete verification step requires it. Keep ground-truth expectations outside every reviewer's accessible packet/checkout.
+2. **Run fresh reviews.** Use each provider's review recipe and steering with the shared P0–P2 contract. Candidates cannot see each other's findings. Record requested and actual model/effort, elapsed time, and usage reported by the harness. Unavailable, silently substituted, empty, or incomplete candidates cannot receive a clean verdict or win; preserve their failure in the scorecard instead of rerouting them. If the user supplied reviews, skip candidate calls and leave absent metadata unknown.
+3. **Adjudicate evidence.** Normalize outputs to the shared finding fields and deduplicate reports of the same defect. Validate each material claim against the pinned code and a test, command, or concrete static trace. Classify refuted defects as false positives, style/speculative commentary as noise, and unresolved claims separately; missing evidence is not automatically a false positive. Track which reviewer found each accepted defect. For a live PR, validated bugs establish supported coverage, not total recall. Only a benchmark with an independently established oracle can measure true positives, missed defects, recall, or correct clean approval; otherwise those fields are null.
+4. **Judge honestly.** Orchestrator-only adjudication is the default and must be labelled unblinded. If a fresh independent judge is used, strip model/effort labels from artifact names and content and keep the identity mapping outside its packet. Let the judge validate anonymous findings against the same source/evidence, then have the orchestrator verify decisive evidence. Do not tell a blinded judge the model identities. An automatic Fable advisory is not part of review VS.
+5. **Compare and report.** Prefer supported bug coverage and precision, weighting severe bugs over cosmetic counts, then evidence quality and measured efficiency. Never reward verbosity or unsupported P0 claims. Return a candidate label, tie (comparable supported results), or inconclusive (failed candidates, unresolved material evidence, incompatible scopes, or unknown identities). No recall-based claim on an ordinary live PR. Unblind identities in the user-facing comparison, bold a winning model only when one exists, and present a consolidated list of actionable defects with provenance. Applying fixes or posting reviews is a separate request.
+6. **Record conservatively.** Use the event-storage rules above, with `schema: code-review-v1`, exact model versions and efforts. Preserve old events and calibration. One smoke test establishes functionality, not model superiority; promote routing/prompt changes only through the approval-gated flow below. Never push state automatically.
+
+Review scorecard (repeat the candidate record for every candidate; unknown values are null, not zero):
+
+```json
+{
+  "schema": "code-review-v1",
+  "date": "YYYY-MM-DD",
+  "task_type": "code_review",
+  "orchestrator": "<exact model and effort>",
+  "scope": "<pinned base/head or local snapshot hash>",
+  "ground_truth_known": false,
+  "adjudication": "orchestrator_unblinded|independent_blinded",
+  "candidates": [
+    {
+      "label": "A",
+      "requested_model": "<exact model>",
+      "actual_model": null,
+      "effort": "<selected effort or null>",
+      "status": "complete|unavailable|incomplete",
+      "verdict": "FINDINGS|APPROVE|INCOMPLETE",
+      "findings_artifact": "<normalized findings location>",
+      "limitations": [],
+      "metrics": {
+        "validated_findings": 0,
+        "false_positives": 0,
+        "unresolved_claims": 0,
+        "noise_count": 0,
+        "repro_quality": null,
+        "true_positives": null,
+        "missed_defects": null,
+        "recall": null,
+        "clean_approval": null,
+        "elapsed_seconds": null,
+        "token_usage": null
+      }
+    }
+  ],
+  "winner": "<candidate label>|tie|inconclusive",
+  "confidence": "high|medium|low",
+  "consolidated_findings": [],
+  "decisive_evidence": "<validated file:line and trace/repro, or why inconclusive>",
+  "routing_implication": "<limited observation, no automatic promotion>"
+}
+```
+
+`repro_quality` is the percentage of reported defect claims with a usable command/test or concrete static trace; null when no defects were reported. `token_usage` retains the harness's available input/cache/reasoning/output fields without inventing missing ones. `clean_approval` is a boolean only for a known-clean/known-buggy benchmark. `consolidated_findings` use the shared normalized finding shape plus candidate-label provenance. If a supplied review covers another revision and cannot be checked against a common snapshot, mark the comparison inconclusive and show the scope mismatch.
+
+### Follow-up experiments (suggest, never auto-run)
+
+Replace bracketed scopes with a concrete frozen target before launch:
+
+- **Generational implementation:** “Run VS on [small bugfix and acceptance criteria] using previous Sol and active Sol at the same production effort and with the same minimal-code contract. Compare correctness, scope, code minimalism, elapsed time, and reported usage. Keep their changes isolated.”
+- **Review effort:** “Compare active Sol at medium versus high on [pinned concurrency/security diff]. Keep model, context, and review contract identical. Validate findings and compare supported coverage, false positives, latency, and usage.”
+- **Real PR review:** “Opus vs Codex code review on [PR or base/head]. Review the same frozen scope read-only, report P0–P2 defects, validate and consolidate the findings, and record recall as unknown unless independent ground truth exists.”
 
 ## Grok 4.6 liberal-trial calibration (while the trial row is open)
 

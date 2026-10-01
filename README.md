@@ -25,9 +25,9 @@ Model Router unifies your multi-model toolbox into a single capability registry:
 
 | Route / Target | Active Model | Cost & Speed | Best For (Superpowers) | How Output Arrives |
 |---|---|---|---|---|
-| **Codex Sol** | `gpt-6-sol`<br>*(5.6 comparison baseline)* | 💎 Standard<br>⏱️ Medium | Complex agentic coding, hard bug reproduction, and judgment-heavy review under the **minimal-code contract**. | Final stdout; copied to `-o <outfile>` |
+| **Codex Sol** | `gpt-6.1-sol`<br>*(6 and 5.6 comparison baselines)* | 💎 Standard<br>⏱️ Medium | Complex agentic coding and hard debugging under the **minimal-code contract**; judgment-heavy review under the **code-review contract**. | Final stdout; copied to `-o <outfile>` |
 | **Codex Luna** | `gpt-6-luna`<br>*(5.6 comparison baseline)* | 🪙 Lowest<br>⚡ Fast | Clear small edits, batch extraction, and scoped native subagent work. | Final stdout; copied to `-o <outfile>` |
-| **Codex Terra** | `gpt-5.6-terra` | 📊 Conditional baseline | Use only where local calibration shows an advantage; published API output-token pricing is higher than GPT-6 Sol. | Final stdout; copied to `-o <outfile>` |
+| **Codex Terra** | `gpt-5.6-terra` | 📊 Conditional baseline | Use only where local calibration shows an advantage; published API output-token pricing is higher than Sol 6.1. | Final stdout; copied to `-o <outfile>` |
 | **Grok** | `grok-4.7`<br>*(4.6 for bake-offs)* | 💎 Moderate<br>⏱️ Medium | Live-X / social search, independent critical code review, long-horizon bug repair (500k context). | stdout (JSON `text`) |
 | **Antigravity** | `gemini-3.8-flash`<br>*(low / med / high)* | 🪙 Ultra-Cheap<br>⚡ Ultra-Fast | High-speed web search, official documentation sweeps, multimodal analysis, bulk reconnaissance. | stdout |
 | **Advisor (Fable & Opus)** | `claude-fable-5-1`<br>`claude-opus-5-5` | 💎 Frontier / Pragmatic<br>⏱️ Deep | Second opinions: **Fable 5.1** for novel architecture and security boundaries; **Opus 5.5** for pragmatic codebase review, maintainability, and cost-effective plan analysis ($4/$20). | stdout (JSON `result`) |
@@ -43,6 +43,24 @@ You don't need to remember complex CLI flags. Simply instruct your active assist
 > *"Delegate this ambiguous backend bugfix to Sol. Make a read-only plan first, then implement the smallest complete change under the minimal-code contract and report the checks run."*
 
 Codex Astra is deliberately excluded from this skill's active routes and automatic escalations.
+
+### Code Reviews and Reviewer VS Mode
+
+| Request | Behavior |
+|---|---|
+| “Review this diff with Codex” | Fresh Sol 6.1 review |
+| “Use Luna to review this commit” | Explicit model override |
+| “Opus vs Codex code review” | Compare Opus 5.5 and Sol 6.1 on the same frozen changes |
+| “Compare old Sol and Sol 6.1 as reviewers” | Compare the previous and active Sol generations |
+| “Compare these reviews” | Adjudicate supplied reviews without rerunning candidates |
+
+Explicit reviewer choices override automatic host routing. Codex review defaults to Sol 6.1, with other available models accepted when named. Medium is the normal review effort; use high for security, concurrency, or difficult cross-file logic. Sol high remains Codex's main orchestrator. Existing automatic review routes stay in place.
+
+Use a current Codex CLI for Sol 6.1 (its catalog was added in 0.159.1; these recipes were verified with 0.159.3). Model access still depends on your account, client, and workspace. An unavailable requested reviewer is reported explicitly rather than silently replaced. See the [Capability Registry](.claude/skills/model-router/references/routing-reference.md) for availability and invocation details.
+
+Reviews report at most five actionable P0–P2 bugs with file/line, trigger, failure path, confidence, evidence, and a minimal correction. They stay read-only and keep feedback in the task. A clean review requires no supported P0–P2 findings; blocked or incomplete reviews are labelled explicitly. Reviewer comparisons validate and consolidate findings, allow ties or inconclusive results, and measure recall only when independent ground truth exists. Codex/Grok hosts can invoke a fresh Opus code reviewer with read/search tools, separately from the no-tools architectural advisor.
+
+Sol 6.1 prompting starts from [OpenAI's official family guidance](https://developers.openai.com/api/docs/guides/latest-model), checked 2026-10-01. Those behavior observations were made on Astra; test them on Sol rather than treating them as established Sol behavior. Reproducible follow-up prompts for generational coding tests, review effort tests, and real-PR comparisons live in [VS Mode](.claude/skills/model-router/references/vs-mode.md#follow-up-experiments-suggest-never-auto-run).
 
 ### 🔍 Fast Web & Documentation Sweeps (Antigravity / Gemini 3.8 Flash)
 > *"Use Antigravity to do a rapid documentation sweep of the latest Supabase Auth migration guide and summarize breaking changes."*
