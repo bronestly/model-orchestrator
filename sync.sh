@@ -199,7 +199,7 @@ for host in codex grok; do
   if [[ "$host" == codex ]]; then adapter="$CODEX_ADAPTER" dest="$CODEX_DEST"; else adapter="$GROK_ADAPTER" dest="$GROK_DEST"; fi
   check_same "$host adapter" "$adapter" "$dest/SKILL.md"
   check_same "$host references" "$CLAUDE_SRC/references" "$dest/references"
-  if [[ "$(ls -A "$dest" | grep -vx '.DS_Store' | sort | tr '\n' ' ')" != "SKILL.md references " ]]; then
+  if [[ "$(ls -A "$dest" | grep -vx '.DS_Store' | LC_ALL=C sort | tr '\n' ' ')" != "SKILL.md references " ]]; then
     echo "Installed $host package has unexpected top-level entries: $dest" >&2
     install_mismatch=1
   fi
