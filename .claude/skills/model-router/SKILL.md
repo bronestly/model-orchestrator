@@ -19,7 +19,7 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.40.0"
+  version: "0.41.0"
   updated: "2026-10-11"
 ---
 
@@ -39,7 +39,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 |---|---|---|
 | Decomposition, high-stakes judgment, final integration | Main Claude context | Never delegate |
 | Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5.5 subagent, then Grok 4.7 `high` |
-| Code review (diff, PR, branch, seam) | Codex Sol, read-only, code-review contract (default code reviewer in codex-delegation); add a running `mr-opus-reviewer` pass on its triggers | `mr-opus-reviewer`, then Fable 5.1 for high stakes |
+| Code review (diff, PR, branch, seam) | Codex Sol, read-only, code-review contract (default code reviewer in codex-delegation); plus a parallel running `mr-opus-reviewer` pass | `mr-opus-reviewer`, then Fable 5.1 for high stakes |
 | Other independent critical review (plans, specs, decisions) | Fresh Opus 5.5 subagent. On an Opus 5.5 host this is same-model fresh context; add a Sol read-only pass for the cross-family check | Fresh Fable 5.1 subagent (also the high-stakes escalation) |
 | Live-X research, review/criticism sweeps, and bounded engineering legs (4.7 active default; 4.6 for bake-offs — see grok-delegation). Live-X needs a Responses-backed model entry with a smoke-tested X-search tool (registry) | Grok 4.7 | Sonnet subagent plus web search |
 | Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Grok 4.7, or Codex Sol with web search (read-only; registry) | Sonnet subagent plus web search |

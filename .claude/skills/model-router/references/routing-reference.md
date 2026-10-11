@@ -66,8 +66,8 @@ On a Claude host these run as subagents rather than CLI calls. The IDs are the s
 | Codename | Model ID | Agent definition | Ladder (**default**) | Role and caveats |
 |---|---|---|---|---|
 | Fable 5.1 | `claude-fable-5-1` | `mr-fable-advisor` | `medium` (clean-read triggers) · **`high`** | Advisor default for frontier architecture, security/trust boundaries, novel migrations; high-stakes review escalation |
-| Opus 5.5 | `claude-opus-5-5` | `mr-opus-reviewer` | `low` (user in the loop) · **`medium`** · `high` (security, concurrency, difficult cross-file review, verification) | Pragmatic advisor; running code reviewer beside the Codex default and its fallback; never `max` by default; economical ($4/$20) with high fidelity |
-| Sonnet 5.5 | `claude-sonnet-5-5` | `mr-sonnet-writer` | `low` (mechanical, bulk) · **`medium`** · `high` (multi-file or hard implementation); unmeasured starting ladder | Standard implementation, tests, docs, writing; batched bulk fallback. The `sonnet` alias served this ID on 2026-10-11 |
+| Opus 5.5 | `claude-opus-5-5` | `mr-opus-reviewer` | `low` (user in the loop) · **`medium`** · `high` (security, concurrency, difficult cross-file review, verification) | Pragmatic advisor; running code reviewer always paired with the Codex default, and its fallback; never `max` by default; economical ($4/$20) with high fidelity |
+| Sonnet 5.5 | `claude-sonnet-5-5` | `mr-sonnet-writer` | `low` (mechanical, bulk) · **`medium`** · `high` (multi-file or hard implementation); unmeasured starting ladder | Standard implementation, tests, docs, writing; batched bulk fallback; trial code-review candidate in review VS (via `mr-opus-reviewer` with the `sonnet` override). The `sonnet` alias served this ID on 2026-10-11 |
 | Sonnet 5 (legacy) | `claude-sonnet-5` | — | — | Previous-generation implementation baseline |
 | Fable 5 (legacy) | `claude-fable-5` | — | — | Previous-generation advisor baseline |
 | Opus 5 (legacy) | `claude-opus-5` | — | — | Previous-generation precision-review baseline |

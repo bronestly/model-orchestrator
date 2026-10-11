@@ -48,9 +48,7 @@ Resolve aliases and effort from the registry. Use the default review effort, wit
 
 With no reviewer named, a code review (diff, PR, branch, or seam review) goes to Codex Sol in the read-only sandbox under the code-review contract below, at the registry's review effort. The sandbox makes read-only mechanical; a Claude reviewer with shell access has it only by prompt.
 
-Add a fresh running reviewer (`mr-opus-reviewer`, see `claude-delegation.md`) in parallel with the same frozen packet, when either holds:
-- the defects could live outside the static code: browser or rendering behaviour, deploy order, real data volume, sizing arithmetic, or anything a probe against a real database, test runner, or page would expose;
-- it is the seam review after a multi-leg pipeline.
+Always add a fresh running reviewer (`mr-opus-reviewer`, see `claude-delegation.md`) in parallel with the same frozen packet (owner decision, 2026-10-11). Tell it which probes the change invites: browser or rendering behaviour, deploy order, real data volume, sizing arithmetic, installers, or anything a real database, test runner, or page would expose.
 
 The two find mostly disjoint defects. The static trace catches state sequences and cross-statement or lost-update paths; the running reviewer catches environment defects and arithmetic the static pass accepted (calibration 2026-10-03 → 10-09). Adjudicate the pair with steps 3–5 of the code-review protocol in `vs-mode.md`, and record a `code-review-v1` event. Codex-versus-Claude reviewing is still on trial, and these pairs are the measurement. Changing this default goes through the approval-gated promotion flow in `vs-mode.md`.
 
