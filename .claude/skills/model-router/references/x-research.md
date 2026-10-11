@@ -18,7 +18,7 @@ Fast-moving-topic rule: X-first for the *discourse*, then corroborate every fact
 
 ## Capability limits to plan around (verified 2026-07-13)
 
-- **Pre-flight: confirm an X tool exists.** X search needs a Responses-API model entry with backend search enabled (registry Grok qualifier). A `chat_completions` entry or a free grok.com login gets none (verified 2026-09-27). Before a live-X leg, pin the device's Responses-backed alias (from `routing-notes.local.md`) and check `events.jsonl` (or streamed `tool_use` blocks) for an `x_keyword_search`/`x_semantic_search` call. Without one:
+- **Pre-flight: confirm an X tool exists.** X search needs a Responses-API model entry with backend search enabled (registry Grok qualifier). A `chat_completions` entry or a free grok.com login gets none (verified 2026-09-27). Before a live-X leg, pin the device's Responses-backed alias (from `routing-notes.local.md`) and run the registry's Grok identity-and-backend check (sampled post IDs must resolve; the `events.jsonl` log can omit server-side X calls). If it fails:
   - the leg is web research on x.com pages, not X search, so label it `DEGRADED: no X tool` and downgrade every prevalence claim;
   - check every post URL against the tool results — without an X tool the native backend invented posts with placeholder status IDs;
   - prefer a Sonnet + WebSearch leg if X coverage is essential.

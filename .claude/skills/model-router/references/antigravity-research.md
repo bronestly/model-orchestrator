@@ -31,9 +31,13 @@ Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) is the active default rout
 - **`-medium` (standard research):** Balanced reasoning; default for changelogs, product comparisons, and release sweeps.
 - **`-high` (deep sweep):** Maximum reasoning; for multi-source synthesis across many documents or complex investigative sweeps.
 
-#### Trial status
+#### Trial verdict (closed 2026-10-11)
 
-Active evaluation. Early smoke tests confirm fast execution and wide coverage. Evaluate citation fidelity and link accuracy empirically via generational VS mode (`vs-mode.md`) rather than assuming past flaws.
+The 3.8 citation-fidelity question is answered from 8+ runs (2026-09-27 → 10-09, calibration "agy Gemini 3.8 still fabricates deep links"): deep links are unreliable (30/32, 23/46 and all 16 of a five-dossier set dead or wrong; grounding-redirect URLs offered as primary sources). Facts on pages it actually fetched, GitHub links, entity discovery, and a brand's own homepage held.
+
+- Use agy for breadth, leads and entity discovery, never as the citation source of a deliverable.
+- Bulk HTTP-check every URL it returns and hand writers a REJECTED list; give every price, ratio or eligibility rule that enters a deliverable a primary fetch.
+- For citation-bearing research, prefer Grok 4.7 (official-doc deep links, X) or Codex Sol with web search (calibration "Codex Sol with web search").
 
 ---
 
@@ -48,7 +52,7 @@ Retained in the registry for generational VS bake-offs (`gemini-3.7-flash-low|me
 - **Mechanism invention:** Demonstrated a pattern of inventing plausible technical mechanisms (e.g. BotGuard headers, unexported service methods) and attributing them to real sources.
 - **Tool auto-denial:** Repeatedly attempted shell commands on pure research legs unless explicitly forbidden by a tool rule.
 
-These historical observations serve as hypotheses to test in 3.7 vs 3.8 VS bake-offs, not as permanent constraints on 3.8.
+These were hypotheses for 3.8. Citation drift is now confirmed on 3.8 (see the trial verdict above); the others remain hypotheses.
 
 ---
 
@@ -59,7 +63,7 @@ These historical observations serve as hypotheses to test in 3.7 vs 3.8 VS bake-
 | Recent releases, changelogs, docs sweeps, product comparisons | Live-X discourse, sentiment, launch-day drama → Grok (`x-research.md`) |
 | Multi-source synthesis ("what changed across X, Y, Z") | Stable academic/historical knowledge (no delegation needed) |
 | Bulk classification, extraction, file reconnaissance (bulk tier) | Anything requiring repository write access (not an established route) |
-| Quick factual lookups with a citable source | Authoritative single numbers you'll act on unverified |
+| Quick factual lookups (verify any link before citing it) | Authoritative single numbers you'll act on unverified; citation sources for a deliverable |
 
 ## Reading agy's output
 

@@ -75,8 +75,8 @@ Treat these as open, and never fill them with a guess:
 
 - **Grok identity and backend.** `grok models` lists `grok-4.7` (2026-09-26) as the active default, and also offers `grok-4.6` and legacy `grok-4.5`. Pin `-m` to the registry ID. Before blaming quality on the route, confirm two things:
   - the result JSON's `modelUsage` object names the model actually served;
-  - for research legs, an X-search tool call appears in the session's `events.jsonl`.
-  A run with only `web_search` calls is a backend problem (see Known route failures), not the model.
+  - for research legs, sampled post IDs resolve: fetch 2–4 via `https://api.fxtwitter.com/status/<id>` and match handle, date and text. Server-side X search is not always logged in the session's `events.jsonl` (missing on two working runs, 2026-09-30), so a missing log line alone proves nothing; a logged `x_keyword_search`/`x_semantic_search` call is positive evidence.
+  A run that returns only `site:x.com` web-search summaries, or whose sampled IDs don't resolve, is a backend problem (see Known route failures), not the model.
 - **xAI `x_search` parameters.** An agy sweep (2026-09-27) reported `allowed_x_handles`/`excluded_x_handles` (mutually exclusive), ISO-8601 `from_date`/`to_date`, image/video understanding flags, and no engagement-count filter. Its citations were homepage-level, so confirm these against a docs.x.ai deep link before relying on them.
 
 *(Codex CLI version is verified at 0.159.3, 2026-10-01; agy is verified at 1.2.11, 2026-09-26; Grok anchored at 1.0.41, 2026-09-26).*
