@@ -27,7 +27,8 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Small, clear independent implementation | Luna `low`/`medium` (minimal-code contract) | Sol `low`/`medium`; Terra when calibrated |
 | Fresh independent implementation review | Sol `medium` or Opus 5.5 | Terra `high` when calibrated, then main Grok with a clean review pass |
 | Bulk extraction, classification, or reconnaissance | Antigravity (bulk tier) or Luna `low` | Sol `low`, then main Grok |
-| General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Main Grok (web tools), then web research in main context |
+| Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Main Grok (web tools) | Codex Sol with web search (read-only; registry) |
+| Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Antigravity (never the citation source) | Main Grok (web tools) |
 | Parallel independent legs explicitly permitted by the user/environment | Native Grok subagents | External CLIs or sequential main-context work |
 
 Do not send live-X research or a Grok engineering worker-leg to a nested Grok CLI from this host — that is the same model. Other hosts' Grok-worker steering (`references/grok-delegation.md`) applies when another host delegates *to* Grok, not to Grok-as-host.

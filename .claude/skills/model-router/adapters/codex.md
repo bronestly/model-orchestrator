@@ -27,7 +27,8 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Fresh independent implementation review | Fresh Sol `medium` (code-review contract) | Terra `high` if calibrated, then main Sol with a clean review pass |
 | Bulk extraction, classification, or reconnaissance | Luna `low` (standalone or native subagent) | Sol `low`, Antigravity (bulk tier), then main Sol |
 | Live-X research or bounded engineering legs (4.7 active default — see grok-delegation) | Grok 4.7 | Web research or main Sol |
-| General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Grok 4.7, then web research in main Sol |
+| Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Fresh Sol leg with web search (read-only; registry) | Grok 4.7, then web research in main Sol |
+| Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Antigravity (never the citation source) | Grok 4.7, then web research in main Sol |
 | Parallel independent legs explicitly permitted by the user/environment | Native Codex subagents, explicitly selecting Luna for light work or Sol for demanding work | External CLIs or sequential main-context work |
 
 Before an external worker call, read [references/routing-reference.md](references/routing-reference.md) — its capability registry is the only place model IDs, invocation shapes, and effort ladders are stated. Then read only the chosen provider reference, which carries judgment and failure modes rather than command shapes:

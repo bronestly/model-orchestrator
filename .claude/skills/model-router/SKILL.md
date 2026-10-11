@@ -5,6 +5,7 @@ allowed-tools:
   - Bash(command -v *)
   - Bash(codex exec -s read-only *)
   - Bash(codex exec -s workspace-write *)
+  - Bash(codex --search exec -s read-only *)
   - Bash(grok --always-approve *)
   - Bash(agy -p *)
   - Bash(agy models*)
@@ -12,12 +13,13 @@ allowed-tools:
   - PowerShell(Get-Command *)
   - PowerShell(codex exec -s read-only *)
   - PowerShell(codex exec -s workspace-write *)
+  - PowerShell(codex --search exec -s read-only *)
   - PowerShell(grok --always-approve *)
   - PowerShell(agy -p *)
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.38.2"
+  version: "0.39.0"
   updated: "2026-10-01"
 ---
 
@@ -37,7 +39,8 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5.5 subagent, then Grok 4.7 `high` |
 | Independent critical review | Fresh Opus 5.5 subagent (precision primary; add a Codex Sol recall pass with code-review contract for correctness-critical diffs). On an Opus 5.5 host this is a same-model fresh-context review — the Sol pass supplies the cross-family check | Fresh Fable 5.1 subagent (also the high-stakes escalation), then Codex Sol with contract |
 | Live-X research, review/criticism sweeps, and bounded engineering legs (4.7 active default; 4.6 for bake-offs — see grok-delegation). Live-X needs a Responses-backed model entry with a smoke-tested X-search tool (registry) | Grok 4.7 | Sonnet subagent plus web search |
-| General web/docs research: releases, comparisons, multi-source synthesis (trial) | Antigravity | Grok 4.7, then Sonnet subagent plus web search |
+| Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Grok 4.7, or Codex Sol with web search (read-only; registry) | Sonnet subagent plus web search |
+| Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Antigravity (never the citation source) | Grok 4.7, then Sonnet subagent plus web search |
 | Bulk classification or extraction | Antigravity bulk tier (text supplied in the prompt — headless agy cannot read local files without allow-rules) or Luna `low` (file work) | Sol `low`, then batched Sonnet |
 | File reconnaissance | Luna `low` or an Explore subagent | Sol `low` |
 | Standard implementation, tests, docs, or writing | Sonnet subagent | Luna `low`/`medium` for clear scoped work; Terra only when calibration shows an advantage |
