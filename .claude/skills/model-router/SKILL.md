@@ -19,8 +19,8 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.39.0"
-  updated: "2026-10-01"
+  version: "0.40.0"
+  updated: "2026-10-11"
 ---
 
 # Model Router — Claude Adapter
@@ -29,7 +29,7 @@ Act as the orchestrator. Keep ambiguity resolution, consequential judgment, veri
 
 ## Explicit code-review requests
 
-User-selected reviewers override automatic routing: “review with Codex” uses the registry's active Sol default in a fresh context; a named available model/effort overrides it. “Opus vs Codex code review” invokes the review protocol in [references/vs-mode.md](references/vs-mode.md). “Compare these reviews” evaluates supplied artifacts without rerunning candidates. Shared request, snapshot, and P0–P2 result rules live in [references/codex-delegation.md](references/codex-delegation.md). Keep reviews read-only and never silently replace a requested unavailable reviewer.
+User-selected reviewers override automatic routing: “review with Codex” uses the registry's active Sol default in a fresh context; a named available model/effort overrides it. “Opus vs Codex code review” invokes the review protocol in [references/vs-mode.md](references/vs-mode.md). “Compare these reviews” evaluates supplied artifacts without rerunning candidates. Shared request, snapshot, and P0–P2 result rules live in [references/codex-delegation.md](references/codex-delegation.md). Keep reviews read-only and never silently replace a requested unavailable reviewer. With no reviewer named, code review follows the default code-reviewer rule in codex-delegation.md.
 
 ## Route selection
 
@@ -37,7 +37,8 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 |---|---|---|
 | Decomposition, high-stakes judgment, final integration | Main Claude context | Never delegate |
 | Complex agentic coding, hard debugging, precise code generation | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement — see codex-delegation) | Fresh Opus 5.5 subagent, then Grok 4.7 `high` |
-| Independent critical review | Fresh Opus 5.5 subagent (precision primary; add a Codex Sol recall pass with code-review contract for correctness-critical diffs). On an Opus 5.5 host this is a same-model fresh-context review — the Sol pass supplies the cross-family check | Fresh Fable 5.1 subagent (also the high-stakes escalation), then Codex Sol with contract |
+| Code review (diff, PR, branch, seam) | Codex Sol, read-only, code-review contract (default code reviewer in codex-delegation); add a running `mr-opus-reviewer` pass on its triggers | `mr-opus-reviewer`, then Fable 5.1 for high stakes |
+| Other independent critical review (plans, specs, decisions) | Fresh Opus 5.5 subagent. On an Opus 5.5 host this is same-model fresh context; add a Sol read-only pass for the cross-family check | Fresh Fable 5.1 subagent (also the high-stakes escalation) |
 | Live-X research, review/criticism sweeps, and bounded engineering legs (4.7 active default; 4.6 for bake-offs — see grok-delegation). Live-X needs a Responses-backed model entry with a smoke-tested X-search tool (registry) | Grok 4.7 | Sonnet subagent plus web search |
 | Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Grok 4.7, or Codex Sol with web search (read-only; registry) | Sonnet subagent plus web search |
 | Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Antigravity (never the citation source) | Grok 4.7, then Sonnet subagent plus web search |
@@ -53,7 +54,7 @@ Model IDs, effort defaults, prices, and context limits for every route — inclu
 
 Before an external CLI call, read the registry. Then read only the provider reference selected by the route:
 
-- Native Sonnet 5 / Opus 5.5 / Fable 5.1 subagent write or review legs: [references/claude-delegation.md](references/claude-delegation.md)
+- Native Sonnet 5.5 / Opus 5.5 / Fable 5.1 subagent write or review legs (agent definitions, per-launch effort): [references/claude-delegation.md](references/claude-delegation.md)
 - Codex Sol/Luna/Terra: [references/codex-delegation.md](references/codex-delegation.md)
 - Grok engineering: [references/grok-delegation.md](references/grok-delegation.md)
 - Grok live-X research: [references/x-research.md](references/x-research.md)

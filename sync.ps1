@@ -82,6 +82,23 @@ if ($Drift) {
     exit 1
 }
 
+# Agent-definition <-> registry guard (mirrors sync.sh). Each native agent definition
+# pins a model ID, which must appear in the registry's host-native table.
+$AgentsSrc = Join-Path $ClaudeSrc "agents"
+$AgentsDest = Join-Path $UserHome ".claude\agents"
+$RegistryText = Get-Content -Raw $RegistryPath
+foreach ($Agent in Get-ChildItem -Path $AgentsSrc -Filter "mr-*.md") {
+    $ModelLine = Get-Content $Agent.FullName | Where-Object { $_ -match '^model:\s*(\S+)' } | Select-Object -First 1
+    $Model = if ($ModelLine -and $ModelLine -match '^model:\s*(\S+)') { $Matches[1] } else { "" }
+    if (-not $Model -or -not $RegistryText.Contains("| ``$Model`` |")) {
+        Write-Host "Agent definition pins a model the registry does not list:"
+        Write-Host "  agent: $($Agent.FullName)"
+        Write-Host "  model: $Model"
+        Write-Error "Refusing to install: add it to the host-native table or fix the definition."
+        exit 1
+    }
+}
+
 # 1. Install Claude adapter (excluding adapters directory and OS metadata)
 if (Test-Path $ClaudeDest) {
     Remove-Item -Recurse -Force $ClaudeDest
@@ -91,6 +108,11 @@ New-Item -ItemType Directory -Force -Path $ClaudeDest | Out-Null
 Get-ChildItem -Path $ClaudeSrc -Exclude "adapters", ".DS_Store" | ForEach-Object {
     Copy-Item -Path $_.FullName -Destination $ClaudeDest -Recurse -Force
 }
+
+# 1b. Native Claude agent definitions. Only the mr-* prefix is owned here.
+New-Item -ItemType Directory -Force -Path $AgentsDest | Out-Null
+Get-ChildItem -Path $AgentsDest -Filter "mr-*.md" | Remove-Item -Force
+Get-ChildItem -Path $AgentsSrc -Filter "mr-*.md" | Copy-Item -Destination $AgentsDest -Force
 
 # 2. Stage and install Codex and Grok adapters
 function Install-HostAdapter {
@@ -147,4 +169,5 @@ paths, or repository quirks. Never put credentials or secrets here.
 Write-Host "Installed Claude adapter: $ClaudeDest"
 Write-Host "Installed Codex adapter:  $CodexDest"
 Write-Host "Installed Grok adapter:   $GrokDest"
+Write-Host "Installed agents:         $AgentsDest\mr-*.md"
 Write-Host "Source repo registered:   $RepoRoot"

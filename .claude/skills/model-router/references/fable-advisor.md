@@ -19,7 +19,7 @@ Model IDs are in the registry (`routing-reference.md`, Advisor row); this sectio
 - **Legacy baselines:** `claude-fable-5` and `claude-opus-5` remain available in the registry as backwards-compatible options.
 - **Same-model advisory (orchestrator = advisor).** When the orchestrator is already the chosen advisor model — a Fable session consulting Fable, an Opus session consulting Opus — the call still delivers something real: a dossier-only reviewer with none of the transcript's accumulated framing or sunk-cost bias. But it is a fresh-context check, not the cross-model opinion this file otherwise provides. When the trigger is about independence (twice-failed approach, resolving a fork the orchestrator cannot settle from evidence), prefer the other advisor model; when it is about a clean read of a plan (overbuild taste, missing-assumption sweep), same-model is acceptable. Say which kind was run when reporting the result.
 
-Non-Claude orchestrators reach the advisor only through this CLI path. A Claude-host orchestrator may instead spawn a native subagent with the chosen model (Fable 5.1 or Opus 5.5), but the dossier discipline and effort rules below still apply.
+Non-Claude orchestrators reach the advisor only through this CLI path. A Claude-host orchestrator may instead spawn a native subagent with the chosen model (Fable 5.1 or Opus 5.5) through `mr-fable-advisor`, passing effort per launch (see `claude-delegation.md`, Launching native legs); the dossier discipline and effort rules below still apply.
 
 Also used as an **optional taste layer** in VS mode when comparing a baseline vs a minimal-code-contract variant (see `vs-mode.md`). VS taste checks follow the same invocation and failure rules.
 

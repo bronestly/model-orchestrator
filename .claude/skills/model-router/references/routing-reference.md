@@ -10,7 +10,7 @@ Read this only before using an external CLI route. Keep calls short, fresh, self
 
 | Route | Model ID | Effort mechanism | Ladder (**default**) | Result arrives on |
 |---|---|---|---|---|
-| Codex Sol | `gpt-6.1-sol` (active) / `gpt-6-sol`, `gpt-5.6-sol` (comparison baselines) | `-c model_reasoning_effort="<effort>"` | `low` (simple scoped work) · **`medium`** (coding/review) · `high` (ambiguous plan, hard debugging, security/concurrency or difficult cross-file review); raise further only on measured need | final message on stdout and copied to `-o` file |
+| Codex Sol | `gpt-6.1-sol` (active) / `gpt-6-sol`, `gpt-5.6-sol` (comparison baselines) | `-c model_reasoning_effort="<effort>"` | `low` (simple scoped work) · **`medium`** (coding/review) · `high` (ambiguous plan, hard debugging, security/concurrency, difficult cross-file review, multi-leg seam or contract review — every 2026-10 review bake-off win ran at `high`); raise further only on measured need | final message on stdout and copied to `-o` file |
 | Codex Luna | `gpt-6-luna` (active) / `gpt-5.6-luna` (comparison baseline) | same | **`low`** (fine-grained edits, recon, extraction) · `medium` (clear coordinated updates); `high` only if representative results justify it | same |
 | Codex Terra | `gpt-5.6-terra` (conditional baseline) | same | **`medium`** implement-after-plan · `high` review, only where calibration shows an advantage | same |
 | Grok | `grok-4.7` | `--reasoning-effort` | `low` (quick snapshots, recon, simple tools) · **`medium`** (bounded eng, standard brief, review) · `high` (multi-file implement, deep criticism/research sweeps, security-adjacent; API default) · `xhigh` (never automatic; propose for genuinely hard legs) | stdout, JSON `text` field |
@@ -61,15 +61,18 @@ Do not guess additional flags. For multiline prompts use a file — stdin with `
 
 ### Host-native subagent routes
 
-On a Claude host these run as subagents rather than CLI calls. The IDs are the same ones the advisor route passes to `--model`.
+On a Claude host these run as subagents rather than CLI calls. The IDs are the same ones the advisor route passes to `--model`. The agent definitions (installed to `~/.claude/agents/` by `sync.sh`/`sync.ps1`) fix model and tools only; effort is chosen per launch through the Agent tool's `effort` parameter, from the ladder below. Without it a subagent inherits the session's effort (verified Claude Code 2.1.296, 2026-10-11: a `high` session gave `high` subagents; a per-launch `medium` logged `medium`).
 
-| Codename | Model ID | Role and caveats |
-|---|---|---|
-| Fable 5.1 | `claude-fable-5-1` | Advisor default for frontier architecture, security/trust boundaries, novel migrations; high-stakes review escalation. Default `high` effort |
-| Opus 5.5 | `claude-opus-5-5` | Pragmatic advisor and precision-review primary. Default `medium` effort; never `max` effort by default; economical ($4/$20) with high fidelity |
-| Sonnet 5 | `claude-sonnet-5` | Standard implementation, tests, docs, writing; batched bulk fallback |
-| Fable 5 (legacy) | `claude-fable-5` | Previous-generation advisor baseline |
-| Opus 5 (legacy) | `claude-opus-5` | Previous-generation precision-review baseline |
+| Codename | Model ID | Agent definition | Ladder (**default**) | Role and caveats |
+|---|---|---|---|---|
+| Fable 5.1 | `claude-fable-5-1` | `mr-fable-advisor` | `medium` (clean-read triggers) · **`high`** | Advisor default for frontier architecture, security/trust boundaries, novel migrations; high-stakes review escalation |
+| Opus 5.5 | `claude-opus-5-5` | `mr-opus-reviewer` | `low` (user in the loop) · **`medium`** · `high` (security, concurrency, difficult cross-file review, verification) | Pragmatic advisor; running code reviewer beside the Codex default and its fallback; never `max` by default; economical ($4/$20) with high fidelity |
+| Sonnet 5.5 | `claude-sonnet-5-5` | `mr-sonnet-writer` | `low` (mechanical, bulk) · **`medium`** · `high` (multi-file or hard implementation); unmeasured starting ladder | Standard implementation, tests, docs, writing; batched bulk fallback. The `sonnet` alias served this ID on 2026-10-11 |
+| Sonnet 5 (legacy) | `claude-sonnet-5` | — | — | Previous-generation implementation baseline |
+| Fable 5 (legacy) | `claude-fable-5` | — | — | Previous-generation advisor baseline |
+| Opus 5 (legacy) | `claude-opus-5` | — | — | Previous-generation precision-review baseline |
+
+A per-launch `model` overrides a definition's model (Agent tool contract), so `mr-fable-advisor` with `opus` is the Opus advisor. Whether a per-launch `effort` overrides a definition's `effort` frontmatter is unverified, which is why the definitions set none.
 
 ### Unverified gaps
 
@@ -112,6 +115,7 @@ For high-risk work, require a fresh review from another model family where pract
 ## Known route failures
 
 - A present binary may still have broken auth, quota, account tier, or configuration. The first real call is the probe.
+- **Unattended SDK hosts (e.g. T3 Code: `CLAUDE_CODE_ENTRYPOINT=sdk-*`, `CLAUDE_CODE_SESSION_ATTENDED=0`).** No one answers permission prompts, and `allowed-tools` does not bypass the auto-mode classifier. On 2026-10-11 it denied the Grok headless shape and `agy models` as "Create Unsafe Agents", while the Codex read-only shape and the advisor `claude -p` shape ran. A classifier denial is a dead route for the session: use the fallback, don't rephrase the call to get past it. Re-enabling it is the owner's choice through an `autoMode.allow` rule in their settings.
 - The gemini CLI is permanently dead: Google retired it 2026-06-18 in favor of Antigravity (`agy`); `IneligibleTierError` was the shutdown symptom. Do not probe it.
 - An unresolvable agy `--model` hard-fails with a non-zero exit listing valid slugs — fix the slug, don't retry. A deep sweep that dies at the 5m mark hit the default `--print-timeout`, not a model failure. Headless runs returning empty stdout with stderr "a tool required the command permission" mean agy attempted unapproved shell commands; add explicit prompt tool rules or configure allow-rules in `~/.gemini/config/config.json` (see Permissions). Headless agy also cannot read local files without a `read_file`/`command` allow-rule, so pass bulk text inside the prompt rather than asking it to open files.
 - Grok background `nohup ... &` invocations fail to retain usable results in subshell tool executions. Run Grok synchronously (registry shape); on Windows the standard prompt-file path is `$env:TEMP\prompt.txt` or `%TEMP%\prompt.txt`.

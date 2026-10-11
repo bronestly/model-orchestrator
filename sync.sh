@@ -88,6 +88,22 @@ if (( drift != 0 )); then
   exit 1
 fi
 
+# Agent-definition <-> registry guard. The registry owns model IDs; each native agent
+# definition pins one, so it must appear in the registry's host-native table.
+AGENTS_SRC="$CLAUDE_SRC/agents"
+AGENTS_DEST="$HOME/.claude/agents"
+for agent in "$AGENTS_SRC"/mr-*.md; do
+  [[ -f "$agent" ]] || continue
+  model="$(awk '/^model:/ { print $2; exit }' "$agent")"
+  if [[ -z "$model" ]] || ! grep -q "| \`$model\` |" "$REGISTRY"; then
+    echo "Agent definition pins a model the registry does not list:" >&2
+    echo "  agent: $agent" >&2
+    echo "  model: ${model:-<none>}" >&2
+    echo "Refusing to install: add it to the host-native table or fix the definition." >&2
+    exit 1
+  fi
+done
+
 # Copy logic with fallback if rsync is unavailable (e.g. minimal container environments)
 copy_dir_clean() {
   local src="$1" dest="$2" exclude_pattern="$3"
@@ -112,6 +128,12 @@ copy_dir_clean() {
 # Claude receives its adapter and the shared references, not the other host sources.
 mkdir -p "$CLAUDE_DEST"
 copy_dir_clean "$CLAUDE_SRC" "$CLAUDE_DEST" "adapters/"
+
+# Native Claude agent definitions. Only the mr-* prefix is owned here; other user
+# agents in ~/.claude/agents are left alone.
+mkdir -p "$AGENTS_DEST"
+rm -f "$AGENTS_DEST"/mr-*.md
+cp "$AGENTS_SRC"/mr-*.md "$AGENTS_DEST/"
 
 # Codex and Grok each receive their adapter as SKILL.md plus the same shared references.
 stage_and_install_host() {
@@ -158,4 +180,5 @@ fi
 echo "Installed Claude adapter: $CLAUDE_DEST"
 echo "Installed Codex adapter:  $CODEX_DEST"
 echo "Installed Grok adapter:   $GROK_DEST"
+echo "Installed agents:         $AGENTS_DEST/mr-*.md"
 echo "Source repo registered:   $REPO_ROOT"

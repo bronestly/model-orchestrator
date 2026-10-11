@@ -44,6 +44,18 @@ An explicit reviewer choice overrides the host's automatic review row. "Review w
 
 Resolve aliases and effort from the registry. Use the default review effort, with its deeper setting for security, concurrency, or difficult cross-file logic. Do not automatically switch a small review to Luna or silently replace a named unavailable model. An explicit comparison authorizes the bounded review candidates; no worker may spawn nested agents. Feedback stays in the task; do not apply fixes or post comments externally.
 
+### Default code reviewer
+
+With no reviewer named, a code review (diff, PR, branch, or seam review) goes to Codex Sol in the read-only sandbox under the code-review contract below, at the registry's review effort. The sandbox makes read-only mechanical; a Claude reviewer with shell access has it only by prompt.
+
+Add a fresh running reviewer (`mr-opus-reviewer`, see `claude-delegation.md`) in parallel with the same frozen packet, when either holds:
+- the defects could live outside the static code: browser or rendering behaviour, deploy order, real data volume, sizing arithmetic, or anything a probe against a real database, test runner, or page would expose;
+- it is the seam review after a multi-leg pipeline.
+
+The two find mostly disjoint defects. The static trace catches state sequences and cross-statement or lost-update paths; the running reviewer catches environment defects and arithmetic the static pass accepted (calibration 2026-10-03 → 10-09). Adjudicate the pair with steps 3–5 of the code-review protocol in `vs-mode.md`, and record a `code-review-v1` event. Codex-versus-Claude reviewing is still on trial, and these pairs are the measurement. Changing this default goes through the approval-gated promotion flow in `vs-mode.md`.
+
+If the Codex route fails (auth, model rollout, CLI or classifier denial), use `mr-opus-reviewer` as the reviewer and name the substitution in the report. An explicit "review with Codex" is never silently substituted. Some devices' read-only sandbox cannot launch browsers or reach the network (see device-local notes). An INCOMPLETE verdict with complete findings for that reason is accepted, not re-prompted; send the unrunnable checks to the running reviewer.
+
 ### Freeze the review scope
 
 Resolve a PR's current base/head to exact commits; for branch reviews freeze the merge-base/head; for a single commit freeze its parent/commit. Preserve explicit range semantics. For uncommitted reviews capture the specified staged/unstaged scope (or all local changes when unspecified, including untracked files) against a pinned HEAD, plus source files and relevant callers/callees. Give the reviewer an immutable checkout/copy and patch, identified by exact commits or a content hash. Do not stash, reset, or commit the user's changes to obtain it. An explicitly requested file/code audit may include pre-existing bugs; label it as an audit rather than attributing them to a diff.
