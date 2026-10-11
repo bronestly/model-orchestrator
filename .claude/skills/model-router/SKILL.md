@@ -17,7 +17,7 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.38.0"
+  version: "0.38.1"
   updated: "2026-10-01"
 ---
 
@@ -129,7 +129,7 @@ For substantial routes, state the route and cost/quality rationale briefly befor
 Read calibration in this order when present:
 
 1. The shared `calibration.md` under the Git checkout named by `$HOME/.claude/model-router/state-repo` (or `%USERPROFILE%\.claude\model-router\state-repo` on Windows).
-2. Machine-local observations from `routing-notes.local.md` beside that pointer.
+2. Machine-local observations from `$HOME/.claude/model-router/routing-notes.local.md`: the directory that holds the `state-repo` pointer file, never inside the state checkout.
 3. Legacy `routing-notes.md` only when no shared state checkout is configured.
 
 Let recent, relevant observations override defaults. Tag every observation with the orchestrator model (for example `orchestrator: opus-5.5`), so Opus 5.5 and Fable 5.1 differences stay measurable. Record transcript-tax misses — a bounded leg run inline after compaction that a fresh prompt could have specified — as observations too, so that bias stays measurable rather than anecdotal. Record machine-specific CLI, tier, path, or repository facts only in `routing-notes.local.md`; never sync credentials or secrets. Store full comparison history as a new immutable file under the shared checkout's `events/YYYY/MM/` directory, and keep `calibration.md` to roughly 15 distilled live lessons. Shared state is pushed only when the user asks, through this repository's `state.sh` or `state.ps1`, because the owner decides when device observations leave the machine. Promote a repeated universal lesson only through the approval-gated flow in `references/vs-mode.md`, editing this repository's source rather than an installed copy.
