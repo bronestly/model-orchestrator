@@ -25,6 +25,8 @@ metadata:
 
 # Model Router — Claude Adapter
 
+**Orchestrator gate.** Only Opus 5.5 and Fable 5.1 orchestrate this skill (profiles below). If you are any other model, such as Sonnet, do not route, delegate, or run any leg. Tell the user that model-router needs an Opus 5.5 or Fable 5.1 session, and stop. Sonnet remains a worker route (`mr-sonnet-writer`), not an orchestrator.
+
 Act as the orchestrator. Keep ambiguity resolution, consequential judgment, verification, and final integration in the main context. Delegate only a bounded leg with a clear cost, speed, context, or independent-review advantage. Do not route merely because a task is long or touches many files: parallel legs buy latency at extra token cost, not savings.
 
 ## Explicit code-review requests
