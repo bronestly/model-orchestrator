@@ -19,65 +19,82 @@ if (-not (Test-Path (Join-Path $ClaudeSrc "SKILL.md")) -or -not (Test-Path $Code
     exit 1
 }
 
-# Registry <-> allowlist drift guard (mirrors sync.sh).
+# Registry <-> allowlist posture guard (mirrors sync.sh).
 # The capability registry in references/routing-reference.md owns every CLI command
-# the skill prescribes. If one is not pre-authorized in the Claude adapter's
-# allowed-tools, the skill prescribes a call it cannot make. Refuse to install.
+# the skill prescribes and, per command, the prefix the owner pre-authorized. The
+# Claude adapter's allowed-tools must list exactly those prefixes (Bash entries with
+# PowerShell twins), and each prefix must start its own command. A missing entry
+# means the skill prescribes a call it cannot make; an extra or shortened entry
+# silently widens the permission posture. Refuse to install in either case.
 $SkillPath = Join-Path $ClaudeSrc "SKILL.md"
 $RegistryPath = Join-Path $ClaudeSrc "references\routing-reference.md"
 
-# Commands: the first backticked span of each row in the "Invocation shapes" table.
-$RegistryCommands = @()
+# Rows of the "Invocation shapes" table: the first and second backticked spans.
+$RegistryRows = @()
 $InBlock = $false
 foreach ($Line in Get-Content $RegistryPath) {
     if ($Line -match '^### Invocation shapes') { $InBlock = $true; continue }
     if ($InBlock -and $Line -match '^#') { $InBlock = $false }
-    if ($InBlock -and $Line -match '^\|' -and $Line -match '`([^`]+)`') {
-        $RegistryCommands += $Matches[1]
+    if ($InBlock -and $Line -match '^\|') {
+        $Spans = [regex]::Matches($Line, '`([^`]+)`')
+        if ($Spans.Count -ge 1) {
+            $Prefix = if ($Spans.Count -ge 2) { $Spans[1].Groups[1].Value } else { "" }
+            $RegistryRows += [pscustomobject]@{ Command = $Spans[0].Groups[1].Value; Prefix = $Prefix }
+        }
     }
 }
 
-# Patterns: the contents of each Bash(...) entry, with any trailing glob removed.
-$AllowPatterns = @()
-$InBlock = $false
-foreach ($Line in Get-Content $SkillPath) {
-    if ($Line -match '^allowed-tools:') { $InBlock = $true; continue }
-    if ($InBlock -and $Line -match '^[^ \t-]') { $InBlock = $false }
-    if ($InBlock -and $Line -match 'Bash\(([^)]*)\)') {
-        $Pattern = $Matches[1] -replace '\*$', ''
-        $Pattern = $Pattern.TrimEnd()
-        if ($Pattern) { $AllowPatterns += $Pattern }
+# Patterns: the contents of each <Kind>(...) entry, with any trailing glob removed.
+# Only one "  - Bash(...)" or "  - PowerShell(...)" entry per line is understood; any
+# other line in the block is returned as "unsupported: <line>" so the set comparison
+# fails instead of silently skipping an entry. A bare "*" grant returns "*".
+function Get-AllowPatterns([string]$Kind) {
+    $Patterns = @()
+    $InBlock = $false
+    foreach ($Line in Get-Content $SkillPath) {
+        if ($Line -match '^allowed-tools:') { $InBlock = $true; continue }
+        if ($InBlock -and $Line -match '^[^ \t-]') { $InBlock = $false }
+        if (-not $InBlock -or $Line -match '^[ \t]*$') { continue }
+        if ($Line -cnotmatch '^  - (Bash|PowerShell)\(([^)]+)\)$') { $Patterns += "unsupported: $Line"; continue }
+        if ($Matches[1] -cne $Kind) { continue }
+        $Pattern = ($Matches[2] -replace '\*$', '').TrimEnd()
+        $Patterns += $(if ($Pattern) { $Pattern } else { "*" })
     }
+    return $Patterns
 }
 
 $Drift = $false
-foreach ($Command in $RegistryCommands) {
-    # Compare only the concrete prefix — everything before the first <placeholder>.
-    $Tokens = @()
-    foreach ($Token in ($Command -split '\s+')) {
-        if ($Token.Contains('<')) { break }
-        $Tokens += $Token
+foreach ($Row in $RegistryRows) {
+    # Trailing space on both sides keeps "agy -p" from matching "agy -print".
+    if (-not $Row.Prefix -or -not ("$($Row.Command) ").StartsWith("$($Row.Prefix) ", [StringComparison]::Ordinal)) {
+        Write-Host "Registry row's pre-authorized prefix does not start its command:"
+        Write-Host "  command: $($Row.Command)"
+        Write-Host "  prefix:  $($Row.Prefix)"
+        $Drift = $true
     }
-    if ($Tokens.Count -eq 0) { continue }
-    $Concrete = $Tokens -join ' '
+}
 
-    $Authorized = $false
-    foreach ($Pattern in $AllowPatterns) {
-        # Trailing space on both sides keeps "agy -p" from matching "agy -print".
-        if (("$Concrete ").StartsWith("$Pattern ")) { $Authorized = $true; break }
-    }
-
-    if (-not $Authorized) {
-        Write-Host "Registry command is not in the Claude adapter's allowed-tools:"
-        Write-Host "  registry: $Concrete"
-        Write-Host "  fix:      add 'Bash($Concrete *)' to SKILL.md, with its PowerShell twin."
-        Write-Host "            Any shorter prefix of that command also satisfies the guard;"
-        Write-Host "            prefer the shortest one that stays unambiguous."
+# The `command -v` probe is not a route, so it has no registry row.
+$Expected = @(@('command -v') + @($RegistryRows | ForEach-Object { $_.Prefix } | Where-Object { $_ }) | Sort-Object -Unique -CaseSensitive)
+$Sets = @{
+    'Bash'       = @(Get-AllowPatterns 'Bash' | Sort-Object -Unique -CaseSensitive)
+    'PowerShell' = @(Get-AllowPatterns 'PowerShell' | ForEach-Object { if ($_ -ceq 'Get-Command') { 'command -v' } else { $_ } } | Sort-Object -Unique -CaseSensitive)
+}
+foreach ($Kind in 'Bash', 'PowerShell') {
+    $Delta = Compare-Object -ReferenceObject $Expected -DifferenceObject $Sets[$Kind] -CaseSensitive
+    if ($Delta) {
+        Write-Host "SKILL.md $Kind(...) allowed-tools differ from the registry's pre-authorized prefixes"
+        Write-Host "  (< registry, > SKILL.md; PowerShell Get-Command shown as command -v):"
+        foreach ($D in $Delta) {
+            $Side = if ($D.SideIndicator -eq '<=') { '<' } else { '>' }
+            Write-Host "  $Side $($D.InputObject)"
+        }
         $Drift = $true
     }
 }
 
 if ($Drift) {
+    Write-Host "Widening a prefix is the owner's decision; make it in the registry first."
     Write-Error "Refusing to install: routing-reference.md and SKILL.md disagree."
     exit 1
 }
@@ -157,6 +174,52 @@ function Install-HostAdapter {
 
 Install-HostAdapter -AdapterSrc $CodexAdapter -Dest $CodexDest -Label "codex"
 Install-HostAdapter -AdapterSrc $GrokAdapter -Dest $GrokDest -Label "grok"
+
+# Post-install check (mirrors sync.sh): every installed package must match its source
+# exactly, so a copy or path error fails here instead of shipping broken links.
+# A manifest line is "<relative path> <sha256>" or "<relative dir>/ <dir>"; $Under prefixes each path.
+function Get-TreeManifest([string]$Root, [string[]]$ExcludeTop = @(), [string]$Under = "") {
+    if (-not (Test-Path $Root)) { return @() }
+    $RootFull = (Resolve-Path $Root).Path.TrimEnd('\', '/')
+    # Directories are listed too, so an unexpected empty directory is caught.
+    Get-ChildItem -Path $Root -Recurse -Force |
+        Where-Object { $_.Name -ne '.DS_Store' } |
+        ForEach-Object {
+            $Rel = $_.FullName.Substring($RootFull.Length + 1) -replace '\\', '/'
+            if ($ExcludeTop -notcontains ($Rel -split '/')[0]) {
+                if ($_.PSIsContainer) { "$Under$Rel/ <dir>" }
+                else { "$Under$Rel $((Get-FileHash $_.FullName -Algorithm SHA256).Hash)" }
+            }
+        }
+}
+function Get-FileManifestLine([string]$Path, [string]$Name) {
+    if (-not (Test-Path $Path -PathType Leaf)) { return "$Name <missing or not a file>" }
+    return "$Name $((Get-FileHash $Path -Algorithm SHA256).Hash)"
+}
+$InstallMismatch = $false
+function Test-SameManifest([string]$Label, [string]$Dest, [string[]]$Expected, [string[]]$Actual) {
+    # Windows PowerShell 5.1's Compare-Object rejects an empty collection.
+    if (-not $Actual) { $Actual = @("<nothing installed>") }
+    $Delta = Compare-Object -ReferenceObject @($Expected | Sort-Object) -DifferenceObject @($Actual | Sort-Object) -CaseSensitive
+    if ($Delta) {
+        Write-Host "Installed $Label does not match its source: $Dest"
+        foreach ($D in $Delta) { Write-Host "  $($D.SideIndicator) $($D.InputObject)" }
+        $script:InstallMismatch = $true
+    }
+}
+Test-SameManifest "Claude package" $ClaudeDest @(Get-TreeManifest $ClaudeSrc @("adapters")) @(Get-TreeManifest $ClaudeDest)
+foreach ($HostPkg in @(@{ Label = "codex"; Adapter = $CodexAdapter; Dest = $CodexDest }, @{ Label = "grok"; Adapter = $GrokAdapter; Dest = $GrokDest })) {
+    $Expected = @(Get-FileManifestLine $HostPkg.Adapter "SKILL.md") + @("references/ <dir>") + @(Get-TreeManifest (Join-Path $ClaudeSrc "references") @() "references/")
+    Test-SameManifest "$($HostPkg.Label) package" $HostPkg.Dest $Expected @(Get-TreeManifest $HostPkg.Dest)
+}
+foreach ($Agent in $AgentFiles) {
+    $Installed = Join-Path $AgentsDest $Agent.Name
+    Test-SameManifest "agent $($Agent.Name)" $Installed @(Get-FileManifestLine $Agent.FullName $Agent.Name) @(Get-FileManifestLine $Installed $Agent.Name)
+}
+if ($InstallMismatch) {
+    Write-Error "Install verification failed; fix sync.ps1 or the source tree and rerun."
+    exit 1
+}
 
 # 3. Preserve machine-local state and source pointer. Shared state is configured
 # separately with state.ps1 and is never copied into an installed package.

@@ -4,7 +4,7 @@ Read this only before using an external CLI route. Keep calls short, fresh, self
 
 ## Capability registry
 
-**This table is the only place model IDs, invocation shapes, and effort ladders are stated.** Provider references carry judgment, prompt discipline, and failure forensics — not command shapes. When a CLI changes, edit here and nowhere else. `sync.sh` refuses to install if a command below has no matching `allowed-tools` entry in the Claude adapter.
+**This table is the only place model IDs, invocation shapes, and effort ladders are stated.** Provider references carry judgment, prompt discipline, and failure forensics — not command shapes. When a CLI changes, edit here and nowhere else. Each invocation shape also states its pre-authorized prefix, the owner-approved permission posture: `sync.sh` and `sync.ps1` refuse to install unless the Claude adapter's `allowed-tools` lists exactly those prefixes (plus the `command -v` / `Get-Command` probe) as Bash entries with PowerShell twins, and each prefix starts its own command. Widening a prefix is an owner decision made here, not in the adapter.
 
 ### Models and effort
 
@@ -32,16 +32,16 @@ For ambiguous or complex coding, choose Sol rather than raising Luna effort by d
 
 ### Invocation shapes
 
-| Route | Command |
-|---|---|
-| Codex — read-only leg | `codex exec -s read-only -m <model-id> -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` |
-| Codex — write leg | `codex exec -s workspace-write -m <model-id> -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` |
-| Codex — web research (read-only) | `codex --search exec -s read-only -m <model-id> -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` |
-| Grok — headless | `grok --always-approve --no-subagents --no-alt-screen --minimal --output-format json -m <model-id> --reasoning-effort <effort> --prompt-file <path>` |
-| Antigravity | `agy -p "<prompt>" --model <slug> --print-timeout <duration>` |
-| Antigravity — slug discovery | `agy models` |
-| Advisor | `claude -p --safe-mode --model <model-id> --effort <effort> --tools "" --system-prompt "<advisor persona>" --output-format json --no-session-persistence "<dossier>"` |
-| Claude — code review (Codex/Grok hosts) | `claude -p --safe-mode --model <model-id> --effort <effort> --tools "Read,Glob,Grep" --allowedTools "Read,Glob,Grep" --permission-prompts none --system-prompt "<reviewer persona>" --output-format json --no-session-persistence "<review packet>"` |
+| Route | Command | Pre-authorized prefix (allowed-tools) |
+|---|---|---|
+| Codex — read-only leg | `codex exec -s read-only -m <model-id> -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` | `codex exec -s read-only` |
+| Codex — write leg | `codex exec -s workspace-write -m <model-id> -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` | `codex exec -s workspace-write` |
+| Codex — web research (read-only) | `codex --search exec -s read-only -m <model-id> -c model_reasoning_effort="<effort>" -o <outfile> "<prompt>"` | `codex --search exec -s read-only` |
+| Grok — headless | `grok --always-approve --no-subagents --no-alt-screen --minimal --output-format json -m <model-id> --reasoning-effort <effort> --prompt-file <path>` | `grok --always-approve` |
+| Antigravity | `agy -p "<prompt>" --model <slug> --print-timeout <duration>` | `agy -p` |
+| Antigravity — slug discovery | `agy models` | `agy models` |
+| Advisor | `claude -p --safe-mode --model <model-id> --effort <effort> --tools "" --system-prompt "<advisor persona>" --output-format json --no-session-persistence "<dossier>"` | `claude -p` |
+| Claude — code review (Codex/Grok hosts) | `claude -p --safe-mode --model <model-id> --effort <effort> --tools "Read,Glob,Grep" --allowedTools "Read,Glob,Grep" --permission-prompts none --system-prompt "<reviewer persona>" --output-format json --no-session-persistence "<review packet>"` | `claude -p` |
 
 Per-route qualifiers:
 

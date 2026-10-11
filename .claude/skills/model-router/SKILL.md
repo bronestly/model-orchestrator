@@ -19,7 +19,7 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.41.1"
+  version: "0.41.2"
   updated: "2026-10-11"
 ---
 

@@ -36,8 +36,10 @@ not an application. There is no build system.
   measured: before v0.25.0 the same facts lived in three or four files and had
   drifted into 14 inconsistencies, including an `allowed-tools` entry that
   pre-authorized the one Grok flag every reference forbids.
-- Registry commands must stay in sync with `SKILL.md`'s `allowed-tools`; `sync.sh`
-  and `sync.ps1` refuse to install otherwise. Widening the allowlist is a
+- Registry commands must stay in sync with `SKILL.md`'s `allowed-tools`: the
+  registry's Invocation shapes table states each command's pre-authorized prefix,
+  and `allowed-tools` must list exactly those prefixes (Bash plus PowerShell twins);
+  `sync.sh` and `sync.ps1` refuse to install otherwise. Widening the allowlist is a
   permission-posture decision — get the owner's agreement, don't do it silently to
   make the guard pass.
 - Preserve the Sol-high-first Codex workflow, the Grok-first Grok
@@ -66,9 +68,10 @@ not an application. There is no build system.
 Run `bash -n sync.sh`, validate all adapter frontmatters, then run `bash sync.sh` (or `.\sync.ps1` on Windows PowerShell)
 and compare each installed adapter and reference directory with its source.
 
-A non-zero `sync.sh` exit is a real finding, not a broken script: it means a registry
-command has no matching `allowed-tools` entry. Read what it prints before changing
-either file.
+A non-zero `sync.sh` exit is a real finding, not a broken script: either a registry
+prefix and `allowed-tools` disagree, or an installed package does not match its
+source (the installer now checks every installed adapter, reference directory, and
+agent itself). Read what it prints before changing either file.
 
 Then check that the registry is still the sole owner of command shapes — this is the
 part no script gates, so it is the one to run by hand after touching any reference:

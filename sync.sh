@@ -18,73 +18,80 @@ if [[ ! -f "$CLAUDE_SRC/SKILL.md" || ! -f "$CODEX_ADAPTER" || ! -f "$GROK_ADAPTE
   exit 1
 fi
 
-# Registry <-> allowlist drift guard.
+# Registry <-> allowlist posture guard.
 # The capability registry in references/routing-reference.md owns every CLI command
-# the skill prescribes. If one of those commands is not pre-authorized in the Claude
-# adapter's allowed-tools, the skill prescribes a call it cannot make — the exact
-# defect this guard exists to catch. Refuse to install rather than ship that.
+# the skill prescribes and, per command, the prefix the owner pre-authorized. The
+# Claude adapter's allowed-tools must list exactly those prefixes (Bash entries with
+# PowerShell twins), and each prefix must start its own command. A missing entry
+# means the skill prescribes a call it cannot make; an extra or shortened entry
+# silently widens the permission posture. Refuse to install in either case.
 REGISTRY="$CLAUDE_SRC/references/routing-reference.md"
 
-# Commands: the first backticked span of each row in the "Invocation shapes" table.
-registry_commands() {
+# Rows of the "Invocation shapes" table as "<command>\t<prefix>": the first and
+# second backticked spans of each row.
+registry_rows() {
   awk '
     /^### Invocation shapes/ { inblock = 1; next }
     inblock && /^#/          { inblock = 0 }
-    inblock && /^\|/ {
-      if (match($0, /`[^`]+`/)) print substr($0, RSTART + 1, RLENGTH - 2)
+    inblock && /^\|/ && match($0, /`[^`]+`/) {
+      command = substr($0, RSTART + 1, RLENGTH - 2)
+      rest = substr($0, RSTART + RLENGTH)
+      prefix = match(rest, /`[^`]+`/) ? substr(rest, RSTART + 1, RLENGTH - 2) : ""
+      print command "\t" prefix
     }
   ' "$REGISTRY"
 }
 
-# Patterns: the contents of each Bash(...) entry, with any trailing glob removed.
+# Patterns: the contents of each <kind>(...) entry, with any trailing glob removed.
+# Only one "  - Bash(...)" or "  - PowerShell(...)" entry per line is understood; any
+# other line in the block is printed as "unsupported: <line>" so the set comparison
+# fails instead of silently skipping an entry. A bare "*" grant prints as "*".
 allowlist_patterns() {
-  awk '
+  awk -v kind="$1" '
     /^allowed-tools:/       { inblock = 1; next }
     inblock && /^[^ \t-]/   { inblock = 0 }
-    inblock && match($0, /Bash\([^)]*\)/) {
-      pattern = substr($0, RSTART + 5, RLENGTH - 6)
+    inblock {
+      sub(/\r$/, "")
+      if ($0 ~ /^[ \t]*$/) next
+      if ($0 !~ /^  - (Bash|PowerShell)\([^)]+\)$/) { print "unsupported: " $0; next }
+      if (index($0, "  - " kind "(") != 1) next
+      pattern = substr($0, length(kind) + 6, length($0) - length(kind) - 6)
       sub(/\*$/, "", pattern)
       sub(/[ \t]+$/, "", pattern)
-      if (pattern != "") print pattern
+      print (pattern == "" ? "*" : pattern)
     }
   ' "$CLAUDE_SRC/SKILL.md"
 }
 
-ALLOWLIST="$(allowlist_patterns)"
 drift=0
-while IFS= read -r command; do
+while IFS=$'\t' read -r command prefix; do
   [[ -n "$command" ]] || continue
-  # Compare only the concrete prefix — everything before the first <placeholder>.
-  concrete="$(awk '{
-    for (i = 1; i <= NF; i++) {
-      if (index($i, "<") > 0) break
-      printf "%s%s", (i > 1 ? " " : ""), $i
-    }
-  }' <<<"$command")"
-  [[ -n "$concrete" ]] || continue
-
-  authorized=0
-  while IFS= read -r pattern; do
-    [[ -n "$pattern" ]] || continue
-    # Trailing space on both sides keeps "agy -p" from matching "agy -print".
-    if [[ "$concrete " == "$pattern "* ]]; then
-      authorized=1
-      break
-    fi
-  done <<<"$ALLOWLIST"
-
-  if (( authorized == 0 )); then
-    echo "Registry command is not in the Claude adapter's allowed-tools:" >&2
-    echo "  registry: $concrete" >&2
-    echo "  fix:      add 'Bash($concrete *)' to SKILL.md, with its PowerShell twin." >&2
-    echo "            Any shorter prefix of that command also satisfies the guard;" >&2
-    echo "            prefer the shortest one that stays unambiguous." >&2
+  # Trailing space on both sides keeps "agy -p" from matching "agy -print".
+  if [[ -z "$prefix" || "$command " != "$prefix "* ]]; then
+    echo "Registry row's pre-authorized prefix does not start its command:" >&2
+    echo "  command: $command" >&2
+    echo "  prefix:  ${prefix:-<none>}" >&2
     drift=1
   fi
-done <<<"$(registry_commands)"
+done <<<"$(registry_rows)"
+
+# The `command -v` probe is not a route, so it has no registry row.
+EXPECTED="$( { echo 'command -v'; registry_rows | cut -f2; } | sed '/^$/d' | sort -u)"
+BASH_SET="$(allowlist_patterns Bash | sort -u)"
+PS_SET="$(allowlist_patterns PowerShell | sed 's/^Get-Command$/command -v/' | sort -u)"
+for kind in Bash PowerShell; do
+  if [[ "$kind" == Bash ]]; then actual="$BASH_SET"; else actual="$PS_SET"; fi
+  if [[ "$actual" != "$EXPECTED" ]]; then
+    echo "SKILL.md $kind(...) allowed-tools differ from the registry's pre-authorized prefixes" >&2
+    echo "  (< registry, > SKILL.md; PowerShell Get-Command shown as command -v):" >&2
+    diff <(printf '%s\n' "$EXPECTED") <(printf '%s\n' "$actual") | grep '^[<>]' | sed 's/^/  /' >&2 || true
+    drift=1
+  fi
+done
 
 if (( drift != 0 )); then
   echo "Refusing to install: routing-reference.md and SKILL.md disagree." >&2
+  echo "Widening a prefix is the owner's decision; make it in the registry first." >&2
   exit 1
 fi
 
@@ -170,6 +177,40 @@ stage_and_install_host() {
 
 stage_and_install_host "$CODEX_ADAPTER" "$CODEX_DEST" "codex"
 stage_and_install_host "$GROK_ADAPTER" "$GROK_DEST" "grok"
+
+# Post-install check: every installed package must match its source exactly, so a
+# copy or path error fails here instead of shipping a package with broken links.
+install_mismatch=0
+check_same() {
+  local label="$1" src="$2" dest="$3"
+  shift 3
+  # diff compares a file with a same-named file inside a directory, so require types to match.
+  if [[ -f "$src" && ! -f "$dest" ]] || ! diff -rq -x '.DS_Store' "$@" "$src" "$dest" >&2; then
+    echo "Installed $label does not match its source: $dest" >&2
+    install_mismatch=1
+  fi
+}
+check_same "Claude package" "$CLAUDE_SRC" "$CLAUDE_DEST" -x adapters
+if [[ -e "$CLAUDE_DEST/adapters" ]]; then
+  echo "Installed Claude package contains the other hosts' adapters/: $CLAUDE_DEST" >&2
+  install_mismatch=1
+fi
+for host in codex grok; do
+  if [[ "$host" == codex ]]; then adapter="$CODEX_ADAPTER" dest="$CODEX_DEST"; else adapter="$GROK_ADAPTER" dest="$GROK_DEST"; fi
+  check_same "$host adapter" "$adapter" "$dest/SKILL.md"
+  check_same "$host references" "$CLAUDE_SRC/references" "$dest/references"
+  if [[ "$(ls -A "$dest" | grep -vx '.DS_Store' | sort | tr '\n' ' ')" != "SKILL.md references " ]]; then
+    echo "Installed $host package has unexpected top-level entries: $dest" >&2
+    install_mismatch=1
+  fi
+done
+for agent in "${agents[@]}"; do
+  check_same "agent $(basename "$agent")" "$agent" "$AGENTS_DEST/$(basename "$agent")"
+done
+if (( install_mismatch != 0 )); then
+  echo "Install verification failed; fix sync.sh or the source tree and rerun." >&2
+  exit 1
+fi
 
 # Preserve machine-local state and source pointer. Shared state is configured
 # separately with state.sh and is never copied into an installed package.
