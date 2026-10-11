@@ -92,10 +92,21 @@ fi
 # definition pins one, so it must appear in the registry's host-native table.
 AGENTS_SRC="$CLAUDE_SRC/agents"
 AGENTS_DEST="$HOME/.claude/agents"
-for agent in "$AGENTS_SRC"/mr-*.md; do
-  [[ -f "$agent" ]] || continue
-  model="$(awk '/^model:/ { print $2; exit }' "$agent")"
-  if [[ -z "$model" ]] || ! grep -q "| \`$model\` |" "$REGISTRY"; then
+# Model IDs: the backticked second column of the host-native table only.
+NATIVE_MODELS="$(awk -F'|' '
+  /^\| Codename \| Model ID \|/ { inblock = 1; next }
+  inblock && !/^\|/             { exit }
+  inblock && match($3, /`[^`]+`/) { print substr($3, RSTART + 1, RLENGTH - 2) }
+' "$REGISTRY")"
+agents=("$AGENTS_SRC"/mr-*.md)
+if [[ ! -f "${agents[0]}" ]]; then
+  echo "No mr-*.md agent definitions under $AGENTS_SRC" >&2
+  echo "Refusing to install: restore the agents/ source directory." >&2
+  exit 1
+fi
+for agent in "${agents[@]}"; do
+  model="$(awk '/^model:/ { sub(/\r$/, ""); print $2; exit }' "$agent")"
+  if [[ -z "$model" ]] || ! grep -qxF -- "$model" <<<"$NATIVE_MODELS"; then
     echo "Agent definition pins a model the registry does not list:" >&2
     echo "  agent: $agent" >&2
     echo "  model: ${model:-<none>}" >&2

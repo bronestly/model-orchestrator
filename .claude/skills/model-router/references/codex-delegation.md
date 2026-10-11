@@ -48,11 +48,11 @@ Resolve aliases and effort from the registry. Use the default review effort, wit
 
 With no reviewer named, a code review (diff, PR, branch, or seam review) goes to Codex Sol in the read-only sandbox under the code-review contract below, at the registry's review effort. The sandbox makes read-only mechanical; a Claude reviewer with shell access has it only by prompt.
 
-Always add a fresh running reviewer (`mr-opus-reviewer`, see `claude-delegation.md`) in parallel with the same frozen packet (owner decision, 2026-10-11). Tell it which probes the change invites: browser or rendering behaviour, deploy order, real data volume, sizing arithmetic, installers, or anything a real database, test runner, or page would expose.
+On a Claude host, always add a fresh running reviewer (`mr-opus-reviewer`, see `claude-delegation.md`) in parallel with the same frozen packet (owner decision, 2026-10-11). Tell it which probes the change invites: browser or rendering behaviour, deploy order, real data volume, sizing arithmetic, installers, or anything a real database, test runner, or page would expose.
 
 The two find mostly disjoint defects. The static trace catches state sequences and cross-statement or lost-update paths; the running reviewer catches environment defects and arithmetic the static pass accepted (calibration 2026-10-03 → 10-09). Adjudicate the pair with steps 3–5 of the code-review protocol in `vs-mode.md`, and record a `code-review-v1` event. Codex-versus-Claude reviewing is still on trial, and these pairs are the measurement. Changing this default goes through the approval-gated promotion flow in `vs-mode.md`.
 
-If the Codex route fails (auth, model rollout, CLI or classifier denial), use `mr-opus-reviewer` as the reviewer and name the substitution in the report. An explicit "review with Codex" is never silently substituted. Some devices' read-only sandbox cannot launch browsers or reach the network (see device-local notes). An INCOMPLETE verdict with complete findings for that reason is accepted, not re-prompted; send the unrunnable checks to the running reviewer.
+If the Codex route fails on a Claude host (auth, model rollout, CLI or classifier denial), use `mr-opus-reviewer` as the reviewer and name the substitution in the report. Codex and Grok hosts have no native agents; they follow their adapter's review row instead of this pairing and fallback. An explicit "review with Codex" is never silently substituted. Some devices' read-only sandbox cannot launch browsers or reach the network (see device-local notes). An INCOMPLETE verdict with complete findings for that reason is accepted, not re-prompted; send the unrunnable checks to the running reviewer.
 
 ### Freeze the review scope
 

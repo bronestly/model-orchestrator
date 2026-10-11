@@ -86,11 +86,23 @@ if ($Drift) {
 # pins a model ID, which must appear in the registry's host-native table.
 $AgentsSrc = Join-Path $ClaudeSrc "agents"
 $AgentsDest = Join-Path $UserHome ".claude\agents"
-$RegistryText = Get-Content -Raw $RegistryPath
-foreach ($Agent in Get-ChildItem -Path $AgentsSrc -Filter "mr-*.md") {
+# Model IDs: the backticked second column of the host-native table only.
+$NativeModels = @()
+$InNative = $false
+foreach ($Line in Get-Content $RegistryPath) {
+    if ($Line -cmatch '^\| Codename \| Model ID \|') { $InNative = $true; continue }
+    if ($InNative -and $Line -notmatch '^\|') { break }
+    if ($InNative -and $Line.Split('|')[2] -match '`([^`]+)`') { $NativeModels += $Matches[1] }
+}
+$AgentFiles = @(Get-ChildItem -Path $AgentsSrc -Filter "mr-*.md" -ErrorAction SilentlyContinue)
+if ($AgentFiles.Count -eq 0) {
+    Write-Error "Refusing to install: no mr-*.md agent definitions under $AgentsSrc."
+    exit 1
+}
+foreach ($Agent in $AgentFiles) {
     $ModelLine = Get-Content $Agent.FullName | Where-Object { $_ -match '^model:\s*(\S+)' } | Select-Object -First 1
     $Model = if ($ModelLine -and $ModelLine -match '^model:\s*(\S+)') { $Matches[1] } else { "" }
-    if (-not $Model -or -not $RegistryText.Contains("| ``$Model`` |")) {
+    if (-not $Model -or $NativeModels -cnotcontains $Model) {
         Write-Host "Agent definition pins a model the registry does not list:"
         Write-Host "  agent: $($Agent.FullName)"
         Write-Host "  model: $Model"
