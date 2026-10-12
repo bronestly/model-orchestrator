@@ -19,8 +19,8 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.41.4"
-  updated: "2026-10-11"
+  version: "0.42.0"
+  updated: "2026-10-12"
 ---
 
 # Model Router — Claude Adapter
@@ -53,6 +53,8 @@ Use the cheapest route that comfortably clears the quality bar, counting the orc
 The transcript is part of the price. A leg that can be written as a fresh, self-contained prompt — the delegation contract below is the test — does not need the transcript, and running it inline charges the whole transcript as overhead anyway; that overhead grows with every turn and compaction. After a compaction or a context-pressure warning, flip the default for bounded legs: fresh context (subagent or CLI) unless the leg genuinely needs the accumulated session. Judgment, ambiguity resolution, and final integration stay in the main context regardless — they are what the transcript is for.
 
 Model IDs, effort defaults, prices, and context limits for every route — including Opus 5.5, Fable 5.1, and Grok 4.7 — live in [references/routing-reference.md](references/routing-reference.md). Fast mode stays off on every provider because it trades cost for latency the skill never needs.
+
+**Host check.** If the session runs in T3 Code (its runtime info says so) or another unattended Agent SDK host (`CLAUDE_CODE_ENTRYPOINT=sdk-*`), read [references/t3-code.md](references/t3-code.md) before the first leg. Plain Claude Code sessions skip it.
 
 Before an external CLI call, read the registry. Then read only the provider reference selected by the route:
 
