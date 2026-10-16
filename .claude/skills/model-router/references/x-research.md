@@ -18,10 +18,9 @@ Fast-moving-topic rule: X-first for the *discourse*, then corroborate every fact
 
 ## Capability limits to plan around (verified 2026-07-13)
 
-- **Pre-flight: confirm an X tool exists.** X search needs a Responses-API model entry with backend search enabled (registry Grok qualifier). A `chat_completions` entry or a free grok.com login gets none (verified 2026-09-27). Before a live-X leg, pin the device's Responses-backed alias (from `routing-notes.local.md`) and run the registry's Grok identity-and-backend check (sampled post IDs must resolve; the `events.jsonl` log can omit server-side X calls). If it fails:
-  - the leg is web research on x.com pages, not X search, so label it `DEGRADED: no X tool` and downgrade every prevalence claim;
-  - check every post URL against the tool results — without an X tool the native backend invented posts with placeholder status IDs;
-  - prefer a Sonnet + WebSearch leg if X coverage is essential.
+- **Pre-flight: confirm an X tool exists.** X search needs a Responses-API model entry with backend search enabled (registry Grok qualifier). A `chat_completions` entry gets none, and a free grok.com login got none on 2026-09-27; the native login passed on 2026-10-16 (registry). Before a live-X leg, pin the registry ID (no relay entries) and run the registry's Grok identity-and-backend check (sampled post IDs must resolve; the `events.jsonl` log can omit server-side X calls). If it fails, the Grok live-X route is dead for the session (registry Grok qualifier):
+  - discard the run's post claims — without an X tool the native backend invented posts with placeholder status IDs;
+  - run the fallback Sonnet + WebSearch leg and label the deliverable `DEGRADED: no X tool`, with every prevalence claim downgraded.
 - Grok 4.7's training cutoff is May 2026. The live search tools are the only freshness layer, so force their use with explicit research instructions.
 - X search tools return roughly ≤10 results per call: depth comes from many angles, not one big query.
 - Native X search can rate-limit (`429`) for a whole turn (observed 2026-08-15); Grok then falls back to `site:x.com` web discovery plus post-page fetches. The report survives but the low-engagement practitioner pass thins out — treat prevalence claims from such runs as weaker and note the degradation in the deliverable.
