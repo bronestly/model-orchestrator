@@ -31,6 +31,8 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Antigravity (never the citation source) | Grok 4.7, then web research in main Sol |
 | Parallel independent legs explicitly permitted by the user/environment | Native Codex subagents, explicitly selecting Luna for light work or Sol for demanding work | External CLIs or sequential main-context work |
 
+**T3 host check.** In T3 Code, read [references/t3-code.md](references/t3-code.md) before the first worker call, including a native subagent. Its token-sharing compatibility rule qualifies the native route above; exposed tools alone do not establish backend support.
+
 Before an external worker call, read [references/routing-reference.md](references/routing-reference.md) — its capability registry is the only place model IDs, invocation shapes, and effort ladders are stated. Then read only the chosen provider reference, which carries judgment and failure modes rather than command shapes:
 
 - Sol/Luna/Terra: [references/codex-delegation.md](references/codex-delegation.md)
