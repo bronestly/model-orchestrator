@@ -6,7 +6,69 @@ Command shapes and model slugs live strictly in the capability registry (`routin
 
 ## Model-separated track records
 
-Learnings, failure forensics, and prompting rules are tracked independently per model generation. Do **not** apply 3.7 empirical quirks as fixed assumptions for 3.8. The user builds the 3.8 track record via VS mode (`vs-mode.md`).
+Learnings, failure forensics, and prompting rules are tracked independently per model generation. Do **not** apply 3.7 empirical quirks as fixed assumptions for 3.8, or 3.8 Flash quirks as assumptions for Gemini 4 Argon. Each track record is built through VS mode (`vs-mode.md`).
+
+---
+
+### Gemini 4 Argon (trial, opened 2026-10-28)
+
+Argon is Google's flagship reasoning model, reachable through agy (registry row "Antigravity — Argon"). It is **not a default route yet**: no automatic routing-table row sends work here until the `argon-baseline-v1` evals below produce events. Use it only when the user asks for Argon, or as a candidate in a VS run. Grounding: an official-docs sweep (Codex Sol `high`, web search) and a live-X sweep (Grok 4.7 `high`, 4/4 sampled post IDs resolved), both 2026-10-28, kept in `model-router-workspace/research-2026-10-28/`.
+
+#### What the evidence says so far
+
+- **Claimed strengths:**
+  - Tool-heavy knowledge work: Artificial Analysis AutomationBench 78%, the top score.
+  - Multimodal documents and long video: Google's LVBench 91.7%.
+  - SVG and visual code: Simon Willison found it excellent at every thinking level.
+  - Price: half of Opus 5.5's until 2026-11-30.
+- **Claimed weaknesses:**
+  - It makes up how codebases work. Theo found it "outright unusable for real code work in my codebases. It aggressively hallucinates about how systems work" and reported >50% false claims on his codebase-analysis bench (2026-10-14).
+  - It trails Opus 5.5 and Astra on FrontierSWE, Terminal-Bench and the AA Index v5 (Argon `high` 50 vs Opus 5.5 max 58), including on Google's own card.
+  - It is slow, with timeouts, which Google's model card itself names.
+  - One OCR bench found it invented page content.
+- **Local probes (agy 1.4.9):**
+  - On one arithmetic check, `low` answered wrong with 0 thinking tokens and `high` answered right with ~1.1k thinking tokens in 22 s.
+  - The harness overhead is ~7.6k input tokens per call.
+  - About eight short probes used ~3% of the Pro weekly Argon bucket.
+
+These are leads for the evals, not established routing facts.
+
+#### Baseline prompting rules (to be tested, not proven)
+
+1. **Closed spec.** State the goal, the exact inputs, the allowed tools, "done means", and the output sections. One practitioner reported that Argon needs every detail spelled out where Opus fills gaps; that report is isolated, so treat this rule as a hypothesis.
+2. **Grounded claims only.** Every claim about code, files or documents cites the file and line, or the fetched source it came from. The worker writes `NOT OBSERVED` instead of describing behaviour it did not see. This targets the codebase-hallucination failure; score it by false-claim rate, not by fluency.
+3. **No length targets.** Google states the model "does not follow token-length or word-count targets". Constrain the shape with a section list or a JSON schema instead.
+4. **Effort by evaluation.** Google's instruction is to "run your evaluations at all three levels, then pick the lowest level that meets your quality bar". Until the evals pick a level per task type, use `medium`, with `low` only for mechanical work.
+5. **Freshness.** The knowledge cutoff is March 2026. Anything later needs a search or fetch tool, or the source supplied in the prompt.
+6. **Carried over from Flash, unverified for Argon:** documents first and the question last; no hand-written step-by-step reasoning. Google's prompt guide states both for Gemini 3 only, so each is tested once before it becomes a rule.
+7. **agy harness rules still apply:** the headless tool rule and the deliverable guard from the 3.8 section below, plus the registry's timeout bound.
+8. **Quota.** On Pro, Argon draws its own weekly bucket. Never spend it on bulk or mechanical work that Flash clears, or on re-checking Flash output.
+
+#### Interim role choices (owner-approved 2026-10-28, from `argon-baseline-v1` E1–E2)
+
+- **agy web-research legs:** prefer Argon `medium` over Flash `high`. On the same official-docs brief it was more accurate (9/14 right vs 7/14), faster (312 s vs 509 s), and used about a quarter of the input tokens. It also got right the CLI facts Flash invented. It is still a source of leads only: it marked a fabricated Google quote and unfetched claims as "verified", and 6/17 of its links were bad. Every rule in the 3.8 trial verdict below (HTTP-check URLs, publish a REJECTED list, primary-fetch anything that enters a deliverable) applies unchanged.
+- **Supplied-context Q&A and extraction** (documents or code in the prompt, or a directory via the registry's `--add-dir` shape, with a cite-or-`NOT FOUND` contract): use Argon `low`. It scored 45/45 across E1, E1 v2 and E1 v3 with no invented answers and 0 thinking tokens, matching Argon `high`, Flash `high` and Opus 5.5.
+- **Quota:** Flash stays the route for bulk work, because Pro's Argon bucket is small; an agentic Argon call cost ~2% of the weekly bucket.
+
+Never use Argon as the citation source of a deliverable, and never route repository writes here (agy write legs are not an established route), until events say otherwise.
+
+#### `argon-baseline-v1` evals
+
+Each task has a ground truth the orchestrator already owns. Score each with the VS scorecard (`vs-mode.md`), plus these metrics:
+
+- false-claim rate;
+- dead or wrong link rate;
+- `thinking_tokens`, `duration_seconds`, and the drop in the Argon bucket's `remaining_fraction`. Read `/usage` before and after each batch, and allow 5–10 min of lag.
+
+| ID | Task | Candidates | Decides |
+|---|---|---|---|
+| E1 | 15 factual questions about this skill's own files, supplied inline, with a known answer key | Argon `low`/`medium`/`high`, Flash `high`, Opus 5.5 | Whether the false-claim failure appears; the lowest passing Argon effort |
+| E2 | Re-run the 2026-10-28 Argon research brief; the verified reports are the key | Argon `medium`, Flash `high` | Citation fidelity versus Flash |
+| E3 | Photo pre-pass on an existing curate-report gold set | Argon `low`/`medium`, Flash `medium` | Vision role and its quota cost |
+| E4 | Classify 20 labelled items | Argon `low`, Flash `low` | Bulk role (expected: Flash keeps it) |
+| E5 | Critique a past plan whose defects are already known | Argon `high`, Opus 5.5 `medium` | Read-only plan-review role |
+
+A role is promoted only after 2–3 unrelated events agree, through the approval-gated flow in `vs-mode.md`. Record each run as an event tagged with the Argon effort and the orchestrator model.
 
 ---
 
@@ -16,7 +78,7 @@ Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) is the active default rout
 
 #### Prompting best practices
 
-1. **Avoid over-prompting reasoning:** 3.8 Flash reasons deeply internally. Do **not** prescribe manual "think step-by-step" or verbose reasoning scaffolds — hand-crafted reasoning recipes clutter internal chains of thought.
+1. **Avoid over-prompting reasoning (unsourced, untested):** 3.8 Flash reasons internally, so this rule says not to prescribe manual "think step-by-step" or verbose reasoning scaffolds. No primary source backs it. Google's prompt-design page has no such instruction (fetched 2026-10-28), and on the same day both Flash 3.8 and Argon produced fabricated "verbatim" Google quotes saying it (`argon-baseline-v1` E2). Keep prompts lean by default, but treat this as a hypothesis to test in a prompt-variant bake-off, not as a vendor rule.
 2. **Long-context ordering:** Place raw context, reference documents, or data dumps **first**; place the task description, questions, output format, and constraints at the **end**.
 3. **Declarative constraints over process rules:** Clearly specify negative boundaries (what NOT to do), task scope, and stopping conditions. Refine definitions and constraints rather than explaining how to think.
 4. **Headless tool rule (critical agy gotcha):** Headless `agy -p` attempts unapproved terminal commands if unconstrained, which get soft-denied to stderr and result in empty stdout. Always prepend an explicit tool rule:

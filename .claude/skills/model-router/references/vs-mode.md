@@ -176,8 +176,13 @@ When upgrading a route to a new model generation (such as Grok 4.6 → 4.7 or Ge
    - **Factual Hallucination / Mechanism Invention:** Check whether plausible-sounding but fabricated technical mechanisms (observed in 3.7) persist in 3.8.
    - **Reasoning Depth & Speed:** Measure latency and output quality across effort levels (`low`, `medium`, `high`).
    - **Tool Discipline:** Check whether 3.8 respects prompt tool constraints without attempting unapproved shell commands.
-4. **Scoring & Ledger:** Record the unblinded scorecard in `<state-repo>/events/YYYY/MM/<timestamp>-<device-id>.md` (device-only facts go in `$HOME/.claude/model-router/routing-notes.local.md`, never inside the state checkout), clearly tagging candidate versions (`grok-4.6-<effort>` vs `grok-4.7-<effort>`).
-5. **Calibration Separation:** Keep track records strictly partitioned by model version. Lessons learned for 4.6 remain archived under 4.6; lessons for 4.7 must be earned through empirical 4.7 or 4.6-vs-4.7 VS runs.
+4. **Evaluation focus for Gemini 3.8 Flash vs Gemini 4 Argon** (a tier comparison, not a generation step; task bank `argon-baseline-v1` in `antigravity-research.md`):
+   - **False-claim rate:** count claims about supplied files or sources that the ground truth contradicts or never states; Argon's reported failure is confident invention about how systems work.
+   - **Effort ladder:** run Argon at all three levels on the same task once, and record the lowest level that passes (Google's own instruction).
+   - **Quota and latency per useful answer:** record `thinking_tokens`, `duration_seconds`, and the Argon bucket's drop. On Pro, Argon quota is the scarce resource, so a tie on quality goes to Flash.
+   - **Citation fidelity:** use the same dead-link and wrong-claim checks as the 3.8 trial.
+5. **Scoring & Ledger:** Record the unblinded scorecard in `<state-repo>/events/YYYY/MM/<timestamp>-<device-id>.md` (device-only facts go in `$HOME/.claude/model-router/routing-notes.local.md`, never inside the state checkout), clearly tagging candidate versions (`grok-4.6-<effort>` vs `grok-4.7-<effort>`).
+6. **Calibration Separation:** Keep track records strictly partitioned by model version. Lessons learned for 4.6 remain archived under 4.6; lessons for 4.7 must be earned through empirical 4.7 or 4.6-vs-4.7 VS runs.
 
 ## Orchestrator trials (suggest, never auto-run)
 
