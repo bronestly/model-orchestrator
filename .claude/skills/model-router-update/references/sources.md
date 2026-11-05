@@ -10,7 +10,7 @@ Primary sources settle facts. Search results and X only point at them.
 | Antigravity | `agy changelog` (no public feed; self-updates) | [Gemini models](https://ai.google.dev/gemini-api/docs/models), [pricing](https://ai.google.dev/gemini-api/docs/pricing) | `agy models`, `agy --help` |
 | T3 Code | `gh release view v<version> -R pingdotgg/t3code` (stable only; ignore nightlies) | `orchestrator_capabilities`, `~/.t3/caches/*.json` | `t3 --version`, desktop app version, source at the tag |
 
-OpenAI's blog and `x.ai` pages return 403 to plain fetches. For OpenAI, so use the API model page and a reporting source that quotes it.
+OpenAI's blog and `x.ai` pages return 403 to plain fetches. For OpenAI, use the API model page and a reporting source that quotes it.
 
 ## What counts as relevant
 
