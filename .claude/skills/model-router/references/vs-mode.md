@@ -177,7 +177,7 @@ When upgrading a route to a new model generation (such as Grok 4.6 → 4.7), do 
    - **Quota and latency per useful answer:** record `thinking_tokens`, `duration_seconds`, and the Argon bucket's drop. On Pro, Argon quota is the scarce resource, so a tie on quality goes to Flash.
    - **Citation fidelity:** use the same dead-link and wrong-claim checks as the 3.8 trial.
 4. **Scoring & Ledger:** Record the unblinded scorecard in `<state-repo>/events/YYYY/MM/<timestamp>-<device-id>.md` (device-only facts go in `$HOME/.claude/model-router/routing-notes.local.md`, never inside the state checkout), clearly tagging candidate versions (`grok-4.6-<effort>` vs `grok-4.7-<effort>`).
-6. **Calibration Separation:** Keep track records strictly partitioned by model version. Lessons learned for 4.6 remain archived under 4.6; lessons for 4.7 must be earned through empirical 4.7 or 4.6-vs-4.7 VS runs.
+5. **Calibration Separation:** Keep track records strictly partitioned by model version. Lessons learned for 4.6 remain archived under 4.6; lessons for 4.7 must be earned through empirical 4.7 or 4.6-vs-4.7 VS runs.
 
 ## Orchestrator trials (suggest, never auto-run)
 

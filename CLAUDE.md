@@ -25,7 +25,8 @@ not an application. There is no build system.
   on user request. Never run automatically from the skill.
 - `auto-sync.sh` — fast-forwards a clean `master` and reinstalls; safe on a timer.
 - `.claude/skills/model-router-update/` — project skill for the daily upstream
-  check. It proposes changes by PR and owns no CLI facts; `sync.sh` does not install it.
+  check. It proposes changes by PR; routing facts stay in the registry, and
+  `sync.sh` does not install it.
 
 ## Change rules
 

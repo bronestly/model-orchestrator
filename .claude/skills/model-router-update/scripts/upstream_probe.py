@@ -1,15 +1,14 @@
 #!/usr/bin/env python3
 """Compare live provider state with the model-router registry. Stdlib only.
 
-Prints one JSON report on stdout. Exit 0 means the report is complete enough to
-read, even if individual sources failed: those appear under "errors", and a run
-with errors is never a clean no-change result. The script changes nothing unless
---record is passed, which stores today's upstream versions as reviewed.
+With --repo, prints one JSON report on stdout and changes nothing. Sources that fail
+appear under "errors", and a report with errors is never a clean no-change result.
+With --record, stores the versions from a saved report as reviewed, so a release that
+ships during a run stays pending for the next one.
 """
 import argparse
 import fnmatch
 import json
-import os
 import re
 import subprocess
 import sys
@@ -17,8 +16,9 @@ from datetime import datetime, timezone
 from pathlib import Path
 
 HOME = Path.home()
-STATE_FILE = HOME / ".claude/model-router/upstream-reviewed.json"
-INSTALLED_SKILL = HOME / ".claude/skills/model-router/SKILL.md"
+ROUTER_STATE = HOME / ".claude/model-router"
+STATE_FILE = ROUTER_STATE / "upstream-reviewed.json"
+INSTALLED_COMMIT = ROUTER_STATE / "installed-commit"
 T3_CACHES = HOME / ".t3/caches"
 VERSION = re.compile(r"\d+\.\d+\.\d+")
 # A backticked model ID, optionally with |-separated suffix alternatives. Table rows
@@ -26,9 +26,17 @@ VERSION = re.compile(r"\d+\.\d+\.\d+")
 MODEL_ID = re.compile(
     r"`((?:gpt|claude|grok|gemini)-[A-Za-z0-9.<-]+(?:\\?\|[a-z]+)*)>?`"
 )
-PROVIDERS = {"codex": "gpt-", "claude": "claude-", "grok": "grok-", "agy": "gemini-"}
+# provider: (prefix of its registry IDs, whether its live list carries other vendors)
+PROVIDERS = {
+    "codex": ("gpt-", False),
+    "claude": ("claude-", False),
+    "grok": ("grok-", True),
+    "agy": ("gemini-", True),
+}
+T3_CATALOGS = {"codex": "codex", "grok": "grok", "agy": "antigravity", "claude": "claudeAgent"}
 
 errors = []
+notices = []
 
 
 def run(*cmd, timeout=45):
@@ -68,60 +76,77 @@ def registry_models(repo):
     return models
 
 
-def t3_catalog(name):
+def t3_cache(name):
     path = T3_CACHES / f"{name}.json"
     try:
-        models = json.loads(path.read_text())["models"]
-    except (OSError, ValueError, KeyError) as exc:
-        errors.append(f"T3 catalog {path}: {exc}")
+        cache = json.loads(path.read_text())
+        return {"version": cache.get("version"), "slugs": {model["slug"] for model in cache["models"]}}
+    except (OSError, ValueError, KeyError, TypeError, AttributeError) as exc:
+        errors.append(f"T3 catalog {path}: {exc!r}")
         return None
-    return {model["slug"] for model in models}
+
+
+def parsed(label, parse, output):
+    """Run a parser over a CLI's output; a shape it did not expect is a failed source."""
+    if not output:
+        return None
+    try:
+        return parse(output)
+    except (ValueError, KeyError, TypeError, AttributeError) as exc:
+        errors.append(f"{label}: {exc!r}")
+        return None
 
 
 def live_models():
-    live = {}
-    output = run("codex", "debug", "models")
-    if output:
-        try:
-            live["codex"] = {
+    live = {
+        "codex": parsed(
+            "codex debug models",
+            lambda text: {
                 model["slug"]
-                for model in json.loads(output)["models"]
+                for model in json.loads(text)["models"]
                 if model.get("visibility") == "list"
-            }
-        except (ValueError, KeyError) as exc:
-            errors.append(f"codex debug models: {exc}")
-    output = run("grok", "models")
-    if output:
-        live["grok"] = set(re.findall(r"^\s*[-*]\s+(\S+)", output, re.M))
-    output = run("agy", "models")
-    if output:
-        live["agy"] = {
-            line.split("\t", 1)[0] for line in output.splitlines() if "\t" in line
-        }
+            },
+            run("codex", "debug", "models"),
+        ),
+        "grok": parsed(
+            "grok models",
+            lambda text: set(re.findall(r"^\s*[-*]\s+(\S+)", text, re.M)),
+            run("grok", "models"),
+        ),
+        "agy": parsed(
+            "agy models",
+            lambda text: {line.split("\t", 1)[0] for line in text.splitlines() if "\t" in line},
+            run("agy", "models"),
+        ),
+    }
     # Claude Code has no list command; T3's catalog comes from the installed CLI.
-    catalog = t3_catalog("claudeAgent")
+    catalog = t3_cache("claudeAgent")
     if catalog:
-        live["claude"] = catalog
-    return live
+        live["claude"] = catalog["slugs"]
+        installed = version_of(run("claude", "--version"))
+        if installed and catalog["version"] != installed:
+            notices.append(
+                f"T3's Claude catalog is from {catalog['version']}, installed is {installed}; "
+                "restart T3 for a current model list"
+            )
+    return {name: models for name, models in live.items() if models}
 
 
 def upstream_versions():
-    versions = {}
-    versions["codex"] = (run("gh", "api", "repos/openai/codex/releases/latest", "-q", ".tag_name") or "").strip()
-    versions["claude"] = (run("npm", "view", "@anthropic-ai/claude-code", "version") or "").strip()
-    output = run("grok", "update", "--check", "--json")
-    try:
-        versions["grok"] = json.loads(output)["latestVersion"] if output else ""
-    except (ValueError, KeyError) as exc:
-        errors.append(f"grok update --check: {exc}")
-        versions["grok"] = ""
-    # agy publishes no release feed: it self-updates, so installed is the best anchor.
-    versions["agy"] = version_of(run("agy", "--version"))
-    versions["t3"] = (run("gh", "api", "repos/pingdotgg/t3code/releases/latest", "-q", ".tag_name") or "").strip()
-    return {
-        name: (VERSION.search(value).group(0) if value and VERSION.search(value) else None)
-        for name, value in versions.items()
+    versions = {
+        "codex": version_of(run("gh", "api", "repos/openai/codex/releases/latest", "-q", ".tag_name")),
+        "claude": version_of(run("npm", "view", "@anthropic-ai/claude-code", "version")),
+        "grok": parsed(
+            "grok update --check",
+            lambda text: version_of(json.loads(text)["latestVersion"]),
+            run("grok", "update", "--check", "--json"),
+        ),
+        # agy publishes no release feed: it self-updates, so installed is the best anchor.
+        "agy": version_of(run("agy", "--version")),
+        "t3": version_of(run("gh", "api", "repos/pingdotgg/t3code/releases/latest", "-q", ".tag_name")),
     }
+    errors.extend(f"no version for {name}" for name, value in versions.items() if value is None)
+    return versions
 
 
 def installed_versions():
@@ -130,53 +155,32 @@ def installed_versions():
     plist = "/Applications/T3 Code (Beta).app/Contents/Info"
     if Path(plist + ".plist").exists():
         installed["t3_desktop"] = version_of(run("defaults", "read", plist, "CFBundleShortVersionString"))
+        if installed["t3_desktop"] != installed["t3_server"]:
+            notices.append(
+                f"T3 desktop {installed['t3_desktop']} and server {installed['t3_server']} differ"
+            )
     return installed
-
-
-def skill_version(path):
-    try:
-        return re.search(r'^\s*version:\s*"([^"]+)"', path.read_text(), re.M).group(1)
-    except (OSError, AttributeError):
-        return None
 
 
 def ignored(model, patterns):
     return any(fnmatch.fnmatch(model, pattern) for pattern in patterns)
 
 
-def main():
-    parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--repo", type=Path, required=True, help="origin/master checkout to compare")
-    parser.add_argument("--record", action="store_true", help="store upstream versions as reviewed")
-    args = parser.parse_args()
-    repo = args.repo.resolve()
-    config = json.loads(Path(__file__).with_name("probe-config.json").read_text())
+def record(report_path):
+    report = json.loads(report_path.read_text())
+    versions = report["upstream"]
+    if report["errors"] or not all(versions.values()):
+        sys.exit(f"Refusing to record a report with failures: {report['errors']}")
+    ROUTER_STATE.mkdir(parents=True, exist_ok=True)
+    STATE_FILE.write_text(
+        json.dumps({"reviewed_at": datetime.now(timezone.utc).isoformat(), "versions": versions}, indent=2) + "\n"
+    )
+    print(f"Recorded {versions} in {STATE_FILE}")
 
-    upstream = upstream_versions()
-    if args.record:
-        if not all(upstream.values()):
-            sys.exit(f"Refusing to record incomplete versions: {upstream} {errors}")
-        STATE_FILE.write_text(
-            json.dumps({"reviewed_at": datetime.now(timezone.utc).isoformat(), "versions": upstream}, indent=2) + "\n"
-        )
-        print(f"Recorded {upstream} in {STATE_FILE}")
-        return
 
-    try:
-        reviewed = json.loads(STATE_FILE.read_text())["versions"]
-    except (OSError, ValueError, KeyError):
-        reviewed = {}
-    version_changes = {
-        name: {"reviewed": reviewed.get(name), "upstream": value}
-        for name, value in upstream.items()
-        if value and value != reviewed.get(name)
-    }
-
-    registry = registry_models(repo)
-    live = live_models()
+def model_diff(registry, live, config):
     new_models, missing_models, t3_gaps = {}, {}, {}
-    t3_names = {"codex": "codex", "grok": "grok", "agy": "antigravity", "claude": "claudeAgent"}
-    for provider, prefix in PROVIDERS.items():
+    for provider, (prefix, mixed) in PROVIDERS.items():
         if provider not in live:
             errors.append(f"no live model list for {provider}")
             continue
@@ -184,7 +188,7 @@ def main():
         relevant = {
             model
             for model in live[provider]
-            if model.startswith(prefix) and not ignored(model, config["ignore_live"])
+            if (model.startswith(prefix) or not mixed) and not ignored(model, config["ignore_live"])
         }
         new_models[provider] = sorted(relevant - routed)
         missing_models[provider] = sorted(
@@ -192,22 +196,62 @@ def main():
             for model in routed - live[provider]
             if not ignored(model, config["ignore_registry"])
         )
-        catalog = t3_catalog(t3_names[provider])
+        catalog = t3_cache(T3_CATALOGS[provider])
         if catalog is not None:
             t3_gaps[provider] = sorted(
-                model for model in relevant - catalog if not ignored(model, config["known_t3_gaps"])
+                model
+                for model in relevant - catalog["slugs"]
+                if not ignored(model, config["known_t3_gaps"])
             )
+    return new_models, missing_models, t3_gaps
 
-    source_skill = skill_version(repo / ".claude/skills/model-router/SKILL.md")
-    installed_skill = skill_version(INSTALLED_SKILL)
+
+def main():
+    parser = argparse.ArgumentParser(description=__doc__)
+    parser.add_argument("--repo", type=Path, help="checkout whose registry to compare")
+    parser.add_argument("--record", type=Path, metavar="REPORT", help="store a saved report's versions as reviewed")
+    args = parser.parse_args()
+    if args.record:
+        record(args.record)
+        return
+    if not args.repo:
+        parser.error("pass --repo or --record")
+    repo = args.repo.resolve()
+    config = json.loads(Path(__file__).with_name("probe-config.json").read_text())
+
+    upstream = upstream_versions()
+    try:
+        reviewed = json.loads(STATE_FILE.read_text())["versions"]
+    except (OSError, ValueError, KeyError, TypeError):
+        reviewed = {}
+    version_changes = {
+        name: {"reviewed": reviewed.get(name), "upstream": value}
+        for name, value in upstream.items()
+        if value and value != reviewed.get(name)
+    }
+    new_models, missing_models, t3_gaps = model_diff(registry_models(repo), live_models(), config)
+    installed = installed_versions()
+
+    master = (run("git", "-C", str(repo), "rev-parse", "origin/master") or "").strip()
+    try:
+        installed_commit = INSTALLED_COMMIT.read_text().strip()
+    except OSError:
+        installed_commit = None
+    if installed_commit != master:
+        notices.append(
+            f"install is at {installed_commit[:7] if installed_commit else 'an unknown commit'}, origin/master is {master[:7]}; "
+            "see the auto-sync.sh output"
+        )
+
     report = {
         "first_run": not reviewed,
+        "upstream": upstream,
         "version_changes": version_changes,
-        "installed": installed_versions(),
+        "installed": installed,
         "new_models": {key: value for key, value in new_models.items() if value},
         "missing_models": {key: value for key, value in missing_models.items() if value},
         "t3_catalog_gaps": {key: value for key, value in t3_gaps.items() if value},
-        "skill": {"source": source_skill, "installed": installed_skill, "stale": source_skill != installed_skill},
+        "notices": notices,
         "errors": errors,
     }
     report["no_change"] = not (
@@ -215,7 +259,6 @@ def main():
         or report["new_models"]
         or report["missing_models"]
         or report["t3_catalog_gaps"]
-        or report["skill"]["stale"]
         or errors
     )
     print(json.dumps(report, indent=2))

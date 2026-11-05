@@ -14,12 +14,13 @@ Read this only when the session runs in T3 Code (its runtime info says so) or in
 
 T3 v2 is transport, not routing: it validates the target and runs it, and every model, effort, and brief decision stays with this skill and its calibration.
 
-**On a T3 host, `delegate_task` is the default transport for every non-Claude leg. A CLI call needs one of the reasons below, named when you state the route.** Claude legs stay native subagents. Call `orchestrator_capabilities` once per thread before the first delegation, and pass effort on every call (registry).
+**On a T3 host, `delegate_task` is the default transport for every external leg, meaning any provider other than the host's own. A CLI call needs one of the reasons below, named when you state the route.** On a Claude host, Claude legs stay native subagents; from a Codex or Grok host, use the registry's Claude route. A host's own native subagents keep their usual rules. Call `orchestrator_capabilities` once per thread before the first delegation, and pass effort on every call (registry).
 
 - **What a T3 task buys:** no shell-command classifier verdicts, a visible and cancellable child thread, durable state across restarts, `clientRequestId` replay instead of duplicate legs, worktree isolation, no stdin hang, and a choice between the device's Codex accounts when one hits its usage limit. Use `isolation: "worktree"` for Codex write legs under an `auto` parent.
 - **The only reasons to use the CLI shape:**
   - Codex read-only review or research, because `delegate_task` has no unattended read-only sandbox (registry, `runtimeMode`).
-  - A leg that needs something in the registry's "Not exposed" list, such as Codex `--search`.
+  - The parent's runtime mode gives the child no usable sandbox: `approval-required` and `auto-accept-edits` stall with no one watching, and `full-access` makes a Codex write leg `danger-full-access` (registry, `runtimeMode`).
+  - A leg that needs something in the registry's "Not exposed" list, such as Codex `--search`. The exception is an Antigravity `--print-timeout` bound: on T3, run the leg with `mode: "wait"` and a `timeoutMs` at the registry's bound instead, and `task_cancel` it on timeout.
   - An Argon leg, because T3's catalog does not list it (registry).
   - Any leg in a secret-bearing repository.
   - A scored Grok leg, or a Grok leg whose effort matters (registry).

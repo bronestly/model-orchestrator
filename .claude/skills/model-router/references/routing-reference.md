@@ -101,7 +101,7 @@ Call qualifiers (verified in T3 v0.1.0 source; the `runtimeMode` mapping and nat
 - **The result is the child's last assistant message only** (or the provider error). For the timeline, `t3_thread_read` the `childThreadId` with `view: "activity"` and page with `afterPosition` until `hasMore` is false; the default `messages` view omits tool activity. `role` only prefixes "Act as the <role> sub-agent"; the child gets no parent history.
 - **No per-child token or cost fields.** T3 aggregates usage only on its Usage page. Codex children still write a rollout under `~/.codex/sessions/` (`originator: "T3 Code"`) with model, effort, sandbox, and token usage; Grok children write `~/.grok/sessions/<cwd>/<id>/usage.json`.
 - **Grok effort is not applied through T3 (observed 2026-10-16, reconfirmed on T3 v0.1.7 with Grok 1.0.70, 2026-11-05; cause unknown).** `reasoningEffort: "low"` was requested; every model call in the session's `chat_history.jsonl` logged `reasoning_effort: "high"`, the device's `~/.grok/config.toml` default. Legs whose Grok effort matters, and scored Grok legs, use the CLI shape.
-- **Not exposed:** an unattended Codex read-only sandbox (see `runtimeMode`), `--search`, network access, `-o`; Grok `--disable-web-search`; agy `--add-dir` and `--print-timeout`. Legs that need one of these use the CLI shape.
+- **Not exposed:** an unattended Codex read-only sandbox (see `runtimeMode`), `--search`, network access, `-o`; Grok `--disable-web-search`; agy `--add-dir` and `--print-timeout`. Legs that need one of these use the CLI shape, except that a T3 agy leg replaces its bound with `mode: "wait"`, `timeoutMs`, and `task_cancel`, because a wait timeout does not stop the child.
 
 ### Unverified gaps
 

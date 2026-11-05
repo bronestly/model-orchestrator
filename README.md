@@ -230,7 +230,7 @@ bash state.sh status
 
 ### Keeping machines in sync
 
-`model-router-update` runs once a day on one machine and opens a PR for the owner to merge. Every other machine only needs to pick up merged changes, which costs no model tokens. `auto-sync.sh` fast-forwards a clean `master` and reinstalls; it skips with a message on any other branch, with uncommitted changes, or when local commits are unpushed.
+`model-router-update` runs once a day on one machine and opens a PR for the owner to merge. Every other machine only needs to pick up merged changes, which costs no model tokens. `auto-sync.sh` fast-forwards a clean `master` and reinstalls; it skips with a message on any other branch, with uncommitted changes or untracked files in the skill, when local commits are unpushed, or when offline.
 
 On Linux, a systemd user timer does this. Replace the checkout path with yours:
 
@@ -239,8 +239,6 @@ mkdir -p ~/.config/systemd/user
 cat > ~/.config/systemd/user/model-router-sync.service <<'UNIT'
 [Unit]
 Description=Update the model-router skill
-Wants=network-online.target
-After=network-online.target
 
 [Service]
 Type=oneshot

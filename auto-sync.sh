@@ -1,33 +1,34 @@
 #!/usr/bin/env bash
 # Fast-forward this checkout to origin/master and reinstall the skill when needed.
-# Safe to run on a timer: it never merges, rebases, or touches local work.
+# Safe to run on a timer: it never merges, rebases, or touches local work. A reason
+# to skip exits 0; a failed fast-forward or install exits non-zero.
 set -euo pipefail
 
 cd "$(dirname "${BASH_SOURCE[0]}")"
-SOURCE=.claude/skills/model-router/SKILL.md
-INSTALLED="$HOME/.claude/skills/model-router/SKILL.md"
+MARKER="$HOME/.claude/model-router/installed-commit"
 
-git fetch --quiet origin master
+skip() {
+  echo "auto-sync: skipped, $1" >&2
+  exit 0
+}
 
 branch="$(git symbolic-ref --quiet --short HEAD || true)"
-if [[ "$branch" != master ]]; then
-  echo "auto-sync: skipped, checkout is on '${branch:-detached HEAD}', not master" >&2
-  exit 0
+[[ "$branch" == master ]] || skip "checkout is on '${branch:-detached HEAD}', not master"
+# sync.sh copies the working tree, so untracked drafts in the skill count as local work.
+if [[ -n "$(git status --porcelain --untracked-files=no)" ||
+      -n "$(git status --porcelain -- .claude/skills/model-router)" ]]; then
+  skip "master has uncommitted changes"
 fi
-if [[ -n "$(git status --porcelain --untracked-files=no)" ]]; then
-  echo "auto-sync: skipped, master has uncommitted changes" >&2
-  exit 0
-fi
+git fetch --quiet origin master || skip "could not fetch origin"
+git merge-base --is-ancestor HEAD origin/master || skip "local master has commits origin/master lacks"
+git merge --quiet --ff-only origin/master
 
-before="$(git rev-parse HEAD)"
-if ! git merge --quiet --ff-only origin/master 2>/dev/null; then
-  echo "auto-sync: skipped, local master has commits origin/master lacks" >&2
-  exit 0
-fi
-
-if [[ "$before" == "$(git rev-parse HEAD)" ]] && cmp -s "$SOURCE" "$INSTALLED"; then
-  echo "auto-sync: up to date at $(git rev-parse --short HEAD)"
+head="$(git rev-parse HEAD)"
+if [[ "$(cat "$MARKER" 2>/dev/null || true)" == "$head" ]]; then
+  echo "auto-sync: up to date at ${head:0:7}"
   exit 0
 fi
 bash sync.sh
-echo "auto-sync: installed $(git rev-parse --short HEAD)"
+# Written last, so a failed install is retried on the next run.
+printf '%s\n' "$head" > "$MARKER"
+echo "auto-sync: installed ${head:0:7}"
