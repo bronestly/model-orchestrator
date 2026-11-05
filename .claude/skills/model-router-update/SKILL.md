@@ -109,7 +109,7 @@ Link the PR to the thread and show its URL in the reply.
 
 ## 7. Finish
 
-Record only if the run ended in a PR or a no-edit report with no failed source. A review that found nothing to edit still records:
+Record only if the run ended in a PR or a no-edit report with no failed source. A review that found nothing to edit still records. A no-change run has nothing new to record, so it skips this:
 
 ```bash
 python3 .update-run/wt/.claude/skills/model-router-update/scripts/upstream_probe.py --record .update-run/report.json
@@ -119,6 +119,7 @@ Then always clean up:
 
 ```bash
 git worktree remove --force .update-run/wt; git worktree prune
+rm -f .update-run/report.json
 ```
 
 Recording stores the versions from the saved report, so the next run reads only newer changelogs, and anything released during this run stays pending. If a source failed, skipping the record makes the next run cover that range again.
