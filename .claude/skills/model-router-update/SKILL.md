@@ -15,11 +15,12 @@ Run everything from the repository root. Shell variables do not persist between 
 
 ```bash
 bash auto-sync.sh
-git worktree remove --force .update-run/wt 2>/dev/null; git worktree prune
+git worktree prune
+git worktree remove .update-run/wt 2>/dev/null
 gh pr list --state open --search "head:model-router-update" --json number,headRefName,url
 ```
 
-A skip or failure from `auto-sync.sh` does not stop the run; include its message in the result. If an update PR is open, use `origin/<its branch>` as `<base>` below and fetch that branch too, so findings already in the PR are not reported again. Otherwise `<base>` is `origin/master`.
+If `.update-run/wt` still exists, an earlier run left unfinished work there: report the path and stop, without removing it. A skip or failure from `auto-sync.sh` does not stop the run; include its message in the result. If an update PR is open, use `origin/<its branch>` as `<base>` below and fetch that branch too, so findings already in the PR are not reported again. Otherwise `<base>` is `origin/master`.
 
 ```bash
 git fetch origin master

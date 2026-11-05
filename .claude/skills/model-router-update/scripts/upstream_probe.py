@@ -152,6 +152,7 @@ def upstream_versions():
 def installed_versions():
     installed = {name: version_of(run(name, "--version")) for name in ("codex", "claude", "grok", "agy")}
     installed["t3_server"] = version_of(run("t3", "--version"))
+    errors.extend(f"no installed version for {name}" for name, value in installed.items() if value is None)
     plist = "/Applications/T3 Code (Beta).app/Contents/Info"
     if Path(plist + ".plist").exists():
         installed["t3_desktop"] = version_of(run("defaults", "read", plist, "CFBundleShortVersionString"))

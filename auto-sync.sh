@@ -24,7 +24,8 @@ git merge-base --is-ancestor HEAD origin/master || skip "local master has commit
 git merge --quiet --ff-only origin/master
 
 head="$(git rev-parse HEAD)"
-if [[ "$(cat "$MARKER" 2>/dev/null || true)" == "$head" ]]; then
+if [[ "$(cat "$MARKER" 2>/dev/null || true)" == "$head" ]] &&
+   cmp -s .claude/skills/model-router/SKILL.md "$HOME/.claude/skills/model-router/SKILL.md"; then
   echo "auto-sync: up to date at ${head:0:7}"
   exit 0
 fi
