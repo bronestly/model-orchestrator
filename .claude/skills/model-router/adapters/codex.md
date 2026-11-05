@@ -23,7 +23,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 |---|---|---|
 | Planning, ambiguity, complex integrated coding, final verification | Main Sol-high context | Do not delegate |
 | Consequential architecture decision or twice-failed approach | One advisor call (Fable 5.1 default; Opus 5.5 on request), if available | Sol self-review |
-| Small, clear independent implementation | Luna `low`/`medium` (minimal-code contract) | Sol `low`/`medium`; Terra only when calibration shows an advantage |
+| Small, clear independent implementation | Luna `low`/`medium` (minimal-code contract) | Sol `low`/`medium`; Terra 6.1 `low`/`medium` on trial for bounded, test-backed fixes |
 | Fresh independent implementation review | Fresh Sol `medium` (code-review contract) | Terra `high` if calibrated, then main Sol with a clean review pass |
 | Bulk extraction, classification, or reconnaissance | Luna `low` (standalone or native subagent) | Sol `low`, Antigravity (bulk tier), then main Sol |
 | Live-X research or bounded engineering legs (4.7 active default — see grok-delegation) | Grok 4.7 | Web research or main Sol |
@@ -31,7 +31,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Antigravity (never the citation source) | Grok 4.7, then web research in main Sol |
 | Parallel independent legs explicitly permitted by the user/environment | Native Codex subagents, explicitly selecting Luna for light work or Sol for demanding work | External CLIs or sequential main-context work |
 
-**T3 host check.** In T3 Code, read [references/t3-code.md](references/t3-code.md) before the first worker call, including a native subagent. Its token-sharing compatibility rule qualifies the native route above; exposed tools alone do not establish backend support.
+**T3 host check.** In T3 Code, read [references/t3-code.md](references/t3-code.md) before the first worker call, including a native subagent. There, external workers run through its `delegate_task` tool unless that file names a reason for a CLI. Its token-sharing compatibility rule qualifies the native route above; exposed tools alone do not establish backend support.
 
 Before an external worker call, read [references/routing-reference.md](references/routing-reference.md) — its capability registry is the only place model IDs, invocation shapes, and effort ladders are stated. Then read only the chosen provider reference, which carries judgment and failure modes rather than command shapes:
 

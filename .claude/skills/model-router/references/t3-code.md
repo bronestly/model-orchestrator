@@ -14,8 +14,15 @@ Read this only when the session runs in T3 Code (its runtime info says so) or in
 
 T3 v2 is transport, not routing: it validates the target and runs it, and every model, effort, and brief decision stays with this skill and its calibration.
 
-- **Prefer a T3 delegated task** for legs that fit the plain shape: a bounded brief, a final message as the deliverable, and a sandbox the parent's runtime mode gives (registry: for Codex, `runtimeMode` is the sandbox). In practice that means Codex write legs with `isolation: "worktree"` under an `auto` parent, Grok research and live-X legs, and Antigravity web legs. What it buys: no shell-command classifier verdicts, a visible and cancellable child thread, durable state across restarts, `clientRequestId` replay instead of duplicate legs, worktree isolation, no stdin hang, and a choice between the device's Codex accounts when one hits its usage limit.
-- **Keep the CLI shape** for Codex read-only review and research legs (the registry's read-only containment has no unattended T3 equivalent), for any leg in a secret-bearing repository, for Grok legs whose effort matters, and for anything in the registry's "Not exposed" list.
+**On a T3 host, `delegate_task` is the default transport for every non-Claude leg. A CLI call needs one of the reasons below, named when you state the route.** Claude legs stay native subagents. Call `orchestrator_capabilities` once per thread before the first delegation, and pass effort on every call (registry).
+
+- **What a T3 task buys:** no shell-command classifier verdicts, a visible and cancellable child thread, durable state across restarts, `clientRequestId` replay instead of duplicate legs, worktree isolation, no stdin hang, and a choice between the device's Codex accounts when one hits its usage limit. Use `isolation: "worktree"` for Codex write legs under an `auto` parent.
+- **The only reasons to use the CLI shape:**
+  - Codex read-only review or research, because `delegate_task` has no unattended read-only sandbox (registry, `runtimeMode`).
+  - A leg that needs something in the registry's "Not exposed" list, such as Codex `--search`.
+  - An Argon leg, because T3's catalog does not list it (registry).
+  - Any leg in a secret-bearing repository.
+  - A scored Grok leg, or a Grok leg whose effort matters (registry).
 - **Write the brief for a last-message result.** Only the child's final assistant message comes back, so require the structured result JSON as that message, with evidence inline rather than "see above".
 - **Treat a delegated task like any other leg.** The delegation contract, completion gate, and seam review apply unchanged. Verify served model, effort, and sandbox before scoring it from provider logs, not from T3 (the registry names the files); T3 thread data carries no effort.
 
@@ -25,7 +32,7 @@ When session metadata confirms `model_provider: "openai_token_sharing"`, use T3 
 
 Observed on 2026-10-16 with Codex 0.163.0: a native child and its parent used the same T3 provider instance. The child rollout contained an `agent_message` task item and failed with `subscription_sharing_unsupported_capability`; the parent's subsequent native result item was also `agent_message`, followed by the same error. Fresh app-owned children on that instance completed. This is evidence of an unsupported native-agent input path, not cross-account routing. After this error, mark the native route dead for the session; preserve the account choice and recover into a fresh compatible context rather than retrying the affected history.
 
-T3 v0.1.0's `CodexManagedRuntime.ts` tries to disable native agents with `features.multi_agent=false` and `features.multi_agent_v2=false`. A local `codex debug prompt-input` comparison on 0.163.0 still included native-agent instructions with those switches; `-c agents.enabled=false` removed them. The supported Codex config equivalent is `[agents]` with `enabled = false` (this disables native agents for every session using that config, while T3 app-owned tasks remain available). A T3 managed-runtime fix should pass the current switch instead of relying on the older feature flags. Restart the affected provider session after changing its configuration; disabling agents does not remove existing unsupported history items. Keep normal native routing for backends that support it.
+T3's `CodexManagedRuntime.ts` (unchanged through v0.1.7) tries to disable native agents with `features.multi_agent=false` and `features.multi_agent_v2=false`. A local `codex debug prompt-input` comparison on 0.163.0 still included native-agent instructions with those switches; `-c agents.enabled=false` removed them. The supported Codex config equivalent is `[agents]` with `enabled = false` (this disables native agents for every session using that config, while T3 app-owned tasks remain available). A T3 managed-runtime fix should pass the current switch instead of relying on the older feature flags. Restart the affected provider session after changing its configuration; disabling agents does not remove existing unsupported history items. Keep normal native routing for backends that support it.
 
 ## Classifier record
 

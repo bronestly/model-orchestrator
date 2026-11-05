@@ -19,8 +19,8 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.44.4"
-  updated: "2026-10-28"
+  version: "0.45.0"
+  updated: "2026-11-05"
 ---
 
 # Model Router — Claude Adapter
@@ -46,7 +46,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Antigravity (never the citation source) | Grok 4.7, then Sonnet subagent plus web search |
 | Bulk classification or extraction | Antigravity bulk tier (text supplied in the prompt — headless agy cannot read local files without allow-rules) or Luna `low` (file work) | Sol `low`, then batched Sonnet |
 | File reconnaissance | Luna `low` or an Explore subagent | Sol `low` |
-| Standard implementation, tests, docs, or writing | Sonnet subagent | Luna `low`/`medium` for clear scoped work; Terra only when calibration shows an advantage |
+| Standard implementation, tests, docs, or writing | Sonnet subagent | Luna `low`/`medium` for clear scoped work; Terra 6.1 `low`/`medium` on trial for bounded, test-backed fixes |
 
 Use the cheapest route that comfortably clears the quality bar, counting the orchestrator's own tier (see the orchestrator profile below). For routine judgment-light work that is not bulk, stay in the main context instead of spending time on routing analysis.
 
@@ -54,7 +54,7 @@ The transcript is part of the price. A leg that can be written as a fresh, self-
 
 Model IDs, effort defaults, prices, and context limits for every route — including Opus 5.5, Fable 5.1, and Grok 4.7 — live in [references/routing-reference.md](references/routing-reference.md). Fast mode stays off on every provider because it trades cost for latency the skill never needs.
 
-**Host check.** If the session runs in T3 Code (its runtime info says so) or another unattended Agent SDK host (`CLAUDE_CODE_ENTRYPOINT=sdk-*`), read [references/t3-code.md](references/t3-code.md) before the first leg. Plain Claude Code sessions skip it.
+**Host check.** If the session runs in T3 Code (its runtime info says so) or another unattended Agent SDK host (`CLAUDE_CODE_ENTRYPOINT=sdk-*`), read [references/t3-code.md](references/t3-code.md) before the first leg. On T3, launch non-Claude legs with its `delegate_task` tool rather than a CLI, unless that file names a reason for the CLI shape. Plain Claude Code sessions skip it.
 
 Before an external CLI call, read the registry. Then read only the provider reference selected by the route:
 

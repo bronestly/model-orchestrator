@@ -106,7 +106,7 @@ The 3.8 citation-fidelity question is answered from 8+ runs (2026-09-27 → 10-0
 
 ### Gemini 3.7 Flash (Historical Track Record & Archived Baseline)
 
-Retained in the registry for generational VS bake-offs (`gemini-3.7-flash-low|medium|high`).
+Retired from agy on or before 2026-11-05: it left `agy models`, and a direct call is rejected. Kept here as history only.
 
 #### Historical findings (agy 1.1.5 through 1.2.11)
 
@@ -130,7 +130,7 @@ These were hypotheses for 3.8. Citation drift is now confirmed on 3.8 (see the t
 
 ## Reading agy's output
 
-- Deliverable arrives on **stdout**; exit code 0 indicates success. Server-side or tool failures exit non-zero (often exit 3 on permission or auth failures) with stderr.
+- Deliverable arrives on **stdout**; exit code 0 indicates success. Server-side or tool failures exit non-zero (often exit 3 on permission or auth failures) with stderr. Exit 3 also means `--print-timeout` cut the run short (registry), so check `finished_reason` before treating the output as complete.
 - Tools needing approval are **soft-denied** with a stderr notice naming the allow-rule — empty stdout plus such a notice means blocked, not model failure.
 - If output is insufficient, refine constraints or effort, or route to Grok 4.7 / main context. Higher effort must buy deeper sources and stricter verification, not mere prose length.
 - The orchestrator still spot-checks decisive claims on primary sources before final integration.

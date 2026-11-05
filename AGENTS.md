@@ -19,6 +19,9 @@ not an application. There is no build system.
 - `sync.ps1` — installs all three global packages on Windows PowerShell.
 - `state.sh` / `state.ps1` — configure and explicitly synchronize optional
   private shared calibration state.
+- `auto-sync.sh` — fast-forwards a clean `master` and reinstalls; safe on a timer.
+- `.claude/skills/model-router-update/` — project skill for the daily upstream
+  check. It proposes changes by PR; `sync.sh` does not install it.
 
 ## Change rules
 

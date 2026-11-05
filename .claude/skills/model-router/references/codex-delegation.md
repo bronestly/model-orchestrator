@@ -6,7 +6,7 @@ Loaded on demand from the host adapter. The `routing-reference.md` capability re
 
 - **Luna:** clear, repeatable work: small edits, extraction, file reconnaissance, and coordinated changes from an explicit brief. Use it for native Codex subagents as well as standalone CLI legs. Keep verification proportional to the change.
 - **Sol:** ambiguous, multi-step coding, hard debugging, judgment-heavy review, or work that needs more follow-through. Start at the registry's default effort and increase only when task evidence warrants it.
-- **Terra:** a comparison baseline or conditional fallback when local results show a quality, speed, or usage advantage for that workload. Do not call it cheaper merely because it is a smaller older model; use the registry's current prices and measured subscription usage.
+- **Terra:** on trial for bounded, test-backed fixes, code reading, writing, and visual or computer-use work (registry, Terra 6.1 note). Otherwise a comparison baseline or conditional fallback when local results show a quality, speed, or usage advantage for that workload. It is not a Sol replacement for plan or hard implement legs. Do not call it cheaper merely because it is a smaller older model; use the registry's current prices and measured subscription usage.
 - **Astra:** excluded from active routing by the owner's preference. Do not use it as an automatic escalation or review backstop.
 
 Count the full task: prompt preparation, a separate plan call, retries, integration, and verification. A cheap model that needs repeated repair may cost more than one Sol call. Keep recent measured outcomes in calibration and revisit defaults when models or account limits change.

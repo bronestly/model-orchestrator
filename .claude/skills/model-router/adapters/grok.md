@@ -24,7 +24,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Planning, ambiguity, integrated coding, live-X, final verification | Main Grok context (live-X needs a Responses-backed model entry with a smoke-tested X-search tool — see the registry's Grok qualifier) | Do not delegate |
 | Consequential architecture decision or twice-failed approach | One advisor call (Fable 5.1 default; Opus 5.5 on request), if available | Grok self-review |
 | Complex multi-file or hard debugging with a documented Sol advantage | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement) | Main Grok |
-| Small, clear independent implementation | Luna `low`/`medium` (minimal-code contract) | Sol `low`/`medium`; Terra when calibrated |
+| Small, clear independent implementation | Luna `low`/`medium` (minimal-code contract) | Sol `low`/`medium`; Terra 6.1 `low`/`medium` on trial for bounded, test-backed fixes |
 | Fresh independent implementation review | Sol `medium` or Opus 5.5 | Terra `high` when calibrated, then main Grok with a clean review pass |
 | Bulk extraction, classification, or reconnaissance | Antigravity (bulk tier) or Luna `low` | Sol `low`, then main Grok |
 | Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Main Grok (web tools) | Codex Sol with web search (read-only; registry) |
@@ -32,6 +32,8 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Parallel independent legs explicitly permitted by the user/environment | Native Grok subagents | External CLIs or sequential main-context work |
 
 Do not send live-X research or a Grok engineering worker-leg to a nested Grok CLI from this host — that is the same model. Other hosts' Grok-worker steering (`references/grok-delegation.md`) applies when another host delegates *to* Grok, not to Grok-as-host.
+
+**T3 host check.** In T3 Code, read [references/t3-code.md](references/t3-code.md) before the first worker call. There, external workers run through its `delegate_task` tool unless that file names a reason for a CLI.
 
 Before an external worker call, read [references/routing-reference.md](references/routing-reference.md) — its capability registry is the only place model IDs, invocation shapes, and effort ladders are stated. Then read only the chosen provider reference, which carries judgment and failure modes rather than command shapes:
 
