@@ -6,11 +6,11 @@ Primary sources settle facts. Search results and X only point at them.
 |---|---|---|---|
 | Codex | `gh release view rust-v<version> -R openai/codex`; [changelog](https://learn.chatgpt.com/docs/changelog) | [Codex models](https://learn.chatgpt.com/docs/models); `developers.openai.com/api/docs/models/<id>` | `codex debug models`, `codex exec --help` |
 | Claude Code | `raw.githubusercontent.com/anthropics/claude-code/main/CHANGELOG.md` | The `claude-api` skill; [models overview](https://platform.claude.com/docs/en/about-claude/models/overview) | T3's `claudeAgent.json` catalog, `claude --help` |
-| Grok | `grok update --check --json`; [docs.x.ai](https://docs.x.ai) | `docs.x.ai` model pages | `grok models`, `grok --help` |
+| Grok | `https://x.ai/cli/changelogs/<version>.external.md` per version, which fetches with `curl`; [changelog page](https://x.ai/changelog/build) (403 to fetchers); `~/.grok/CHANGELOG.md` (last few versions only) | `docs.x.ai` model pages | `grok models`, `grok --help` |
 | Antigravity | `agy changelog` (no public feed; self-updates) | [Gemini models](https://ai.google.dev/gemini-api/docs/models), [pricing](https://ai.google.dev/gemini-api/docs/pricing) | `agy models`, `agy --help` |
 | T3 Code | `gh release view v<version> -R pingdotgg/t3code` (stable only; ignore nightlies) | `orchestrator_capabilities`, `~/.t3/caches/*.json` | `t3 --version`, desktop app version, source at the tag |
 
-OpenAI's blog returns 403 to plain fetches, so use the API model page and a reporting source that quotes it.
+OpenAI's blog and `x.ai` pages return 403 to plain fetches. For OpenAI, so use the API model page and a reporting source that quotes it.
 
 ## What counts as relevant
 

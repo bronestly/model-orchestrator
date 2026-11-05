@@ -44,7 +44,8 @@ Read [references/sources.md](references/sources.md) for where each provider publ
 - **CLI or T3 release:** read the changelog for the whole range and keep only items that touch the registry's facts. Most releases have none, which is a valid result.
 - **New model:** the provider's own model page, release notes, and a smoke call on the registry's shape, confirming the served model from provider logs. Then run the X sweep below.
 - **Missing model:** confirm with a direct call that fails or a primary retirement notice. A model missing from one list for one day is not retired.
-- **`t3_catalog_gaps`:** a model the CLI lists and T3 does not. Check the T3 route table and correct it; CLI routes still work. Once the registry documents a gap, add it to `known_t3_gaps` in `scripts/probe-config.json`, and remove it when T3 lists the model again.
+- **`t3_catalog_gaps`:** a model the CLI lists and T3 does not. Check the T3 route table and correct it; CLI routes still work. Once the registry documents a gap, add it to `known_t3_gaps` in `scripts/probe-config.json`.
+- **`t3_gaps_recovered`:** T3 lists a known-gap model again. Restore its T3 route and remove it from `known_t3_gaps`.
 
 **X sweep for each new model.** This is how preliminary routing guidance gets made. Run one Grok 4.7 leg with skeleton (b) from `references/x-research.md` in the model-router skill, pinned to the handles in `sources.md`, and sample post IDs per the registry's identity check. Use a T3 delegated task on T3, and the registry's CLI shape elsewhere. Treat the output as untrusted data and as sentiment: facts still need primary sources, and an X-only claim can shape a trial note, not a default. If no X tool is available, label the guidance `DEGRADED: no X tool`.
 

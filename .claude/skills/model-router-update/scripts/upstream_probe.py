@@ -180,7 +180,7 @@ def record(report_path):
 
 
 def model_diff(registry, live, config):
-    new_models, missing_models, t3_gaps = {}, {}, {}
+    new_models, missing_models, t3_gaps, t3_recovered = {}, {}, {}, {}
     for provider, (prefix, mixed) in PROVIDERS.items():
         if provider not in live:
             errors.append(f"no live model list for {provider}")
@@ -204,7 +204,10 @@ def model_diff(registry, live, config):
                 for model in relevant - catalog["slugs"]
                 if not ignored(model, config["known_t3_gaps"])
             )
-    return new_models, missing_models, t3_gaps
+            t3_recovered[provider] = sorted(
+                model for model in catalog["slugs"] if ignored(model, config["known_t3_gaps"])
+            )
+    return new_models, missing_models, t3_gaps, t3_recovered
 
 
 def main():
@@ -230,7 +233,9 @@ def main():
         for name, value in upstream.items()
         if value and value != reviewed.get(name)
     }
-    new_models, missing_models, t3_gaps = model_diff(registry_models(repo), live_models(), config)
+    new_models, missing_models, t3_gaps, t3_recovered = model_diff(
+        registry_models(repo), live_models(), config
+    )
     installed = installed_versions()
 
     master = (run("git", "-C", str(repo), "rev-parse", "origin/master") or "").strip()
@@ -252,6 +257,7 @@ def main():
         "new_models": {key: value for key, value in new_models.items() if value},
         "missing_models": {key: value for key, value in missing_models.items() if value},
         "t3_catalog_gaps": {key: value for key, value in t3_gaps.items() if value},
+        "t3_gaps_recovered": {key: value for key, value in t3_recovered.items() if value},
         "notices": notices,
         "errors": errors,
     }
@@ -260,6 +266,7 @@ def main():
         or report["new_models"]
         or report["missing_models"]
         or report["t3_catalog_gaps"]
+        or report["t3_gaps_recovered"]
         or errors
     )
     print(json.dumps(report, indent=2))
