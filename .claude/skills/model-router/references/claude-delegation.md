@@ -49,7 +49,7 @@ Wrap forwarded research output, logs, and other workers' results in `<untrusted>
 ## Harness facts (Claude Code host)
 
 - Subagents inherit the parent's permission mode, including plan mode. Leave plan mode before launching write legs.
-- Subagents inherit the parent's effort unless the launch passes `effort` (see Launching native legs). Check the effort that actually ran in `<session>/subagents/agent-*.meta.json`.
+- Always pass `effort` on launch (see Launching native legs): the fallback depends on the model (registry, Host-native subagent routes). Check the effort that actually ran in `<session>/subagents/agent-*.meta.json`.
 - Without a definition, tool sets vary by model: a `general-purpose` Sonnet subagent had no Agent tool, while Opus and Fable did (2026-10-11). A definition that lists Bash gets no Grep/Glob tools (search runs through Bash); one without Bash gets them (2026-10-11: `mr-opus-reviewer` had Read and Bash, `mr-fable-advisor` had Read, Grep, and Glob). `mr-opus-reviewer` keeps Bash because its role beside the Codex default is the reviewer that runs probes; read-only is a prompt contract for it.
 - Agent SDK hosts such as T3 Code run unattended; their host rules live in `references/t3-code.md`.
 - Agent definitions reload mid-session: after `sync.sh` reinstalls `~/.claude/agents/mr-*.md`, the next launch uses the new body without a restart (2026-10-11).

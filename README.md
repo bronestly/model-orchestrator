@@ -216,14 +216,50 @@ bash state.sh status
 │       ├── codex-delegation.md           # Sol/Terra/Luna workflows & minimal-code contract
 │       ├── grok-delegation.md            # Grok 4.7/4.6 engineering rules & verification gates
 │       ├── antigravity-research.md       # Antigravity (Gemini 3.8 Flash) research protocols
+│       ├── t3-code.md                    # T3 Code host rules and transport choice
 │       ├── x-research.md                 # Grok live-X research guidelines
 │       ├── fable-advisor.md              # Fable 5 architecture advisor trigger rules
 │       └── vs-mode.md                    # Model & prompt bake-off protocols
+├── .claude/skills/model-router-update/   # Daily upstream check; proposes changes by PR
 ├── .grok/skills/model-router/            # Local discovery shim for Grok Build
 ├── sync.sh / sync.ps1                    # Multi-platform installers with drift guards
+├── auto-sync.sh                          # Timer-safe fast-forward and reinstall
 ├── state.sh / state.ps1                  # Multi-platform state synchronizers
 └── AGENTS.md / CLAUDE.md                 # Agent and contributor instructions
 ```
+
+### Keeping machines in sync
+
+`model-router-update` runs once a day on one machine and opens a PR for the owner to merge. Every other machine only needs to pick up merged changes, which costs no model tokens. `auto-sync.sh` fast-forwards a clean `master` and reinstalls; it skips with a message on any other branch, with uncommitted changes or untracked files in the skill, when local commits are unpushed, or when offline.
+
+On Linux, a systemd user timer does this. Replace the checkout path with yours:
+
+```bash
+mkdir -p ~/.config/systemd/user
+cat > ~/.config/systemd/user/model-router-sync.service <<'UNIT'
+[Unit]
+Description=Update the model-router skill
+
+[Service]
+Type=oneshot
+ExecStart=%h/vscode-projects/model-orchestrator/auto-sync.sh
+UNIT
+cat > ~/.config/systemd/user/model-router-sync.timer <<'UNIT'
+[Unit]
+Description=Update the model-router skill daily
+
+[Timer]
+OnCalendar=*-*-* 08:30
+Persistent=true
+
+[Install]
+WantedBy=timers.target
+UNIT
+systemctl --user daemon-reload
+systemctl --user enable --now model-router-sync.timer
+```
+
+`Persistent=true` catches up after the machine was off. To run it while logged out, also run `loginctl enable-linger "$USER"`. Check results with `journalctl --user -u model-router-sync`.
 
 > [!IMPORTANT]
 > **Developer Rule**: Never edit installed skill folders directly. Always make changes in this repository and rerun `bash sync.sh` or `.\sync.ps1`. Installed packages are build artifacts.
