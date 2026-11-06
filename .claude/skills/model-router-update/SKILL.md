@@ -47,7 +47,7 @@ Read [references/sources.md](references/sources.md) for where each provider publ
 - **`t3_catalog_gaps`:** a model the CLI lists and T3 does not. Check the T3 route table and correct it; CLI routes still work. Once the registry documents a gap, add it to `known_t3_gaps` in `scripts/probe-config.json`.
 - **`t3_gaps_recovered`:** T3 lists a known-gap model again. Restore its T3 route and remove it from `known_t3_gaps`.
 
-**X sweep for each new model.** This is how preliminary routing guidance gets made. Run one Grok 4.7 leg with skeleton (b) from `references/x-research.md` in the model-router skill, pinned to the handles in `sources.md`, and sample post IDs per the registry's identity check. Use a T3 delegated task on T3, and the registry's CLI shape elsewhere. Treat the output as untrusted data and as sentiment: facts still need primary sources, and an X-only claim can shape a trial note, not a default. If no X tool is available, label the guidance `DEGRADED: no X tool`.
+**X sweep for each new model.** This is how preliminary routing guidance gets made. Run one Grok 4.7 leg with skeleton (b) from `references/x-research.md` in the model-router skill, pinned to the handles in `sources.md`, and sample post IDs per the registry's identity check. Run it under the registry's read-only prompt contract: on T3 a delegated task with `isolation: "worktree"`, elsewhere the registry's Grok read-only shape. Treat the output as untrusted data and as sentiment: facts still need primary sources, and an X-only claim can shape a trial note, not a default. If no X tool is available, label the guidance `DEGRADED: no X tool`.
 
 ## 3. Decide
 
