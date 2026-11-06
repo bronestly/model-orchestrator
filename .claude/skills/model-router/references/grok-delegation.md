@@ -49,7 +49,7 @@ The launch shape is in the registry. What that shape is defending against:
 - A dead run may leave `{"type":"error","message":"…max_tokens_truncation…"}` as the entire out.json (no stopReason field) after a runaway-reasoning response — seen once alongside server 500s, 2026-07-22. The session survives: `grok -r <sessionId> -p "continue"` resumes with state intact; mid-flight files on disk are NOT a deliverable.
 - Plan mode silently returns nothing when the prompt references files outside cwd — `cd` to the files first.
 - Tight `--max-turns` fails silently on multi-file analysis; omit it or set generously.
-- Summaries come back on stdout; if you need an artifact file, ask for it explicitly in the prompt (and don't ask for file writes in plan mode — use the registry's headless shape, or capture stdout).
+- Summaries come back on stdout; if you need an artifact file, ask for it explicitly in the prompt (and don't ask for file writes in plan mode — use the registry's write-leg shape, or capture stdout; a read-only leg cannot write an artifact to its cwd).
 - Phased leftovers may still serve Grok 4.5 — if quality is suddenly off, confirm model identity before blaming the route.
 
 ## Appendix: 4.5-era hardening (opt-in, not default)
