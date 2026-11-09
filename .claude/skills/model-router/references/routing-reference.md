@@ -89,7 +89,7 @@ Only on a T3 Code host (v0.1.7, orchestration v2). The `t3-code` MCP tool `deleg
 |---|---|---|---|
 | Codex Sol / Luna / Terra | `driverKind: "codex"` or `providerInstanceId: "<device instance ID>"` (`routing-notes.local.md`), `model: <registry Codex ID>` | `options: {reasoningEffort: "<effort>"}` | `serviceTier: "priority"` (fast mode) |
 | Grok | `driverKind: "grok"`, `model: "grok-4.7"` | `options: {reasoningEffort: "<effort>"}` | — |
-| Antigravity | `driverKind: "antigravity"`, `model: "gemini-3.8-flash-<low\|medium\|high>"`. Argon left T3's catalog: on v0.1.7 its bundled `agy_acp_server_1.1.1` lists Flash only (2026-11-05), so Argon legs use the CLI shape | encoded in the slug | — |
+| Antigravity | `driverKind: "antigravity"`, `model: "gemini-3.8-flash"` or `"gemini-4-argon"` — bare slugs; the CLI's `-low\|-medium\|-high` suffixed slugs are not in T3's catalog (`orchestrator_capabilities`, v0.1.7, 2026-11-08). Argon is listed again, after being absent on 2026-11-05 | `options: [{id: "thinking_level", value: "low\|medium\|high"}]`; T3 default `high` for Flash, `medium` for Argon, so always pass it | — |
 | Claude (only when the native Agent tool cannot serve the model) | `driverKind: "claudeAgent"`, `model: <registry Claude ID>` | `options: {effort: "<effort>"}` | `fastMode: true`, `ultracode` |
 
 Call qualifiers (verified in T3 v0.1.0 source; the `runtimeMode` mapping and native-agent flags re-read at v0.1.7):
