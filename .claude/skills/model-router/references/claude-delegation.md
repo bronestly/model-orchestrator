@@ -16,7 +16,7 @@ Use the shared scope, evidence, and verdict requirements from `codex-delegation.
 
 ## Launching native legs
 
-Launch through the model-router agent definitions in the registry's host-native table: `mr-sonnet-writer` for write legs, `mr-opus-reviewer` for reviews, and `mr-fable-advisor` for advisor dossiers. They pin the model ID and leave out the Agent tool, so a worker cannot fan out. The advisor also has no shell. If a definition is missing (not installed, or the session started before sync), use `general-purpose` with an explicit `model` and say so in the report.
+Launch through the model-router agent definitions in the registry's host-native table: `mr-sonnet-writer` for write legs, `mr-probe-reviewer` for reviews, and `mr-fable-advisor` for advisor dossiers. They pin the model ID and leave out the Agent tool, so a worker cannot fan out. The advisor also has no shell. If a definition is missing (not installed, or the session started before sync), use `general-purpose` with an explicit `model` and say so in the report.
 
 On every native launch, pass `effort` from that route's registry ladder; this skill is the explicit instruction the Agent tool requires before it sets effort. Start at the default and move a rung up or down per leg on the ladder's stated triggers (for example, Opus `high` for a security diff). Give a one-line reason whenever you go above the default. Never pick `max` automatically. To swap models for one leg, pass `model` — for example, `mr-fable-advisor` with `opus` gives the Opus advisor.
 
@@ -50,9 +50,9 @@ Wrap forwarded research output, logs, and other workers' results in `<untrusted>
 
 - Subagents inherit the parent's permission mode, including plan mode. Leave plan mode before launching write legs.
 - Always pass `effort` on launch (see Launching native legs): the fallback depends on the model (registry, Host-native subagent routes). Check the effort that actually ran in `<session>/subagents/agent-*.meta.json`.
-- Without a definition, tool sets vary by model: a `general-purpose` Sonnet subagent had no Agent tool, while Opus and Fable did (2026-10-11). A definition that lists Bash gets no Grep/Glob tools (search runs through Bash); one without Bash gets them (2026-10-11: `mr-opus-reviewer` had Read and Bash, `mr-fable-advisor` had Read, Grep, and Glob). `mr-opus-reviewer` keeps Bash because its role beside the Codex default is the reviewer that runs probes; read-only is a prompt contract for it.
+- Without a definition, tool sets vary by model: a `general-purpose` Sonnet subagent had no Agent tool, while Opus and Fable did (2026-10-11). A definition that lists Bash gets no Grep/Glob tools (search runs through Bash); one without Bash gets them (2026-10-11: `mr-probe-reviewer` had Read and Bash, `mr-fable-advisor` had Read, Grep, and Glob). `mr-probe-reviewer` keeps Bash because its role beside the Codex default is the reviewer that runs probes; read-only is a prompt contract for it.
 - Agent SDK hosts such as T3 Code run unattended; their host rules live in `references/t3-code.md`.
-- Agent definitions reload mid-session: after `sync.sh` reinstalls `~/.claude/agents/mr-*.md`, the next launch uses the new body without a restart (2026-10-11). That covers bodies of agent types the session already lists. A type the session does not list yet can lag: in a resumed T3 session on 2026-11-06, `mr-opus-reviewer` still failed with `Agent type not found` in the turn after `sync.sh`, while a fresh child session could launch it, and it resolved in the same session by the next user turn. On that error, retry on the next turn or use a fresh child session before treating the definition as broken.
+- Agent definitions reload mid-session: after `sync.sh` reinstalls `~/.claude/agents/mr-*.md`, the next launch uses the new body without a restart (2026-10-11). That covers bodies of agent types the session already lists. A type the session does not list yet can lag: in a resumed T3 session on 2026-11-06, `mr-probe-reviewer` still failed with `Agent type not found` in the turn after `sync.sh`, while a fresh child session could launch it, and it resolved in the same session by the next user turn. On that error, retry on the next turn or use a fresh child session before treating the definition as broken.
 - Worktree-isolated agents branch from the default branch, not the current one. Point them at the right base explicitly.
 - Subagents cannot write to the session scratchpad. Require the deliverable in the final message.
 - Deferred session-only tools such as DesignSync are unavailable to subagents. Mirror the needed files to disk first.
@@ -72,7 +72,7 @@ Brief a fresh reviewer on the whole diff and name these targets. Each has produc
 6. **Spec-inherited defects:** bugs every leg copied faithfully from the orchestrator's spec or frozen contract.
 7. **Security-primitive rules:** re-derive redirect guards, path/URL validators, and escaping from the parser spec, not from the leg's own tests.
 
-Merge findings from two reviewers into one adjudicated fix leg.
+Merge findings from the selected reviewers (two when the change has a runtime trigger, per `codex-delegation.md`) into one adjudicated fix leg.
 
 ## Mechanical enforcement (owner-applied)
 
