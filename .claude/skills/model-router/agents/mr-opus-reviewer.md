@@ -1,6 +1,6 @@
 ---
 name: mr-opus-reviewer
-description: model-router native code reviewer that runs probes (paired with the default Codex static review; fallback reviewer when Codex is unavailable). Launched by the model-router orchestrator with a frozen review packet; pass effort per launch from the registry ladder.
+description: model-router native code reviewer that runs probes (paired with the default Codex static review when the change has a runtime trigger; fallback reviewer when Codex is unavailable). Launched by the model-router orchestrator with a frozen review packet; pass effort per launch from the registry ladder.
 model: claude-opus-5-5
 tools: Read, Grep, Glob, Bash
 ---

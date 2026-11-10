@@ -72,7 +72,7 @@ Brief a fresh reviewer on the whole diff and name these targets. Each has produc
 6. **Spec-inherited defects:** bugs every leg copied faithfully from the orchestrator's spec or frozen contract.
 7. **Security-primitive rules:** re-derive redirect guards, path/URL validators, and escaping from the parser spec, not from the leg's own tests.
 
-Merge findings from two reviewers into one adjudicated fix leg.
+Merge findings from the selected reviewers (two when the change has a runtime trigger, per `codex-delegation.md`) into one adjudicated fix leg.
 
 ## Mechanical enforcement (owner-applied)
 
