@@ -22,7 +22,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Work | Primary | Fallback |
 |---|---|---|
 | Planning, ambiguity, integrated coding, live-X, final verification | Main Grok context (live-X needs a Responses-backed model entry with a smoke-tested X-search tool — see the registry's Grok qualifier) | Do not delegate |
-| Consequential architecture decision or twice-failed approach | One advisor call (Fable 5.1 default; Opus 5.5 on request), if available | Grok self-review |
+| Consequential architecture decision or twice-failed approach | One advisor call (Fable 5.2 default; Opus 5.5 on request), if available | Grok self-review |
 | Complex multi-file or hard debugging with a documented Sol advantage | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement) | Main Grok |
 | Small, clear independent implementation | Luna `low`/`medium` (minimal-code contract) | Sol `low`/`medium`; Terra 6.1 `low`/`medium` on trial for bounded, test-backed fixes |
 | Fresh independent implementation review | Sol `medium` or Opus 5.5 | Terra `high` when calibrated, then main Grok with a clean review pass |
@@ -44,7 +44,7 @@ Before an external worker call, read [references/routing-reference.md](reference
 - Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
 - Explicit model comparison, including Sol baseline vs +minimal-code-contract: [references/vs-mode.md](references/vs-mode.md)
 
-Normal tasks must not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor review (Fable 5.1 default; Opus 5.5 or a dual Fable+Opus advisory on request). This host reaches the advisor only through the registry CLI path.
+Normal tasks must not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor review (Fable 5.2 default; Opus 5.5 or a dual Fable+Opus advisory on request). This host reaches the advisor only through the registry CLI path.
 
 ## Orchestrator discipline
 

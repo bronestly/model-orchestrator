@@ -30,8 +30,8 @@ Model Router unifies your multi-model toolbox into a single capability registry:
 | **Codex Terra** | `gpt-5.6-terra` | 📊 Conditional baseline | Use only where local calibration shows an advantage; published API output-token pricing is higher than Sol 6.1. | Final stdout; copied to `-o <outfile>` |
 | **Grok** | `grok-4.7`<br>*(4.6 for bake-offs)* | 💎 Moderate<br>⏱️ Medium | Live-X / social search, independent critical code review, long-horizon bug repair (500k context). | stdout (JSON `text`) |
 | **Antigravity** | `gemini-3.8-flash`<br>*(low / med / high)* | 🪙 Ultra-Cheap<br>⚡ Ultra-Fast | High-speed web search, official documentation sweeps, multimodal analysis, bulk reconnaissance. | stdout |
-| **Advisor (Fable & Opus)** | `claude-fable-5-1`<br>`claude-opus-5-5` | 💎 Frontier / Pragmatic<br>⏱️ Deep | Second opinions: **Fable 5.1** for novel architecture and security boundaries; **Opus 5.5** for pragmatic codebase review, maintainability, and cost-effective plan analysis ($4/$20). | stdout (JSON `result`) |
-| **Native Subagents** | `claude-opus-5-5`<br>`claude-fable-5-1`<br>`claude-sonnet-5` | 💎 Standard<br>⏱️ Fast | In-session Claude subagents for precision review, high-stakes verification, tests, and writing. | Subagent message |
+| **Advisor (Fable & Opus)** | `claude-fable-5-2`<br>`claude-opus-5-5` | 💎 Frontier / Pragmatic<br>⏱️ Deep | Second opinions: **Fable 5.2** for novel architecture and security boundaries; **Opus 5.5** for pragmatic codebase review, maintainability, and cost-effective plan analysis ($4/$20). | stdout (JSON `result`) |
+| **Native Subagents** | `claude-opus-5-5`<br>`claude-fable-5-2`<br>`claude-sonnet-5` | 💎 Standard<br>⏱️ Fast | In-session Claude subagents for precision review, high-stakes verification, tests, and writing. | Subagent message |
 
 ---
 
@@ -68,10 +68,10 @@ Sol 6.1 prompting starts from [OpenAI's official family guidance](https://develo
 ### 🌐 Live Social Sentiment & Criticism (Grok 4.7)
 > *"Have Grok scout live discussions on X from the past 48 hours regarding issues with Next.js 15 app router caching."*
 
-### 🏛️ High-Stakes Architectural & Codebase Reviews (Fable 5.1 & Opus 5.5 Advisors)
-> *"Prepare an architectural dossier and consult Fable 5.1 for a second opinion on this database migration plan."*  
+### 🏛️ High-Stakes Architectural & Codebase Reviews (Fable 5.2 & Opus 5.5 Advisors)
+> *"Prepare an architectural dossier and consult Fable 5.2 for a second opinion on this database migration plan."*  
 > *"Have Opus 5.5 review this refactoring proposal as advisor to check for maintainability risks and overengineering."*  
-> *"Run a dual advisory with both Fable 5.1 and Opus 5.5 on this distributed auth proposal and reconcile where they agree and disagree."*
+> *"Run a dual advisory with both Fable 5.2 and Opus 5.5 on this distributed auth proposal and reconcile where they agree and disagree."*
 
 ### ⚔️ Side-by-Side Model Bake-Off (VS Mode)
 > *"Run a VS bake-off between Grok 4.6 and Grok 4.7 on this algorithm optimization task. Score them on task completion honesty, token burn, and code minimalism."*

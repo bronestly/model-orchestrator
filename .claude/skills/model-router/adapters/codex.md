@@ -22,7 +22,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Work | Primary | Fallback |
 |---|---|---|
 | Planning, ambiguity, complex integrated coding, final verification | Main Sol-high context | Do not delegate |
-| Consequential architecture decision or twice-failed approach | One advisor call (Fable 5.1 default; Opus 5.5 on request), if available | Sol self-review |
+| Consequential architecture decision or twice-failed approach | One advisor call (Fable 5.2 default; Opus 5.5 on request), if available | Sol self-review |
 | Small, clear independent implementation | Luna `low`/`medium` (minimal-code contract) | Sol `low`/`medium`; Terra 6.1 `low`/`medium` on trial for bounded, test-backed fixes |
 | Fresh independent implementation review | Fresh Sol `medium` (code-review contract) | Terra `high` if calibrated, then main Sol with a clean review pass |
 | Bulk extraction, classification, or reconnaissance | Luna `low` (standalone or native subagent) | Sol `low`, Antigravity (bulk tier), then main Sol |
@@ -42,7 +42,7 @@ Before an external worker call, read [references/routing-reference.md](reference
 - Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
 - Explicit model comparison, including Sol baseline vs +minimal-code-contract: [references/vs-mode.md](references/vs-mode.md)
 
-Normal tasks must not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor review (Fable 5.1 default; Opus 5.5 or a dual Fable+Opus advisory on request).
+Normal tasks must not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor review (Fable 5.2 default; Opus 5.5 or a dual Fable+Opus advisory on request).
 
 ## Orchestrator discipline
 

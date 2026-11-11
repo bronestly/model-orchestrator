@@ -17,7 +17,7 @@ Code-review requests use the dedicated protocol below; do not apply this impleme
 {
   "date": "YYYY-MM-DD",
   "task_type": "<routing-table row this task belongs to>",
-  "orchestrator": "<orchestrator model, e.g. opus-5.5 or fable-5.1>",
+  "orchestrator": "<orchestrator model, e.g. opus-5.5 or fable-5.2>",
   "candidates": {"A": "<model>", "B": "<model>"},
   "scores_1to5": {
     "correctness":           {"A": 0, "B": 0},

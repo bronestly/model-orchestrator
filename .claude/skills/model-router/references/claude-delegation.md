@@ -1,4 +1,4 @@
-# When delegating to Claude (Sonnet 5.5, Opus 5.5, Fable 5.1)
+# When delegating to Claude (Sonnet 5.5, Opus 5.5, Fable 5.2)
 
 Loaded on demand before a native write/review leg or an external read-only code review. Model IDs, effort defaults, and CLI recipes live in the `routing-reference.md` capability registry. This file carries the prompt template, per-model steering, harness facts, and review targets. Grounding: calibration pipelines 2026-08-02 → 2026-09-25 under Fable and Opus orchestrators, the official Claude 5-family prompting pages, and the Opus 5.5 system card (both checked 2026-09-27).
 
@@ -44,7 +44,7 @@ Wrap forwarded research output, logs, and other workers' results in `<untrusted>
 
 - **Sonnet 5.5** (lessons recorded under the `sonnet` alias). Follows instructions literally and does not generalize from one item to the next. Name every file, case, and deliverable, including tests. It has broken the "no git" rule five times, each time as a well-meant cleanup (08-02, 08-20, 09-15, 09-22), so a checkpoint before the leg is mandatory.
 - **Opus 5.5.** Ask for concise output. Effort sets how much it thinks, and prompt wording sets how much it writes. As a reviewer, have it report every issue with severity, confidence, and a trace; "only report high-severity" is followed literally and under-reports. Its known weakness is stating inferences as fact, so require that each finding say what was actually read or run.
-- **Fable 5.1.** Ask for surgical edits rather than whole-file rewrites. Have it report pre-existing bugs it notices instead of fixing them, and add no tests beyond those requested. Ask it to check each claim in its result against a tool result from this session. Never include context-budget counts in its prompt.
+- **Fable 5.2** (steering carried from Fable 5.1, plus Anthropic's 5.2 migration notes). Ask for surgical edits rather than whole-file rewrites. Have it report pre-existing bugs it notices instead of fixing them, and add no tests beyond those requested; do not tell it the codebase is its own, since Anthropic's ownership sentence makes it restructure, add tests and docs, and change behaviour nobody asked for. Ask it to check each claim in its result against a tool result from this session. Never include context-budget counts in its prompt. Name exactly which actions are approved; a vague approval rule makes it hold routine work. At `low` or `medium` it may stop with a list of what remains, so the stop rule should say that ordinary obstacles (timeouts, empty results) are worked through and only deliberate blockers end the leg. Lines telling it to think less have no effect at `medium` and above; lower the effort instead.
 
 ## Harness facts (Claude Code host)
 

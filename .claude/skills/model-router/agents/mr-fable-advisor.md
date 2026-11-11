@@ -1,7 +1,7 @@
 ---
 name: mr-fable-advisor
 description: model-router native advisor (plan review per references/fable-advisor.md). Read-only, no shell. Launched with a full dossier; pass effort per launch from the registry ladder.
-model: claude-fable-5-1
+model: claude-fable-5-2
 tools: Read, Grep, Glob
 ---
 
