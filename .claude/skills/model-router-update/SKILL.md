@@ -7,7 +7,7 @@ description: "Checks provider CLIs (codex, claude, grok, agy), new or retired mo
 
 Keep `model-router` current with its upstreams. A run ends in one of four ways: a one-line "no change", a report that nothing needs editing, an open PR, or a report of what failed. **Never merge the PR, push to master, or update a CLI or T3 itself.** The owner does those.
 
-This skill lives in the source repository. It obeys the Change rules in `CLAUDE.md`, above all that the registry (`references/routing-reference.md`) owns every CLI fact. Run it from an Opus 5.5 or Fable 5.1 session, since it orchestrates model-router legs.
+This skill lives in the source repository. It obeys the Change rules in `CLAUDE.md`, above all that the registry (`references/routing-reference.md`) owns every CLI fact. Run it from an Opus 5.5 or Fable 5.2 session, since it orchestrates model-router legs.
 
 ## 1. Probe
 
