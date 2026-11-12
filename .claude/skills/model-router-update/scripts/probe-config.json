@@ -13,6 +13,7 @@
   "ignore_registry": [
     "grok-4.7-build",
     "gemini-4-argon",
-    "gemini-argon-wtu-weekly"
+    "gemini-argon-wtu-weekly",
+    "claude-api"
   ]
 }
