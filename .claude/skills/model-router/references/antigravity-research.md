@@ -82,7 +82,7 @@ Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) is the active default rout
 1. **Avoid over-prompting reasoning (unsourced, untested):** 3.8 Flash reasons internally, so this rule says not to prescribe manual "think step-by-step" or verbose reasoning scaffolds. No primary source backs it. Google's prompt-design page has no such instruction (fetched 2026-10-28), and on the same day both Flash 3.8 and Argon produced fabricated "verbatim" Google quotes saying it (`argon-baseline-v1` E2). Keep prompts lean by default, but treat this as a hypothesis to test in a prompt-variant bake-off, not as a vendor rule.
 2. **Long-context ordering:** Place raw context, reference documents, or data dumps **first**; place the task description, questions, output format, and constraints at the **end**.
 3. **Declarative constraints over process rules:** Clearly specify negative boundaries (what NOT to do), task scope, and stopping conditions. Refine definitions and constraints rather than explaining how to think.
-4. **Headless tool rule (critical agy gotcha):** Headless `agy -p` attempts unapproved terminal commands if unconstrained, which get soft-denied to stderr and result in empty stdout. Always prepend an explicit tool rule:
+4. **Headless tool rule (critical agy gotcha):** Headless `agy -p` attempts unapproved terminal commands if unconstrained, which get soft-denied to stderr and result in empty stdout, or since agy 1.5.7's Auto default may simply run (registry, Permissions). Always prepend an explicit tool rule:
    - For web research: `TOOL RULE: use ONLY built-in web search and fetch tools; do NOT execute terminal or shell commands.`
    - For text extraction or prompt analysis: `TOOL RULE: do NOT use any tools.`
 5. **Citation and verification contract:** Require specific deep links (not homepages) with publication dates. Explicitly instruct the model to verify facts against fetched sources before outputting. Unverified claims must be flagged.
@@ -131,6 +131,6 @@ These were hypotheses for 3.8. Citation drift is now confirmed on 3.8 (see the t
 ## Reading agy's output
 
 - Deliverable arrives on **stdout**; exit code 0 indicates success. Server-side or tool failures exit non-zero (often exit 3 on permission or auth failures) with stderr. Exit 3 also means `--print-timeout` cut the run short (registry), so check `finished_reason` before treating the output as complete.
-- Tools needing approval are **soft-denied** with a stderr notice naming the allow-rule — empty stdout plus such a notice means blocked, not model failure.
+- Outside Auto mode (registry, Permissions), tools needing approval are **soft-denied** with a stderr notice naming the allow-rule — empty stdout plus such a notice means blocked, not model failure.
 - If output is insufficient, refine constraints or effort, or route to Grok 4.7 / main context. Higher effort must buy deeper sources and stricter verification, not mere prose length.
 - The orchestrator still spot-checks decisive claims on primary sources before final integration.
