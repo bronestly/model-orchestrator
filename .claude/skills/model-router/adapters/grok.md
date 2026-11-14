@@ -26,9 +26,10 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Complex multi-file or hard debugging with a documented Sol advantage | Codex Sol (`medium` implement; `high` plan-only when multi-file/ambiguous, then fresh `medium` implement) | Main Grok |
 | Small, clear independent implementation | Luna `low`/`medium` (minimal-code contract) | Sol `low`/`medium`; Terra 6.1 `low`/`medium` on trial for bounded, test-backed fixes |
 | Fresh independent implementation review | Sol `medium` or Opus 5.5 | Terra `high` when calibrated, then main Grok with a clean review pass |
-| Bulk extraction, classification, or reconnaissance | Antigravity (bulk tier) or Luna `low` | Sol `low`, then main Grok |
+| Bulk extraction, classification, or reconnaissance | Luna `low` | Sol `low`, then main Grok |
 | Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Main Grok (web tools) | Codex Sol with web search (read-only; registry) |
-| Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Antigravity (never the citation source) | Main Grok (web tools) |
+| Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Main Grok (web tools) | Antigravity as a T3 task only as an extra lead source, never the citation source |
+| Watching a video or YouTube URL | Gemini API, Hydrogen; Argon when detail matters (`gemini-api.md`) | Captions plus a main-Grok extraction pass |
 | Parallel independent legs explicitly permitted by the user/environment | Native Grok subagents | External CLIs or sequential main-context work |
 
 Do not send live-X research or a Grok engineering worker-leg to a nested Grok CLI from this host — that is the same model. Other hosts' Grok-worker steering (`references/grok-delegation.md`) applies when another host delegates *to* Grok, not to Grok-as-host.
@@ -41,7 +42,8 @@ Before an external worker call, read [references/routing-reference.md](reference
 - Opus or another Claude code reviewer: [references/claude-delegation.md](references/claude-delegation.md) (the registry's code-review route, separate from Advisor)
 - Grok engineering (this host's own implement steering): [references/grok-delegation.md](references/grok-delegation.md)
 - Grok live-X research: [references/x-research.md](references/x-research.md)
-- Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
+- Antigravity leads and photo pre-pass: [references/antigravity-research.md](references/antigravity-research.md)
+- Gemini API video legs: [references/gemini-api.md](references/gemini-api.md)
 - Explicit model comparison, including Sol baseline vs +minimal-code-contract: [references/vs-mode.md](references/vs-mode.md)
 
 Normal tasks must not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor review (Fable 5.2 default; Opus 5.5 or a dual Fable+Opus advisory on request). This host reaches the advisor only through the registry CLI path.

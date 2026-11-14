@@ -20,8 +20,7 @@ T3 v2 is transport, not routing: it validates the target and runs it, and every 
 - **The only reasons to use the CLI shape:**
   - Codex read-only review or research, because `delegate_task` has no unattended read-only sandbox (registry, `runtimeMode`).
   - The parent's runtime mode gives the child no usable sandbox: `approval-required` and `auto-accept-edits` stall with no one watching, and `full-access` makes a Codex write leg `danger-full-access` (registry, `runtimeMode`).
-  - A leg that needs something in the registry's "Not exposed" list, such as Codex `--search`. The exception is an Antigravity `--print-timeout` bound: on T3, run the leg with `mode: "wait"` and a `timeoutMs` at the registry's bound instead, and `task_cancel` it on timeout.
-  - An Argon leg, because T3's catalog does not list it (registry).
+  - A leg that needs something in the registry's "Not exposed" list, such as Codex `--search`. Antigravity is excluded: its work legs are T3 tasks only (registry, "Antigravity transport"). The exception is an Antigravity `--print-timeout` bound: on T3, run the leg with `mode: "wait"` and a `timeoutMs` at the registry's bound instead, and `task_cancel` it on timeout.
   - A Claude review or advisor leg from a Codex or Grok host, because T3 cannot apply safe mode, the restricted tool set, or the replacement system prompt (registry).
   - Any leg in a secret-bearing repository.
   - A scored Grok leg, or a Grok leg whose effort matters (registry).
@@ -46,6 +45,7 @@ The verdicts depend on the exact command shape, so record each new verdict here 
 | 2026-10-11 | Codex read-only leg, advisor `claude -p` | Grok headless leg, `agy models` ("Create Unsafe Agents") |
 | 2026-10-12 | Codex read-only leg (Luna `low`), `agy -p` (Gemini 3.8 Flash `-low`) | — |
 | 2026-10-16 | Codex read-only leg (Sol 6.1 `high`); `delegate_task` (MCP) to Codex, Grok | — |
+| 2026-11-14 | Gemini API `curl` call (no allow rule); Codex read-only leg (Sol 6.1 `medium`); `delegate_task` to Grok | A `yt-dlp` caption download; a file search for an API key |
 | 2026-10-12, with an owner `autoMode.allow` rule for these legs | Grok headless leg (4.7 `low`, `end_turn`, correct answer), `agy models`, `agy -p` | — |
 
 ## Owner-controlled fix

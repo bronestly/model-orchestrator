@@ -1,6 +1,8 @@
-# Delegating general web/docs research and bulk legs to Antigravity (agy)
+# Antigravity (agy): lead sweeps and the photo pre-pass
 
-Loaded on demand from the routing table. Antigravity CLI (`agy`) is Google's successor to the retired gemini CLI and the lineup's general web-research and bulk-recon route. Grounding: local smoke tests on agy 1.2.11, 2026-09-26.
+Loaded on demand from the routing table. Antigravity CLI (`agy`) is Google's successor to the retired gemini CLI.
+
+**Role since v0.51.0 (owner decision, 2026-11-14).** agy is no longer a primary route for web research or bulk text. A ledger of about 90 recorded Gemini legs (2026-07-23 → 11-12) showed web research at 2 wins, 11 useful-after-checking and 24 losses, with 4 failed runs; all three YouTube research legs lost or failed, because agy only searches about a video and never sees it; and agy legs ran 5–25 minutes with hangs and "No capacity available" failures. Photo and vision work is where it earned its place (5 wins: review recall 18 exact / 0 missed against 26 and 23 missed, and a 12-vs-2 blind pre-pass win over Haiku 5.5). So: keep 3.8 Flash for the photo pre-pass, use agy web sweeps only as an optional extra lead source, and send video to the Gemini API (`gemini-api.md`). Transport rules are in the registry ("Antigravity transport"). The sections below are the track record and prompting rules for the legs that remain. Grounding: local smoke tests on agy 1.2.11, 2026-09-26.
 
 Command shapes and model slugs live strictly in the capability registry (`routing-reference.md`). This reference defines prompting discipline, effort selection, and model-separated calibration.
 
@@ -46,10 +48,10 @@ These are leads for the evals, not established routing facts.
 
 #### Interim role choices (owner-approved 2026-10-28, from `argon-baseline-v1` E1–E2)
 
-- **agy web-research legs:** prefer Argon `medium` over Flash `high`. On the same official-docs brief it was more accurate (9/14 right vs 7/14), faster (312 s vs 509 s), and used about a quarter of the input tokens. It also got right the CLI facts Flash invented. It is still a source of leads only: it marked a fabricated Google quote and unfetched claims as "verified", and 6/17 of its links were bad. Every rule in the 3.8 trial verdict below (HTTP-check URLs, publish a REJECTED list, primary-fetch anything that enters a deliverable) applies unchanged.
+- **agy lead sweeps (optional since v0.51.0, T3 tasks only):** prefer Argon `medium` over Flash `high`. On the same official-docs brief it was more accurate (9/14 right vs 7/14), faster (312 s vs 509 s), and used about a quarter of the input tokens. It also got right the CLI facts Flash invented. It is still a source of leads only: it marked a fabricated Google quote and unfetched claims as "verified", and 6/17 of its links were bad. Every rule in the 3.8 trial verdict below (HTTP-check URLs, publish a REJECTED list, primary-fetch anything that enters a deliverable) applies unchanged.
 - **Supplied-context Q&A and extraction:** use Argon `low` only when the text is supplied inline or the directory is small (about 25 files), under a cite-or-`NOT FOUND` contract. It scored 45/45 across E1, E1 v2 and E1 v3 with no invented answers and 0 thinking tokens. **Never use it on a large repository:** on the growreports TypeScript tree (`--add-dir`, ~460k input) Argon `low` invented handlers, components and a function signature in 3 of 8 sampled sections under the same contract, where Sonnet invented none (event `20261028T175925Z-pop-os-argon-vs-contest-forum-plan`). That is Theo's reported failure, reproduced. On precise per-file questions over Discourse's Ruby source it tied Sonnet. Large-repo recon stays on Sonnet/Explore or Luna.
 - **Plan review:** Argon `high` is a recall add-on only. On a real frozen plan it found 3 valid defects Sol `high` missed, but it also cited plan sections and identifiers that exist nowhere. Check every Argon finding against the frozen artifact, and never use Argon as the sole reviewer. Sol `high` stays the precision reviewer.
-- **Quota:** Flash stays the route for bulk work, because Pro's Argon bucket is small; an agentic Argon call cost ~2% of the weekly bucket.
+- **Quota:** never spend Argon on bulk work, because Pro's Argon bucket is small; an agentic Argon call cost ~2% of the weekly bucket. Bulk text itself left agy in v0.51.0 (see the role note at the top).
 
 Never use Argon as the citation source of a deliverable, and never route repository writes here (agy write legs are not an established route), until events say otherwise.
 
@@ -121,11 +123,11 @@ These were hypotheses for 3.8. Citation drift is now confirmed on 3.8 (see the t
 
 ## When to route here
 
-| Send to agy first | Do NOT send here |
+| Optional extra lead source (never first) | Do NOT send here |
 |---|---|
 | Recent releases, changelogs, docs sweeps, product comparisons | Live-X discourse, sentiment, launch-day drama → Grok (`x-research.md`) |
 | Multi-source synthesis ("what changed across X, Y, Z") | Stable academic/historical knowledge (no delegation needed) |
-| Bulk classification, extraction, file reconnaissance (bulk tier) | Anything requiring repository write access (not an established route) |
+| Photo and image pre-pass (3.8 Flash) | Anything requiring repository write access (not an established route); video or YouTube content → `gemini-api.md` |
 | Quick factual lookups (verify any link before citing it) | Authoritative single numbers you'll act on unverified; citation sources for a deliverable |
 
 ## Reading agy's output

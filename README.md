@@ -11,7 +11,7 @@ When working with frontier AI coding agents, using a single model for everything
 
 | Advantage | Why It Matters |
 |---|---|
-| 💰 **Drastic Cost & Token Savings** | Stop burning expensive orchestrator context on documentation reads, web scraping, and bulk file parsing. Delegate them to ultra-fast, fraction-of-a-cent models like **Gemini 3.8 Flash**. |
+| 💰 **Drastic Cost & Token Savings** | Stop burning expensive orchestrator context on documentation reads, web scraping, and bulk file parsing. Delegate them to cheaper tiers such as **Luna** or a **Sonnet** subagent. |
 | 🎯 **Specialist Superpowers** | Give your coding assistant capabilities it doesn't have alone: real-time X/social search and 500k-token endurance bug repair with **Grok 4.7**, deep agentic coding with **Codex Sol**, and high-stakes plan review with **Fable 5**. |
 | ⚡ **No More "Transcript Tax"** | In long sessions, running a subtask inline forces the model to process your entire 100k+ conversation transcript on every turn. Model Router spins up fresh, self-contained sub-tasks with zero transcript overhead. |
 | 🛡️ **Enforced Minimal-Code Contract** | Tired of AI agents generating 400 lines of unsolicited helper abstractions for a 5-line fix? Model Router strictly enforces minimal diffs and rejects bloated changes before they hit your codebase. |
@@ -29,7 +29,7 @@ Model Router unifies your multi-model toolbox into a single capability registry:
 | **Codex Luna** | `gpt-6-luna`<br>*(5.6 comparison baseline)* | 🪙 Lowest<br>⚡ Fast | Clear small edits, batch extraction, and scoped native subagent work. | Final stdout; copied to `-o <outfile>` |
 | **Codex Terra** | `gpt-5.6-terra` | 📊 Conditional baseline | Use only where local calibration shows an advantage; published API output-token pricing is higher than Sol 6.1. | Final stdout; copied to `-o <outfile>` |
 | **Grok** | `grok-4.7`<br>*(4.6 for bake-offs)* | 💎 Moderate<br>⏱️ Medium | Live-X / social search, independent critical code review, long-horizon bug repair (500k context). | stdout (JSON `text`) |
-| **Antigravity** | `gemini-3.8-flash`<br>*(low / med / high)* | 🪙 Ultra-Cheap<br>⚡ Ultra-Fast | High-speed web search, official documentation sweeps, multimodal analysis, bulk reconnaissance. | stdout |
+| **Antigravity** | `gemini-3.8-flash`<br>*(low / med / high)* | 🪙 Ultra-Cheap<br>⚡ Ultra-Fast | Photo pre-pass and optional lead sweeps (T3 tasks only). Video goes to the Gemini API. | stdout |
 | **Advisor (Fable & Opus)** | `claude-fable-5-2`<br>`claude-opus-5-5` | 💎 Frontier / Pragmatic<br>⏱️ Deep | Second opinions: **Fable 5.2** for novel architecture and security boundaries; **Opus 5.5** for pragmatic codebase review, maintainability, and cost-effective plan analysis ($4/$20). | stdout (JSON `result`) |
 | **Native Subagents** | `claude-opus-5-5`<br>`claude-fable-5-2`<br>`claude-sonnet-5` | 💎 Standard<br>⏱️ Fast | In-session Claude subagents for precision review, high-stakes verification, tests, and writing. | Subagent message |
 
@@ -62,8 +62,8 @@ Reviews report at most five actionable P0–P2 bugs with file/line, trigger, fai
 
 Sol 6.1 prompting starts from [OpenAI's official family guidance](https://developers.openai.com/api/docs/guides/latest-model), checked 2026-10-01. Those behavior observations were made on Astra; test them on Sol rather than treating them as established Sol behavior. Reproducible follow-up prompts for generational coding tests, review effort tests, and real-PR comparisons live in [VS Mode](.claude/skills/model-router/references/vs-mode.md#follow-up-experiments-suggest-never-auto-run).
 
-### 🔍 Fast Web & Documentation Sweeps (Antigravity / Gemini 3.8 Flash)
-> *"Use Antigravity to do a rapid documentation sweep of the latest Supabase Auth migration guide and summarize breaking changes."*
+### 🎬 Watching a Video (Gemini API)
+> *"Watch this YouTube video with Gemini and give me every claim about pricing, with timestamps."*
 
 ### 🌐 Live Social Sentiment & Criticism (Grok 4.7)
 > *"Have Grok scout live discussions on X from the past 48 hours regarding issues with Next.js 15 app router caching."*
@@ -215,7 +215,9 @@ bash state.sh status
 │       ├── routing-reference.md          # 🔑 Single source of truth for CLI shapes & IDs
 │       ├── codex-delegation.md           # Sol/Terra/Luna workflows & minimal-code contract
 │       ├── grok-delegation.md            # Grok 4.7/4.6 engineering rules & verification gates
-│       ├── antigravity-research.md       # Antigravity (Gemini 3.8 Flash) research protocols
+│       ├── antigravity-research.md       # Antigravity lead sweeps and photo pre-pass
+│       ├── gemini-api.md                 # Gemini API video legs
+│       ├── refusal-fallback.md           # Trial: parallel fallback after a Claude refusal
 │       ├── t3-code.md                    # T3 Code host rules and transport choice
 │       ├── x-research.md                 # Grok live-X research guidelines
 │       ├── fable-advisor.md              # Fable 5 architecture advisor trigger rules

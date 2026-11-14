@@ -19,8 +19,8 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.50.0"
-  updated: "2026-11-13"
+  version: "0.51.0"
+  updated: "2026-11-14"
 ---
 
 # Model Router — Claude Adapter
@@ -43,8 +43,10 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Other independent critical review (plans, specs, decisions) | Fresh Opus 5.5 subagent. On an Opus 5.5 host this is same-model fresh context; add a Sol read-only pass for the cross-family check | Fresh Fable 5.2 subagent (also the high-stakes escalation) |
 | Live-X research, review/criticism sweeps, and bounded engineering legs (4.7 active default; 4.6 for bake-offs — see grok-delegation). Live-X needs a Responses-backed model entry with a smoke-tested X-search tool (registry) | Grok 4.7 | Sonnet subagent plus web search |
 | Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Grok 4.7, or Codex Sol with web search (read-only; registry) | Sonnet subagent plus web search |
-| Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Antigravity (never the citation source) | Grok 4.7, then Sonnet subagent plus web search |
-| Bulk classification or extraction | Antigravity bulk tier (text supplied in the prompt — headless agy cannot read local files without allow-rules) or Luna `low` (file work) | Sol `low`, then batched Sonnet |
+| Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Grok 4.7 | Sonnet subagent plus web search; Antigravity as a T3 task only as an extra lead source, never the citation source |
+| Watching a video or YouTube URL (what is said and shown, with timestamps) | Gemini API, Hydrogen; Argon when detail matters (`gemini-api.md`) | Captions plus a Sonnet extraction leg |
+| Bulk classification or extraction | Luna `low` | Sol `low`, then batched Sonnet |
+| Photo or image pre-pass | Gemini 3.8 Flash (`antigravity-research.md`) | Haiku or Sonnet subagent |
 | File reconnaissance | Luna `low` or an Explore subagent | Sol `low` |
 | Standard implementation, tests, docs, or writing | Sonnet subagent | Luna `low`/`medium` for clear scoped work; Terra 6.1 `low`/`medium` on trial for bounded, test-backed fixes |
 
@@ -62,7 +64,9 @@ Before an external CLI call, read the registry. Then read only the provider refe
 - Codex Sol/Luna/Terra: [references/codex-delegation.md](references/codex-delegation.md)
 - Grok engineering: [references/grok-delegation.md](references/grok-delegation.md)
 - Grok live-X research: [references/x-research.md](references/x-research.md)
-- Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
+- Antigravity leads and photo pre-pass: [references/antigravity-research.md](references/antigravity-research.md)
+- Gemini API video legs: [references/gemini-api.md](references/gemini-api.md)
+- A Claude refusal or safeguard downgrade on authorized security work (trial): [references/refusal-fallback.md](references/refusal-fallback.md)
 - Explicit model comparison, including Sol with vs without the minimal-code contract: [references/vs-mode.md](references/vs-mode.md)
 
 Normal tasks do not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor plan review — a full-plan dossier for a consequential decision, returning a verdict plus implementor steering notes. Fable 5.2 is the default advisor, Opus 5.5 the pragmatic codebase advisor, and a dual opinion runs only on explicit request. On this host, prefer a native subagent with the chosen model over the CLI shape; the dossier, effort, and failure rules apply either way.
