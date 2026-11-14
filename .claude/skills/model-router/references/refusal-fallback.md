@@ -16,7 +16,7 @@ A refusal on anything else is a result, not a route failure. Report it.
 1. Tell the user which model refused or was downgraded, and on what.
 2. Launch in one response, with the same self-contained brief:
    - a fresh Opus 5.5 native subagent;
-   - Codex Sol `high`, read-only;
+   - Codex Sol, read-only, at the registry's effort for security review;
    - Gemini 4 Carbon through the Gemini API (trial);
    - optionally Grok 4.7.
 3. The brief states the real authorization context plainly and nothing else changes. Never reword a task to hide what it is, split it to slip past a filter, or add role-play framing. A model that refuses the honest brief has refused.

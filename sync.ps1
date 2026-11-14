@@ -66,10 +66,7 @@ function Get-AllowPatterns([string]$Kind) {
 $Drift = $false
 foreach ($Row in $RegistryRows) {
     # Trailing space on both sides keeps "agy -p" from matching "agy -print".
-    # A prefix that ends in "/" is a URL path, which is its own boundary.
-    $StartsCommand = ("$($Row.Command) ").StartsWith("$($Row.Prefix) ", [StringComparison]::Ordinal) -or
-        ($Row.Prefix -and $Row.Prefix.EndsWith('/') -and $Row.Command.StartsWith($Row.Prefix, [StringComparison]::Ordinal))
-    if (-not $Row.Prefix -or -not $StartsCommand) {
+    if (-not $Row.Prefix -or -not ("$($Row.Command) ").StartsWith("$($Row.Prefix) ", [StringComparison]::Ordinal)) {
         Write-Host "Registry row's pre-authorized prefix does not start its command:"
         Write-Host "  command: $($Row.Command)"
         Write-Host "  prefix:  $($Row.Prefix)"

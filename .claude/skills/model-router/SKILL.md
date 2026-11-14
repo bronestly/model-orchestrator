@@ -9,7 +9,6 @@ allowed-tools:
   - Bash(grok --always-approve *)
   - Bash(agy -p *)
   - Bash(agy models*)
-  - Bash(curl -sS --url https://generativelanguage.googleapis.com/v1beta/models/*)
   - Bash(claude -p *)
   - PowerShell(Get-Command *)
   - PowerShell(codex exec -s read-only *)
@@ -18,7 +17,6 @@ allowed-tools:
   - PowerShell(grok --always-approve *)
   - PowerShell(agy -p *)
   - PowerShell(agy models*)
-  - PowerShell(curl -sS --url https://generativelanguage.googleapis.com/v1beta/models/*)
   - PowerShell(claude -p *)
 metadata:
   version: "0.51.0"
