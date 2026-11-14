@@ -215,7 +215,9 @@ bash state.sh status
 │       ├── routing-reference.md          # 🔑 Single source of truth for CLI shapes & IDs
 │       ├── codex-delegation.md           # Sol/Terra/Luna workflows & minimal-code contract
 │       ├── grok-delegation.md            # Grok 4.7/4.6 engineering rules & verification gates
-│       ├── antigravity-research.md       # Antigravity (Gemini 3.8 Flash) research protocols
+│       ├── antigravity-research.md       # Antigravity lead sweeps and photo pre-pass
+│       ├── gemini-api.md                 # Gemini API video legs
+│       ├── refusal-fallback.md           # Trial: parallel fallback after a Claude refusal
 │       ├── t3-code.md                    # T3 Code host rules and transport choice
 │       ├── x-research.md                 # Grok live-X research guidelines
 │       ├── fable-advisor.md              # Fable 5 architecture advisor trigger rules

@@ -66,8 +66,9 @@ allowlist_patterns() {
 drift=0
 while IFS=$'\t' read -r command prefix; do
   [[ -n "$command" ]] || continue
-  # Trailing space on both sides keeps "agy -p" from matching "agy -print".
-  if [[ -z "$prefix" || "$command " != "$prefix "* ]]; then
+  # Trailing space on both sides keeps "agy -p" from matching "agy -print". A prefix
+  # that ends in "/" is a URL path, which is its own boundary.
+  if [[ -z "$prefix" ]] || { [[ "$command " != "$prefix "* ]] && ! [[ "$prefix" == */ && "$command" == "$prefix"* ]]; }; then
     echo "Registry row's pre-authorized prefix does not start its command:" >&2
     echo "  command: $command" >&2
     echo "  prefix:  ${prefix:-<none>}" >&2

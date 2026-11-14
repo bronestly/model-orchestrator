@@ -25,10 +25,11 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Consequential architecture decision or twice-failed approach | One advisor call (Fable 5.2 default; Opus 5.5 on request), if available | Sol self-review |
 | Small, clear independent implementation | Luna `low`/`medium` (minimal-code contract) | Sol `low`/`medium`; Terra 6.1 `low`/`medium` on trial for bounded, test-backed fixes |
 | Fresh independent implementation review | Fresh Sol `medium` (code-review contract) | Terra `high` if calibrated, then main Sol with a clean review pass |
-| Bulk extraction, classification, or reconnaissance | Luna `low` (standalone or native subagent) | Sol `low`, Antigravity (bulk tier), then main Sol |
+| Bulk extraction, classification, or reconnaissance | Luna `low` (standalone or native subagent) | Sol `low`, then main Sol |
 | Live-X research or bounded engineering legs (4.7 active default — see grok-delegation) | Grok 4.7 | Web research or main Sol |
 | Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Fresh Sol leg with web search (read-only; registry) | Grok 4.7, then web research in main Sol |
-| Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Antigravity (never the citation source) | Grok 4.7, then web research in main Sol |
+| Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Grok 4.7 | Web research in main Sol; Antigravity as a T3 task only as an extra lead source, never the citation source |
+| Watching a video or YouTube URL | Gemini API, Hydrogen; Argon when detail matters (`gemini-api.md`) | Captions plus a Luna extraction leg |
 | Parallel independent legs explicitly permitted by the user/environment | Native Codex subagents, explicitly selecting Luna for light work or Sol for demanding work | External CLIs or sequential main-context work |
 
 **T3 host check.** In T3 Code, read [references/t3-code.md](references/t3-code.md) before the first worker call, including a native subagent. There, external workers run through its `delegate_task` tool unless that file names a reason for a CLI. Its token-sharing compatibility rule qualifies the native route above; exposed tools alone do not establish backend support.
@@ -39,7 +40,8 @@ Before an external worker call, read [references/routing-reference.md](reference
 - Opus or another Claude code reviewer: [references/claude-delegation.md](references/claude-delegation.md) (the registry's code-review route, separate from Advisor)
 - Grok engineering: [references/grok-delegation.md](references/grok-delegation.md)
 - Grok live-X research: [references/x-research.md](references/x-research.md)
-- Antigravity web research and bulk legs: [references/antigravity-research.md](references/antigravity-research.md)
+- Antigravity leads and photo pre-pass: [references/antigravity-research.md](references/antigravity-research.md)
+- Gemini API video legs: [references/gemini-api.md](references/gemini-api.md)
 - Explicit model comparison, including Sol baseline vs +minimal-code-contract: [references/vs-mode.md](references/vs-mode.md)
 
 Normal tasks must not load advisor instructions. Read [references/fable-advisor.md](references/fable-advisor.md) only when its trigger is met or the user explicitly requests an advisor review (Fable 5.2 default; Opus 5.5 or a dual Fable+Opus advisory on request).
