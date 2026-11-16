@@ -31,6 +31,7 @@ class Fixture(unittest.TestCase):
         self.home = Path(self.tmp.name)
         self.t3 = self.home / ".t3"
         self.instances = {}
+        self.t3_version = usage.VERIFIED_T3_VERSION
         self.old_home = os.environ.get("HOME")
         os.environ["HOME"] = str(self.home)
 
@@ -45,11 +46,11 @@ class Fixture(unittest.TestCase):
         path.parent.mkdir(parents=True, exist_ok=True)
         path.write_text(data if isinstance(data, str) else json.dumps(data), encoding="utf-8")
 
-    def instance(self, instance_id, driver, name, windows=None, checked=-2, **entry):
+    def instance(self, instance_id, driver, name, windows=None, checked=-2, plan=None, **entry):
         self.instances[instance_id] = {"driver": driver, "displayName": name, **entry}
         if windows is not None:
             self.write(self.t3 / "caches" / (instance_id + ".json"), {
-                "enabled": True, "status": "ready",
+                "enabled": True, "status": "ready", "auth": {"label": plan} if plan else {},
                 "usageLimits": {"checkedAt": at(checked), "windows": windows},
             })
 
@@ -70,6 +71,8 @@ class Fixture(unittest.TestCase):
 
     def collect(self, **kwargs):
         self.write(self.t3 / "userdata" / "settings.json", {"providerInstances": self.instances})
+        if self.t3_version:
+            self.write(self.t3 / "userdata" / "server-runtime.json", {"serverVersion": self.t3_version})
         result = usage.collect(str(self.t3), NOW, **kwargs)
         return result, {a["instanceId"]: a for a in result["accounts"]}
 
@@ -169,24 +172,58 @@ class UsageTests(Fixture):
         self.assertEqual((by_id["codex"]["source"], by_id["codex"]["worstUsedPercent"]), ("codex-rollout", 61))
         self.assertEqual((by_id["codex_b"]["source"], by_id["codex_b"]["worstUsedPercent"]), ("t3-cache", 30))
 
-    def test_tie_goes_to_owner_default_and_stale_loses_a_tie(self):
+    def test_tie_goes_to_fresh_reading_and_stale_still_ranks(self):
         self.instance("claudeAgent", "claudeAgent", "A", [self.win("seven_day", 40, 10080, 900)])
-        self.instance("claudeAgent_b", "claudeAgent", "B", [self.win("seven_day", 43, 10080, 900)])
-        result, _ = self.collect()
-        self.assertEqual(result["recommended"]["claude"]["instanceId"], "claudeAgent")
-        result, _ = self.collect(prefer=["B"])
-        self.assertEqual(result["recommended"]["claude"]["instanceId"], "claudeAgent_b")
-        self.assertIn("owner default", result["recommended"]["claude"]["reason"])
-        # A stale reading still ranks, but a fresh account within the margin wins even over the default.
         self.instance("claudeAgent_b", "claudeAgent", "B", [self.win("seven_day", 38, 10080, 900)], checked=-90)
-        result, by_id = self.collect(prefer=["B"])
+        result, by_id = self.collect()
         self.assertEqual(by_id["claudeAgent_b"]["state"], "stale")
         self.assertEqual(result["recommended"]["claude"]["instanceId"], "claudeAgent")
+        self.assertIn("fresher", result["recommended"]["claude"]["reason"])
         # Outside the margin the stale account still wins, and the reason says how old it is.
         self.instance("claudeAgent_b", "claudeAgent", "B", [self.win("seven_day", 5, 10080, 900)], checked=-90)
         result, _ = self.collect()
         self.assertEqual(result["recommended"]["claude"]["instanceId"], "claudeAgent_b")
         self.assertIn("90 min old", result["recommended"]["claude"]["reason"])
+
+    def test_higher_plan_goes_first_while_it_has_room(self):
+        plus, pro = "ChatGPT Plus Subscription", "ChatGPT Pro 100 Subscription"
+        self.instance("codex", "codex", "Small", [self.win("primary", 10, 300, 60)], plan=plus)
+        self.instance("codex_b", "codex", "Big", [self.win("primary", 60, 10080, 600)], plan=pro)
+        result, by_id = self.collect()
+        self.assertEqual((by_id["codex"]["planRank"], by_id["codex_b"]["planRank"]), (2, 3))
+        self.assertEqual(result["recommended"]["codex"]["instanceId"], "codex_b")
+        self.assertIn("highest plan (ChatGPT Pro 100)", result["recommended"]["codex"]["reason"])
+        # Under the floor the bigger plan no longer goes first: most room wins.
+        self.instance("codex_b", "codex", "Big", [self.win("primary", 80, 10080, 600)], plan=pro)
+        result, _ = self.collect()
+        self.assertEqual(result["recommended"]["codex"]["instanceId"], "codex")
+        # Equal or unranked plans fall back to most room.
+        self.instance("codex_b", "codex", "Big", [self.win("primary", 60, 10080, 600)], plan="ChatGPT Business Subscription")
+        result, by_id = self.collect()
+        self.assertIsNone(by_id["codex_b"]["planRank"])
+        self.assertEqual(result["recommended"]["codex"]["instanceId"], "codex")
+
+    def test_version_and_format_warnings(self):
+        self.instance("codex", "codex", "A", [self.win("primary", 10, 300, 60)])
+        result, _ = self.collect()
+        self.assertEqual((result["compatibility"]["status"], result["compatibility"]["warnings"]), ("verified", []))
+        self.t3_version = "9.0.0"
+        result, _ = self.collect()
+        self.assertEqual(result["compatibility"]["status"], "newer")
+        self.assertIn("delegate_task", result["compatibility"]["warnings"][0])
+        self.assertIn("WARNING: T3 9.0.0 is newer", self.run_cli())
+        self.t3_version = "0.1.2"
+        self.assertEqual(self.collect()[0]["compatibility"]["status"], "older")
+        # A renamed field in the cache is reported as a format change, and the account is unknown.
+        self.t3_version = usage.VERIFIED_T3_VERSION
+        self.write(self.t3 / "caches" / "codex.json", {"enabled": True, "status": "ready", "usageLimits": {
+            "checkedAt": at(-1), "windows": [{"id": "primary", "percentUsed": 10}]}})
+        result, by_id = self.collect()
+        self.assertEqual(by_id["codex"]["state"], "unknown")
+        self.assertIn("unknown format", result["compatibility"]["warnings"][0])
+        os.remove(self.t3 / "userdata" / "server-runtime.json")
+        self.t3_version = None
+        self.assertEqual(self.collect()[0]["compatibility"]["status"], "unknown")
 
     def test_model_specific_window_only_counts_for_that_model(self):
         self.instance("claudeAgent", "claudeAgent", "A", [
@@ -216,6 +253,8 @@ class UsageTests(Fixture):
 
     def run_cli(self, *args):
         self.write(self.t3 / "userdata" / "settings.json", {"providerInstances": self.instances})
+        if self.t3_version:
+            self.write(self.t3 / "userdata" / "server-runtime.json", {"serverVersion": self.t3_version})
         out = subprocess.run([sys.executable, str(SCRIPT), "--t3-home", str(self.t3), "--now", at(0), *args],
                              capture_output=True, text=True, check=True)
         return out.stdout + out.stderr

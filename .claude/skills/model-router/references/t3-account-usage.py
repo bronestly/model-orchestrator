@@ -11,6 +11,9 @@ Usage comes from two places, and the newer reading wins:
      account by `creator_account_id`. An account that is running right now
      has newer figures there than in the cache.
 
+It also reads the running T3 version and warns when it differs from the one
+these file formats were checked against (VERIFIED_T3_VERSION).
+
 The only field read from a Codex `auth.json` is `tokens.account_id`. No token,
 key or email is printed or copied. Selection rules: see t3-code.md.
 """
@@ -24,6 +27,16 @@ from datetime import datetime, timezone
 
 DRIVERS = {"codex": "codex", "claudeAgent": "claude"}
 SCOPED_PREFIX = "seven_day_"  # T3 names a model-specific Claude window seven_day_<model>
+# The T3 server version whose settings file, cache files and MCP tools this script
+# and t3-code.md were checked against. model-router-update raises it after
+# re-checking a new release (its sources.md, "T3 Code compatibility").
+VERIFIED_T3_VERSION = "0.1.9"
+# Subscription tiers, lowest first, matched against the plan label T3 shows.
+# Pooled plans (business, team, enterprise, edu) are left unranked on purpose.
+PLAN_TIERS = {
+    "codex": ["free", "go", "plus", "pro 100", "pro 200", "pro 500"],
+    "claude": ["free", "pro", "max", "ultra"],
+}
 ROLLOUT_MAX_FILES = 300
 ROLLOUT_MAX_AGE_S = 8 * 24 * 3600  # older than the weekly window says nothing
 
@@ -62,6 +75,72 @@ def clean_path(value):
     """Settings paths are typed by hand: strip blanks, expand ~."""
     text = value.strip() if isinstance(value, str) else ""
     return os.path.expanduser(text) if text else ""
+
+
+def plan_of(provider, cache):
+    """(label, rank) from the plan label in T3's cache; rank None when not comparable."""
+    auth = (cache or {}).get("auth")
+    auth = auth if isinstance(auth, dict) else {}
+    label = auth.get("label") or auth.get("type")
+    if not isinstance(label, str) or not label.strip():
+        return None, None
+    label = label.replace("Subscription", "").strip()
+    words = " %s " % label.lower()
+    rank = None
+    for index, tier in enumerate(PLAN_TIERS[provider]):
+        if " %s " % tier in words:
+            rank = index
+    return label, rank
+
+
+def version_tuple(text):
+    parts = []
+    for piece in str(text).split("-")[0].split("."):
+        if not piece.isdigit():
+            return None
+        parts.append(int(piece))
+    return tuple(parts) or None
+
+
+def compatibility(t3_home, settings_found, accounts):
+    """Compare the running T3 with the version this script was checked against."""
+    runtime = load_json(os.path.join(t3_home, "userdata", "server-runtime.json"))
+    version = runtime.get("serverVersion") if isinstance(runtime, dict) else None
+    version = version if isinstance(version, str) and version else None
+    mine, theirs = version_tuple(VERIFIED_T3_VERSION), version_tuple(version) if version else None
+    status = "unknown" if theirs is None else "verified" if theirs == mine else "newer" if theirs > mine else "older"
+    warnings = []
+    if status == "unknown":
+        warnings.append("T3 version could not be read (is the T3 server running?); "
+                        "checked against %s" % VERIFIED_T3_VERSION)
+    elif status != "verified":
+        warnings.append("T3 %s is %s than %s, the version this rule was checked against: compare the "
+                        "delegate_task, orchestrator_capabilities and task_cancel tools with the list in "
+                        "t3-code.md before delegating" % (version, status, VERIFIED_T3_VERSION))
+    if not settings_found:
+        warnings.append("T3 settings file missing or without a readable providerInstances map")
+    for a in accounts:
+        if a["enabled"] and a["_shape"]:
+            warnings.append("%s (%s): %s" % (a["displayName"], a["instanceId"], a["_shape"]))
+    return {"t3Version": version, "verifiedT3Version": VERIFIED_T3_VERSION, "status": status, "warnings": warnings}
+
+
+def cache_shape_problem(cache):
+    """Why a cache file cannot be read as usage, or None. Tells a format change from "not probed"."""
+    if cache is None:
+        return None
+    limits = cache.get("usageLimits")
+    if limits is None:
+        return None
+    if not isinstance(limits, dict) or not isinstance(limits.get("windows"), list):
+        return "cache file has usageLimits in an unknown format"
+    if isinstance(limits.get("unavailable"), dict):
+        return None
+    bad = [w for w in limits["windows"]
+           if not isinstance(w, dict) or "id" not in w or not isinstance(w.get("usedPercent"), (int, float))]
+    if bad or parse_time(limits.get("checkedAt")) is None:
+        return "cache file has usage windows in an unknown format"
+    return None
 
 
 def is_enabled(entry, cache):
@@ -123,11 +202,14 @@ def discover(t3_home):
                 or instance_id,
                 "enabled": is_enabled(entry, cache),
                 "providerStatus": (cache or {}).get("status"),
+                "plan": plan_of(DRIVERS[driver], cache)[0],
+                "planRank": plan_of(DRIVERS[driver], cache)[1],
+                "_shape": cache_shape_problem(cache),
                 "_entry": entry,
                 "_cache": cache,
             }
         )
-    return accounts, settings is not None
+    return accounts, isinstance(settings, dict) and isinstance(settings.get("providerInstances"), dict)
 
 
 def cache_path(t3_home, instance_id):
@@ -263,6 +345,7 @@ def applies(window_id, model):
 def finish(account, reading, now, stale_s, model):
     account.pop("_entry", None)
     account.pop("_cache", None)
+    account.pop("_shape", None)
     account.update({"state": "unknown", "source": None, "checkedAt": None, "ageMinutes": None,
                     "windows": [], "worstUsedPercent": None, "headroomPercent": None, "note": None})
     if not account["enabled"]:
@@ -302,50 +385,61 @@ def finish(account, reading, now, stale_s, model):
     return account
 
 
-def recommend(accounts, prefer, tie_margin, low_headroom):
-    """Most room in the worst window; see t3-code.md for the rule in words."""
+def recommend(accounts, tie_margin, low_headroom, plan_floor):
+    """Which account to delegate to; see t3-code.md for the rule in words."""
     usable = [a for a in accounts if a["enabled"] and a["providerStatus"] in (None, "ready")]
     if not usable:
         return {"instanceId": None, "displayName": None, "reason": "no enabled, ready account"}
 
-    def preferred(a):
-        return a["instanceId"] in prefer or a["displayName"] in prefer
+    def rank(a):
+        return -1 if a["planRank"] is None else a["planRank"]
+
+    def answer(pick, reason):
+        return {"instanceId": pick["instanceId"], "displayName": pick["displayName"], "reason": reason}
+
+    def describe(pick, lead):
+        reason = lead
+        others = [a for a in known if a is not pick]
+        if others:
+            reason += " (%s)" % ", ".join("%s %.0f%%" % (a["displayName"], a["headroomPercent"]) for a in others)
+        if pick["state"] == "stale":
+            reason += "; figure is %d min old" % pick["ageMinutes"]
+        return reason
 
     known = [a for a in usable if a["headroomPercent"] is not None]
     unknown = [a for a in usable if a["headroomPercent"] is None]
     best = max((a["headroomPercent"] for a in known), default=None)
     if best is None or (best < low_headroom and unknown):
-        pool, why = unknown, (
-            "no usage data for any account" if best is None
-            else "every account with data has under %d%% left; trying one without data" % low_headroom
-        )
-        pick = sorted(pool, key=lambda a: not preferred(a))[0]
-        return {"instanceId": pick["instanceId"], "displayName": pick["displayName"],
-                "reason": why + ("; owner default" if preferred(pick) else "")}
+        why = ("no usage data for any account" if best is None
+               else "every account with data has under %d%% left; trying one without data" % low_headroom)
+        return answer(sorted(unknown, key=lambda a: -rank(a))[0], why)
+    if best <= 0:
+        resets = [w["resetsAt"] for a in known for w in a["windows"]
+                  if w["applies"] and w["usedPercent"] >= 100 and w["resetsAt"]]
+        return {"instanceId": None, "displayName": None,
+                "reason": "all accounts are at their limit; earliest known reset %s" % (min(resets) if resets else "unknown")}
+    # A bigger plan's percent is worth more, so the highest plan goes first while it has real room.
+    top = max(rank(a) for a in known)
+    if top > min(rank(a) for a in known):
+        roomy = [a for a in known if rank(a) == top and a["headroomPercent"] >= plan_floor]
+        if roomy:
+            pick = max(roomy, key=lambda a: a["headroomPercent"])
+            return answer(pick, describe(pick, "highest plan (%s) with %.0f%% left in its worst window"
+                                         % (pick["plan"], pick["headroomPercent"])))
     close = [a for a in known if best - a["headroomPercent"] <= tie_margin]
-    # Among near-equal accounts: fresh data first, then the owner's default, then most room.
-    close.sort(key=lambda a: (a["state"] != "ok", not preferred(a), -a["headroomPercent"]))
+    # Among near-equal accounts: fresh data first, then the higher plan, then most room.
+    close.sort(key=lambda a: (a["state"] != "ok", -rank(a), -a["headroomPercent"]))
     pick = close[0]
-    reason = "%.0f%% left in its worst window" % pick["headroomPercent"]
-    others = [a for a in known if a is not pick]
-    if others:
-        reason += " (%s)" % ", ".join("%s %.0f%%" % (a["displayName"], a["headroomPercent"]) for a in others)
+    reason = describe(pick, "%.0f%% left in its worst window" % pick["headroomPercent"])
     if len(close) > 1:
         reason += "; within %d points, chosen as %s" % (
             tie_margin,
             "the fresher reading" if close[1]["state"] != "ok" and pick["state"] == "ok"
-            else "owner default" if preferred(pick) else "the one with most room",
-        )
-    if pick["state"] == "stale":
-        reason += "; figure is %d min old" % pick["ageMinutes"]
-    if pick["headroomPercent"] <= 0:
-        resets = [w["resetsAt"] for w in pick["windows"] if w["applies"] and w["usedPercent"] >= 100 and w["resetsAt"]]
-        reason = "all accounts are at their limit; earliest known reset %s" % (min(resets) if resets else "unknown")
-        return {"instanceId": None, "displayName": None, "reason": reason}
-    return {"instanceId": pick["instanceId"], "displayName": pick["displayName"], "reason": reason}
+            else "the higher plan" if rank(pick) > rank(close[1]) else "the one with most room")
+    return answer(pick, reason)
 
 
-def collect(t3_home, now, stale_minutes=30, model=None, prefer=(), tie_margin=5, low_headroom=10):
+def collect(t3_home, now, stale_minutes=30, model=None, tie_margin=5, low_headroom=10, plan_floor=25):
     accounts, settings_found = discover(t3_home)
     readings = {a["instanceId"]: reading_from_cache(a["_cache"]) for a in accounts}
     codex = [a for a in accounts if a["driver"] == "codex" and a["enabled"]]
@@ -358,11 +452,13 @@ def collect(t3_home, now, stale_minutes=30, model=None, prefer=(), tie_margin=5,
         current = readings.get(instance)
         if newer and (not current or "unavailable" in current or newer["checkedAtEpoch"] > current["checkedAtEpoch"]):
             readings[instance] = newer
+    compat = compatibility(t3_home, settings_found, accounts)
     done = [finish(a, readings.get(a["instanceId"]), now, stale_minutes * 60, model) for a in accounts]
     done.sort(key=lambda a: (a["provider"], a["instanceId"]))
     result = {
         "generatedAt": iso(now),
         "t3SettingsFound": settings_found,
+        "compatibility": compat,
         "staleAfterMinutes": stale_minutes,
         "model": model,
         "accounts": done,
@@ -371,7 +467,7 @@ def collect(t3_home, now, stale_minutes=30, model=None, prefer=(), tie_margin=5,
     for provider in sorted(set(DRIVERS.values())):
         group = [a for a in done if a["provider"] == provider]
         if group:
-            result["recommended"][provider] = recommend(group, set(prefer), tie_margin, low_headroom)
+            result["recommended"][provider] = recommend(group, tie_margin, low_headroom, plan_floor)
     return result
 
 
@@ -382,7 +478,8 @@ def render(result, show_all, now):
     for a in result["accounts"]:
         if a["state"] == "disabled" and not show_all:
             continue
-        head = "%-6s %s (%s)" % (a["provider"], a["displayName"], a["instanceId"])
+        head = "%-6s %s (%s%s)" % (a["provider"], a["displayName"], a["instanceId"],
+                                  ", " + a["plan"] if a["plan"] else "")
         if a["state"] in ("disabled", "unknown"):
             lines.append("%s: %s%s" % (head, "unknown, " if a["state"] == "unknown" else "", a["note"]))
             continue
@@ -406,6 +503,8 @@ def render(result, show_all, now):
             provider,
             "%s (%s): %s" % (pick["displayName"], pick["instanceId"], pick["reason"])
             if pick["instanceId"] else "none: " + pick["reason"]))
+    for warning in result["compatibility"]["warnings"]:
+        lines.append("WARNING: " + warning)
     return "\n".join(lines)
 
 
@@ -414,16 +513,16 @@ def main(argv=None):
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--all", action="store_true", help="also list disabled instances")
     parser.add_argument("--model", help="model of the leg; drops usage windows that belong to another model")
-    parser.add_argument("--prefer", action="append", default=[], metavar="INSTANCE",
-                        help="owner's default account (instance id or display name); breaks ties; repeatable")
     parser.add_argument("--stale-minutes", type=int, default=30)
     parser.add_argument("--tie-margin", type=int, default=5, help="headroom points that count as a tie")
+    parser.add_argument("--plan-floor", type=int, default=25,
+                        help="the highest-plan account is chosen while it has at least this much left")
     parser.add_argument("--t3-home", default=os.environ.get("T3CODE_HOME") or "~/.t3")
     parser.add_argument("--now", help=argparse.SUPPRESS)  # fixed clock for tests
     args = parser.parse_args(argv)
     now = parse_time(args.now) if args.now else datetime.now(timezone.utc).timestamp()
     result = collect(os.path.expanduser(args.t3_home.strip()), now, args.stale_minutes, args.model,
-                     args.prefer, args.tie_margin)
+                     args.tie_margin, plan_floor=args.plan_floor)
     if args.json:
         if not args.all:
             result["accounts"] = [a for a in result["accounts"] if a["state"] != "disabled"]
