@@ -16,7 +16,7 @@ T3 v2 is transport, not routing: it validates the target and runs it, and every 
 
 **On a T3 host, `delegate_task` is the default transport for every external leg, meaning any provider other than the host's own. A CLI call needs one of the reasons below, named when you state the route.** On a Claude host, Claude legs stay native subagents; from a Codex or Grok host, use the registry's Claude CLI shapes for review and advisor legs. A host's own native subagents keep their usual rules. Call `orchestrator_capabilities` once per thread before the first delegation, and pass effort on every call (registry).
 
-- **What a T3 task buys:** no shell-command classifier verdicts, a visible and cancellable child thread, durable state across restarts, `clientRequestId` replay instead of duplicate legs, worktree isolation, no stdin hang, and a choice between the device's Codex accounts when one hits its usage limit. Use `isolation: "worktree"` for Codex write legs under an `auto` parent.
+- **What a T3 task buys:** no shell-command classifier verdicts, a visible and cancellable child thread, durable state across restarts, `clientRequestId` replay instead of duplicate legs, worktree isolation, no stdin hang, and a choice between the device's accounts for a provider (next section). Use `isolation: "worktree"` for Codex write legs under an `auto` parent.
 - **The only reasons to use the CLI shape:**
   - Codex read-only review or research, because `delegate_task` has no unattended read-only sandbox (registry, `runtimeMode`).
   - The parent's runtime mode gives the child no usable sandbox: `approval-required` and `auto-accept-edits` stall with no one watching, and `full-access` makes a Codex write leg `danger-full-access` (registry, `runtimeMode`).
@@ -27,6 +27,37 @@ T3 v2 is transport, not routing: it validates the target and runs it, and every 
   - A Grok read-only leg that reads a real repository, because T3 cannot pass `--sandbox` (registry).
 - **Write the brief for a last-message result.** Only the child's final assistant message comes back, so require the structured result JSON as that message, with evidence inline rather than "see above".
 - **Treat a delegated task like any other leg.** The delegation contract, completion gate, and seam review apply unchanged. Verify served model, effort, and sandbox before scoring it from provider logs, not from T3 (the registry names the files); T3 thread data carries no effort.
+
+## Choosing the account for a Codex or Claude leg
+
+A device can hold several accounts for one provider, each a separate T3 provider instance. T3 never chooses between them by usage: a target with only `driverKind` gets the parent's own instance, or else the first healthy one (registry). A leg on an account at its limit fails or waits, so choose the account yourself before every Codex or Claude `delegate_task`.
+
+1. **Run the usage script** that sits beside this file, `t3-account-usage.py`, with `python3` (`python` on Windows) and `--json`. Add `--model <the leg's model ID>` so a usage window that belongs to another model is left out, and `--prefer <instance>` with the owner's default account for that provider. It reads the T3 settings, T3's own usage cache, and the Codex session logs. It changes nothing and reads no credential.
+2. **Use `recommended.<provider>`** from its output and pass that `instanceId` as `target.providerInstanceId`, with the model and effort as on any other call (registry). The instance must also show `canRunChildTask: true` in `orchestrator_capabilities`, because an instance can be switched off for one project.
+3. **Say it in the route statement:** the account by its display name, and the script's reason, for example "Codex on account B: 87% left in its worst window, A has 18%".
+
+The rule the script applies, so you can check its answer:
+
+- An account's room is 100 minus its fullest window that applies to the leg. A window whose reset time has passed counts as empty.
+- The enabled, ready account with the most room wins.
+- Accounts within 5 points of the best are a tie. A tie goes first to a reading under 30 minutes old, then to the owner's default account, then to the most room.
+- A reading over 30 minutes old (`state: "stale"`) still ranks on its last figures. If it wins, give its age in the route statement.
+- An account with no data (`state: "unknown"`) is not treated as empty. It is chosen only when every account with data has under 10% left; its first call is then the probe.
+- When `recommended` names no account, every account is at its limit. Tell the user the reset time it reports and use the route's documented fallback instead of waiting.
+
+The owner's default account for each provider is a device fact: read it from `routing-notes.local.md`, and record it there once the owner names it. With none recorded, leave `--prefer` out. Account names, instance IDs, and home paths never go into this skill.
+
+Run the script again before each later round of legs, because a reading ages quickly while legs run. Legs launched together in one response share one reading; when several heavy legs start at once and two accounts both have room, split them between the accounts.
+
+Native Claude subagents always use the host session's own account, so this rule covers only Claude legs that go through `delegate_task` (registry, Claude row). When the script shows the host's account nearly out and another Claude account with room, that is a reason to send a Claude write leg as a T3 task on the other account. Say so in the route statement.
+
+### When a delegated task fails on a usage limit
+
+1. **Cancel the failed task with `task_cancel` first.** T3 can resume a limited task by itself when its limit resets (setting `autoResumeLimitedThreads`). A task you already redid elsewhere would then run a second time and duplicate the work. This has happened. A cancelled task is not resumed.
+2. **Run the usage script again.** Trust the failure over the figure: treat the failed account as full until the reset time in its error, even if the script still shows room.
+3. **Relaunch on the other account** with a new `clientRequestId`, because the old one replays the failed task (registry). For a write leg, first look at what the failed child left behind, and state in the new brief whether to continue from it or start clean.
+4. **With no other account that has room,** tell the user the reset time and use the route's documented fallback. Don't leave the limited task waiting without saying so.
+5. Record the limit hit, with the account's display name and date, in `routing-notes.local.md`.
 
 ## Codex token sharing and native subagents
 

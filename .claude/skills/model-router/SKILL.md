@@ -19,8 +19,8 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.51.0"
-  updated: "2026-11-14"
+  version: "0.52.0"
+  updated: "2026-11-16"
 ---
 
 # Model Router — Claude Adapter
@@ -56,7 +56,7 @@ The transcript is part of the price. A leg that can be written as a fresh, self-
 
 Model IDs, effort defaults, prices, and context limits for every route — including Opus 5.5, Fable 5.2, and Grok 4.7 — live in [references/routing-reference.md](references/routing-reference.md). Fast mode stays off on every provider because it trades cost for latency the skill never needs.
 
-**Host check.** If the session runs in T3 Code (its runtime info says so) or another unattended Agent SDK host (`CLAUDE_CODE_ENTRYPOINT=sdk-*`), read [references/t3-code.md](references/t3-code.md) before the first leg. On T3, launch non-Claude legs with its `delegate_task` tool rather than a CLI, unless that file names a reason for the CLI shape. Plain Claude Code sessions skip it.
+**Host check.** If the session runs in T3 Code (its runtime info says so) or another unattended Agent SDK host (`CLAUDE_CODE_ENTRYPOINT=sdk-*`), read [references/t3-code.md](references/t3-code.md) before the first leg. On T3, launch non-Claude legs with its `delegate_task` tool rather than a CLI, unless that file names a reason for the CLI shape, and choose the account for each Codex or Claude task by its usage rule. Plain Claude Code sessions skip it.
 
 Before an external CLI call, read the registry. Then read only the provider reference selected by the route:
 

@@ -52,4 +52,5 @@ not an application. There is no build system.
 Run `bash -n sync.sh state.sh`, validate all adapter frontmatters, then run
 `bash sync.sh` (or `.\sync.ps1` on Windows PowerShell) and compare each
 installed adapter and reference directory with its source. Exercise the
-configured state checkout with `bash state.sh status` without pushing.
+configured state checkout with `bash state.sh status` without pushing. After touching
+`references/t3-account-usage.py`, run `python3 tests/test_t3_account_usage.py`.
