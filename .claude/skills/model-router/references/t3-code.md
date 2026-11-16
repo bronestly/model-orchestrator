@@ -59,7 +59,15 @@ An owner instruction to use one account, in the conversation or in `routing-note
 
 Run the script again before each later round of legs, because a reading ages quickly while legs run. Legs launched together in one response share one reading; when several heavy legs start at once and two accounts both have room, split them between the accounts.
 
-Native Claude subagents always use the host session's own account, so this rule covers only Claude legs that go through `delegate_task` (registry, Claude row). When the script shows the host's account nearly out and another Claude account with room, that is a reason to send a Claude write leg as a T3 task on the other account. Say so in the route statement.
+### A Claude host that is low on its own account
+
+Native Claude subagents (the Agent tool and the `mr-*` definitions) always run on the host session's own account. A Claude leg reaches another account only as a T3 task, with `target.providerInstanceId` set to that account (verified 2026-11-16 on T3 0.1.9: a session on one Claude account ran a child on the other). So on a Claude host, before a native Claude write leg:
+
+1. Run the usage script with `--host <this session's instance>`, which is `inheritedProviderInstanceId` in `orchestrator_capabilities`, and `--model <the leg's model>`.
+2. If `host.delegateElsewhere` is false, launch the native leg as usual. The host stays on its own account while it has 25% or more left, even when another account has more, because a native leg is cheaper to brief and returns more than a last message.
+3. If it is true, send the leg with `delegate_task` to the account in `host.to`. The child gets no agent definition, so put the write-leg template from `claude-delegation.md` into the brief, pass the model and effort, and require the result JSON as the last message. Name both accounts and the reason in the route statement.
+
+This covers write and implementation legs only. Review, advisor, and probe-reviewer legs stay native, because T3 cannot apply their tool limits (registry, "Not exposed"). If the host is too low for them, use the route's documented fallback and tell the user. The orchestrator's own turns stay on the host account; when that account is nearly out, tell the user so they can continue in a session on the other account.
 
 ### Version check
 

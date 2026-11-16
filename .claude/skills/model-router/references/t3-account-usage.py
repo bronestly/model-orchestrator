@@ -611,7 +611,7 @@ def recommend(accounts, tie_margin, low_headroom, plan_floor):
 
 
 def collect(t3_home, now, stale_minutes=30, model=None, tie_margin=5, low_headroom=10, plan_floor=25,
-            probe=None):
+            probe=None, host=None):
     accounts, settings_found = discover(t3_home)
     readings = {a["instanceId"]: reading_from_cache(a["_cache"]) for a in accounts}
     codex = [a for a in accounts if a["driver"] == "codex" and a["enabled"]]
@@ -642,7 +642,32 @@ def collect(t3_home, now, stale_minutes=30, model=None, tie_margin=5, low_headro
         group = [a for a in done if a["provider"] == provider]
         if group:
             result["recommended"][provider] = recommend(group, tie_margin, low_headroom, plan_floor)
+    if host:
+        result["host"] = host_advice(done, result["recommended"], host, plan_floor)
     return result
+
+
+def host_advice(accounts, recommended, host, floor):
+    """Should a leg leave the host session's own account? Only when it is low and another has room."""
+    mine = next((a for a in accounts if a["instanceId"] == host), None)
+    if mine is None:
+        return {"instanceId": host, "delegateElsewhere": False, "reason": "host instance not found in T3 settings"}
+    advice = {"instanceId": host, "displayName": mine["displayName"], "headroomPercent": mine["headroomPercent"],
+              "delegateElsewhere": False, "to": None}
+    pick = recommended.get(mine["provider"]) or {}
+    other = next((a for a in accounts if a["instanceId"] == pick.get("instanceId")), None)
+    if mine["headroomPercent"] is None:
+        advice["reason"] = "no usage data for the host account; stay on it"
+    elif mine["headroomPercent"] >= floor:
+        advice["reason"] = "host account has %.0f%% left; stay on it" % mine["headroomPercent"]
+    elif other is None or other is mine or other["headroomPercent"] is None or other["headroomPercent"] < floor:
+        advice["reason"] = "host account has %.0f%% left and no other account has %d%% or more" % (
+            mine["headroomPercent"], floor)
+    else:
+        advice.update({"delegateElsewhere": True, "to": other["instanceId"],
+                       "reason": "host account has %.0f%% left; %s has %.0f%%" % (
+                           mine["headroomPercent"], other["displayName"], other["headroomPercent"])})
+    return advice
 
 
 def render(result, show_all, now):
@@ -677,6 +702,10 @@ def render(result, show_all, now):
             provider,
             "%s (%s): %s" % (pick["displayName"], pick["instanceId"], pick["reason"])
             if pick["instanceId"] else "none: " + pick["reason"]))
+    if result.get("host"):
+        lines.append("host %s: %s%s" % (result["host"].get("displayName") or result["host"]["instanceId"],
+                                        "delegate elsewhere, " if result["host"]["delegateElsewhere"] else "",
+                                        result["host"]["reason"]))
     for warning in result["compatibility"]["warnings"]:
         lines.append("WARNING: " + warning)
     return "\n".join(lines)
@@ -690,6 +719,9 @@ def main(argv=None):
     parser.add_argument("--probe", nargs="?", const="needed", choices=["needed", "all"],
                         help="ask the provider CLI directly for accounts with no or stale data "
                              "(--probe=all: every account); sends no prompt")
+    parser.add_argument("--host", metavar="INSTANCE",
+                        help="instance id of this session's own account; adds advice on whether a leg "
+                             "that would run on it should go to another account instead")
     parser.add_argument("--stale-minutes", type=int, default=30)
     parser.add_argument("--tie-margin", type=int, default=5, help="headroom points that count as a tie")
     parser.add_argument("--plan-floor", type=int, default=25,
@@ -699,7 +731,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     now = parse_time(args.now) if args.now else datetime.now(timezone.utc).timestamp()
     result = collect(os.path.expanduser(args.t3_home.strip()), now, args.stale_minutes, args.model,
-                     args.tie_margin, plan_floor=args.plan_floor, probe=args.probe)
+                     args.tie_margin, plan_floor=args.plan_floor, probe=args.probe, host=args.host)
     if args.json:
         if not args.all:
             result["accounts"] = [a for a in result["accounts"] if a["state"] != "disabled"]

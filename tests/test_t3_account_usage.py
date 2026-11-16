@@ -235,6 +235,25 @@ class UsageTests(Fixture):
         _, by_id = self.collect()
         self.assertEqual(by_id["claudeAgent"]["headroomPercent"], 10)
 
+    def test_host_advice_switches_only_when_host_is_low_and_another_has_room(self):
+        self.instance("claudeAgent", "claudeAgent", "Host", [self.win("seven_day", 90, 10080, 900)])
+        self.instance("claudeAgent_b", "claudeAgent", "Other", [self.win("seven_day", 30, 10080, 900)])
+        result, _ = self.collect(host="claudeAgent")
+        self.assertEqual((result["host"]["delegateElsewhere"], result["host"]["to"]), (True, "claudeAgent_b"))
+        # The other account is low as well: stay.
+        self.instance("claudeAgent_b", "claudeAgent", "Other", [self.win("seven_day", 85, 10080, 900)])
+        self.assertFalse(self.collect(host="claudeAgent")[0]["host"]["delegateElsewhere"])
+        # The host has room: stay, even though the other account has more.
+        self.instance("claudeAgent", "claudeAgent", "Host", [self.win("seven_day", 60, 10080, 900)])
+        self.instance("claudeAgent_b", "claudeAgent", "Other", [self.win("seven_day", 5, 10080, 900)])
+        self.assertFalse(self.collect(host="claudeAgent")[0]["host"]["delegateElsewhere"])
+        # A model-specific window can make the host low for one model only.
+        self.instance("claudeAgent", "claudeAgent", "Host", [
+            self.win("seven_day", 20, 10080, 900), self.win("seven_day_fable", 95, 10080, 900)])
+        self.assertTrue(self.collect(host="claudeAgent", model="claude-fable-5-2")[0]["host"]["delegateElsewhere"])
+        self.assertFalse(self.collect(host="claudeAgent", model="claude-sonnet-5-5")[0]["host"]["delegateElsewhere"])
+        self.assertFalse(self.collect(host="nope")[0]["host"]["delegateElsewhere"])
+
     def test_all_accounts_at_limit_names_the_reset(self):
         self.instance("codex", "codex", "A", [self.win("primary", 100, 300, 45)])
         result, _ = self.collect()
