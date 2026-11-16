@@ -15,6 +15,10 @@ not an application. There is no build system.
   and effort ladders. Read before any external CLI call.
 - `.claude/skills/model-router/references/` — shared, on-demand provider guidance
   (`claude-delegation.md` covers native Sonnet/Opus/Fable subagent legs).
+- `.claude/skills/model-router/references/t3-account-usage.py` — read-only usage
+  report for the T3 account rule in `t3-code.md`; it sits in `references/` so all
+  three installed packages carry it. Checked by `python3 tests/test_t3_account_usage.py`
+  (fixtures only, not installed).
 - `CHANGELOG.md` — dated version history, moved out of `SKILL.md` in v0.37.0 so the
   always-loaded adapter stays small.
 - `sync.sh` — installs Claude at `~/.claude/skills/model-router/`, Codex at
@@ -91,3 +95,6 @@ One hit is expected and correct — `references/fable-advisor.md`, explaining th
 lives in `CHANGELOG.md`, outside the grep path).
 Anything else is a command shape that has leaked out of the registry: move it back and
 leave a pointer.
+
+After touching `references/t3-account-usage.py`, run
+`python3 tests/test_t3_account_usage.py`.

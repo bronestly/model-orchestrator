@@ -2,3 +2,4 @@
 *.zip
 model-router-workspace/
 .update-run/
+__pycache__/

@@ -219,11 +219,13 @@ bash state.sh status
 │       ├── gemini-api.md                 # Gemini API video legs
 │       ├── refusal-fallback.md           # Trial: parallel fallback after a Claude refusal
 │       ├── t3-code.md                    # T3 Code host rules and transport choice
+│       ├── t3-account-usage.py           # Usage left per T3 Codex/Claude account (read-only)
 │       ├── x-research.md                 # Grok live-X research guidelines
 │       ├── fable-advisor.md              # Fable 5 architecture advisor trigger rules
 │       └── vs-mode.md                    # Model & prompt bake-off protocols
 ├── .claude/skills/model-router-update/   # Daily upstream check; proposes changes by PR
 ├── .grok/skills/model-router/            # Local discovery shim for Grok Build
+├── tests/                                # Fixture checks for the usage script
 ├── sync.sh / sync.ps1                    # Multi-platform installers with drift guards
 ├── auto-sync.sh                          # Timer-safe fast-forward and reinstall
 ├── state.sh / state.ps1                  # Multi-platform state synchronizers
@@ -270,7 +272,7 @@ systemctl --user enable --now model-router-sync.timer
 
 ## 🧪 Developer Verification
 
-Run these three quick checks whenever making changes to the references or adapters:
+Run these quick checks whenever making changes to the references or adapters:
 
 1. **Syntax Check**:
    ```bash
@@ -288,3 +290,7 @@ Run these three quick checks whenever making changes to the references or adapte
      | grep -v 'references/routing-reference.md:'
    ```
    Review any hits and keep active command recipes in the capability registry.
+4. **Usage Script Check** (after touching `references/t3-account-usage.py`):
+   ```bash
+   python3 tests/test_t3_account_usage.py
+   ```

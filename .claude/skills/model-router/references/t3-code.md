@@ -16,7 +16,7 @@ T3 v2 is transport, not routing: it validates the target and runs it, and every 
 
 **On a T3 host, `delegate_task` is the default transport for every external leg, meaning any provider other than the host's own. A CLI call needs one of the reasons below, named when you state the route.** On a Claude host, Claude legs stay native subagents; from a Codex or Grok host, use the registry's Claude CLI shapes for review and advisor legs. A host's own native subagents keep their usual rules. Call `orchestrator_capabilities` once per thread before the first delegation, and pass effort on every call (registry).
 
-- **What a T3 task buys:** no shell-command classifier verdicts, a visible and cancellable child thread, durable state across restarts, `clientRequestId` replay instead of duplicate legs, worktree isolation, no stdin hang, and a choice between the device's Codex accounts when one hits its usage limit. Use `isolation: "worktree"` for Codex write legs under an `auto` parent.
+- **What a T3 task buys:** no shell-command classifier verdicts, a visible and cancellable child thread, durable state across restarts, `clientRequestId` replay instead of duplicate legs, worktree isolation, no stdin hang, and a choice between the device's accounts for a provider (next section). Use `isolation: "worktree"` for Codex write legs under an `auto` parent.
 - **The only reasons to use the CLI shape:**
   - Codex read-only review or research, because `delegate_task` has no unattended read-only sandbox (registry, `runtimeMode`).
   - The parent's runtime mode gives the child no usable sandbox: `approval-required` and `auto-accept-edits` stall with no one watching, and `full-access` makes a Codex write leg `danger-full-access` (registry, `runtimeMode`).
@@ -27,6 +27,67 @@ T3 v2 is transport, not routing: it validates the target and runs it, and every 
   - A Grok read-only leg that reads a real repository, because T3 cannot pass `--sandbox` (registry).
 - **Write the brief for a last-message result.** Only the child's final assistant message comes back, so require the structured result JSON as that message, with evidence inline rather than "see above".
 - **Treat a delegated task like any other leg.** The delegation contract, completion gate, and seam review apply unchanged. Verify served model, effort, and sandbox before scoring it from provider logs, not from T3 (the registry names the files); T3 thread data carries no effort.
+
+## Choosing the account for a Codex or Claude leg
+
+A device can hold several accounts for one provider, each a separate T3 provider instance. T3 never chooses between them by usage: a target with only `driverKind` gets the parent's own instance, or else the first healthy one (registry). A leg on an account at its limit fails or waits, so choose the account yourself before every Codex or Claude `delegate_task`.
+
+1. **Run the usage script** that sits beside this file, `t3-account-usage.py`, with `python3` (`python` on Windows), `--json`, and `--probe`. Add `--model <the leg's model ID>` so a usage window that belongs to another model is left out. It changes nothing and reads no credential.
+2. **Use `recommended.<provider>`** from its output and pass that `instanceId` as `target.providerInstanceId`, with the model and effort as on any other call (registry). The instance must also show `canRunChildTask: true` in `orchestrator_capabilities`, because an instance can be switched off for one project.
+3. **Say it in the route statement:** the account by its display name, and the script's reason, for example "Codex on account B: highest plan with 87% left in its worst window, A has 18%".
+4. **Act on `compatibility.warnings`** as the version check below says.
+
+Where the figures come from, newest reading first:
+
+- **T3's provider status cache.** T3 writes one file per instance after each provider check: at server start, when someone refreshes providers in the T3 settings, and every five minutes by default, but only while a T3 client window is open. With no window open the file goes stale, and for a new instance it does not exist yet.
+- **Codex session logs,** which a running Codex account updates on every turn.
+- **A direct probe, with `--probe`.** For an account whose reading is missing or over 30 minutes old, the script asks that provider's own CLI for the account's limits (registry, "Usage probes"). No prompt is sent, so it costs no model usage. `--probe=all` probes every account. A probe that fails leaves the account as it was and says why in its `note`.
+
+No T3 tool returns usage or refreshes the cache, so the probe is the way to get a fresh figure from an agent session.
+
+The rule the script applies, so you can check its answer:
+
+- An account's room is 100 minus its fullest window that applies to the leg. A window whose reset time has passed counts as empty.
+- No account is a fixed default. When the accounts are on different plans, the one on the highest plan goes first while it has at least 25% room, because the same percent of a larger allowance is more work. The plan comes from the label T3 shows for the account; pooled plans (business, team, enterprise) are not ranked.
+- Otherwise the enabled, ready account with the most room wins.
+- Accounts within 5 points of the best are a tie. A tie goes first to a reading under 30 minutes old, then to the higher plan, then to the most room.
+- A reading over 30 minutes old (`state: "stale"`) still ranks on its last figures. If it wins, give its age in the route statement.
+- An account with no data (`state: "unknown"`) is not treated as empty. It is chosen only when every account with data has under 10% left; its first call is then the probe.
+- When `recommended` names no account, every account is at its limit. Tell the user the reset time it reports and use the route's documented fallback instead of waiting.
+
+An owner instruction to use one account, in the conversation or in `routing-notes.local.md`, overrides the script; say so in the route statement. Account names, instance IDs, and home paths are device facts: they go in `routing-notes.local.md`, never into this skill.
+
+Run the script again before each later round of legs, because a reading ages quickly while legs run. Legs launched together in one response share one reading; when several heavy legs start at once and two accounts both have room, split them between the accounts.
+
+### A Claude host that is low on its own account
+
+Native Claude subagents (the Agent tool and the `mr-*` definitions) always run on the host session's own account. A Claude leg reaches another account only as a T3 task, with `target.providerInstanceId` set to that account (verified 2026-11-16 on T3 0.1.9: a session on one Claude account ran a child on the other). So on a Claude host, before a native Claude write leg:
+
+1. Run the usage script with `--host <this session's instance>`, which is `inheritedProviderInstanceId` in `orchestrator_capabilities`, and `--model <the leg's model>`.
+2. If `host.delegateElsewhere` is false, launch the native leg as usual. The host stays on its own account while it has 25% or more left, even when another account has more, because a native leg is cheaper to brief and returns more than a last message.
+3. If it is true, send the leg with `delegate_task` to the account in `host.to`. The child gets no agent definition, so put the write-leg template from `claude-delegation.md` into the brief, pass the model and effort, and require the result JSON as the last message. Name both accounts and the reason in the route statement.
+
+This covers write and implementation legs only. Review, advisor, and probe-reviewer legs stay native, because T3 cannot apply their tool limits (registry, "Not exposed"). If the host is too low for them, use the route's documented fallback and tell the user. The orchestrator's own turns stay on the host account; when that account is nearly out, tell the user so they can continue in a session on the other account.
+
+### Version check
+
+The script, this file, and the registry's T3 rows were checked against one T3 server version (`compatibility.verifiedT3Version` in the script's output). The script reads the running version and reports `compatibility.status`. With `verified` and no warnings, go on. Otherwise, before the first `delegate_task` of the session:
+
+1. **Compare the tools you were given with what this skill relies on:**
+   - `delegate_task`: `task`, `target` with `providerInstanceId`, `driverKind`, `model` and `options`, plus `clientRequestId`, `isolation`, `mode`, `timeoutMs` and `runtimeMode`.
+   - `orchestrator_capabilities`: a `providers` list whose entries carry `providerInstanceId`, `driverKind`, `displayName`, `canRunChildTask`, `constraints`, and `models` with their `options`.
+   - `task_cancel`: `taskId`.
+2. **Tell the user what you found, in the route statement:** the running and the checked version, and either "tools match" or each missing, renamed, or changed name.
+3. **Work around a real mismatch, don't guess.** If `providerInstanceId` is gone, delegate by `driverKind` and say that no account was chosen. If `task_cancel` is gone, don't redo a usage-limited task on another account until the user has stopped the first one. A warning that a cache file has an unknown format means that account's usage is unknown; the rule above already covers that.
+4. A newer T3 with matching tools is a note, not a blocker. Suggest the `model-router-update` skill, which re-checks the release and raises the checked version.
+
+### When a delegated task fails on a usage limit
+
+1. **Cancel the failed task with `task_cancel` first.** T3 can resume a limited task by itself when its limit resets (setting `autoResumeLimitedThreads`). A task you already redid elsewhere would then run a second time and duplicate the work. This has happened. A cancelled task is not resumed.
+2. **Run the usage script again.** Trust the failure over the figure: treat the failed account as full until the reset time in its error, even if the script still shows room.
+3. **Relaunch on the other account** with a new `clientRequestId`, because the old one replays the failed task (registry). For a write leg, first look at what the failed child left behind, and state in the new brief whether to continue from it or start clean.
+4. **With no other account that has room,** tell the user the reset time and use the route's documented fallback. Don't leave the limited task waiting without saying so.
+5. Record the limit hit, with the account's display name and date, in `routing-notes.local.md`.
 
 ## Codex token sharing and native subagents
 
