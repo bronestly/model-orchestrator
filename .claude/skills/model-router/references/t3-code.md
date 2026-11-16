@@ -32,10 +32,18 @@ T3 v2 is transport, not routing: it validates the target and runs it, and every 
 
 A device can hold several accounts for one provider, each a separate T3 provider instance. T3 never chooses between them by usage: a target with only `driverKind` gets the parent's own instance, or else the first healthy one (registry). A leg on an account at its limit fails or waits, so choose the account yourself before every Codex or Claude `delegate_task`.
 
-1. **Run the usage script** that sits beside this file, `t3-account-usage.py`, with `python3` (`python` on Windows) and `--json`. Add `--model <the leg's model ID>` so a usage window that belongs to another model is left out. It reads the T3 settings, T3's own usage cache, and the Codex session logs. It changes nothing and reads no credential.
+1. **Run the usage script** that sits beside this file, `t3-account-usage.py`, with `python3` (`python` on Windows), `--json`, and `--probe`. Add `--model <the leg's model ID>` so a usage window that belongs to another model is left out. It changes nothing and reads no credential.
 2. **Use `recommended.<provider>`** from its output and pass that `instanceId` as `target.providerInstanceId`, with the model and effort as on any other call (registry). The instance must also show `canRunChildTask: true` in `orchestrator_capabilities`, because an instance can be switched off for one project.
 3. **Say it in the route statement:** the account by its display name, and the script's reason, for example "Codex on account B: highest plan with 87% left in its worst window, A has 18%".
 4. **Act on `compatibility.warnings`** as the version check below says.
+
+Where the figures come from, newest reading first:
+
+- **T3's provider status cache.** T3 writes one file per instance after each provider check: at server start, when someone refreshes providers in the T3 settings, and every five minutes by default, but only while a T3 client window is open. With no window open the file goes stale, and for a new instance it does not exist yet.
+- **Codex session logs,** which a running Codex account updates on every turn.
+- **A direct probe, with `--probe`.** For an account whose reading is missing or over 30 minutes old, the script asks that provider's own CLI for the account's limits (registry, "Usage probes"). No prompt is sent, so it costs no model usage. `--probe=all` probes every account. A probe that fails leaves the account as it was and says why in its `note`.
+
+No T3 tool returns usage or refreshes the cache, so the probe is the way to get a fresh figure from an agent session.
 
 The rule the script applies, so you can check its answer:
 

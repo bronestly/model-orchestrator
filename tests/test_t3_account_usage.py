@@ -251,6 +251,64 @@ class UsageTests(Fixture):
         _, by_id = self.collect()
         self.assertEqual(by_id["codex"]["state"], "unknown")
 
+    def fake_cli(self, name, body):
+        """A stand-in provider CLI on PATH that logs its home and prints canned replies."""
+        bin_dir = self.home / "bin"
+        self.write(bin_dir / name, "#!%s\nimport json, os, sys\nsys.stdin.readline()\n"
+                   "open(os.path.join(%r, %r), 'a').write((os.environ.get('CODEX_HOME') or "
+                   "os.environ.get('CLAUDE_CONFIG_DIR') or 'default') + '\\n')\n%s\n"
+                   % (sys.executable, str(self.home), name + ".calls", body))
+        os.chmod(bin_dir / name, 0o755)
+        self.addCleanup(os.environ.__setitem__, "PATH", os.environ["PATH"])
+        if str(bin_dir) not in os.environ["PATH"]:
+            os.environ["PATH"] = str(bin_dir) + os.pathsep + os.environ["PATH"]
+
+    def calls(self, name):
+        path = self.home / (name + ".calls")
+        return path.read_text().split() if path.exists() else []
+
+    def test_probe_fills_missing_and_stale_accounts_only(self):
+        self.fake_cli("codex", "print(json.dumps({'id': 2, 'result': {'rateLimits': {'planType': 'prolite', "
+                      "'primary': {'usedPercent': 21, 'windowDurationMins': 10080, 'resetsAt': %d}, "
+                      "'secondary': None}}}), flush=True)\nsys.stdin.read()" % (NOW + 3600))
+        self.fake_cli("claude", "print(json.dumps({'type': 'control_response', 'response': {'request_id': 'usage', "
+                      "'response': {'subscription_type': 'max', 'rate_limits': {"
+                      "'five_hour': {'utilization': 9, 'resets_at': None}, "
+                      "'seven_day': {'utilization': 30, 'resets_at': '%s'}, "
+                      "'model_scoped': [{'display_name': 'Fable', 'utilization': 44, 'resets_at': None}]}}}}))" % at(600))
+        self.instance("codex", "codex", "Fresh", [self.win("primary", 50, 300, 60)])
+        self.instance("codex_b", "codex", "Missing", config={"shadowHomePath": " ~/.codex_b"})
+        self.instance("claudeAgent", "claudeAgent", "Stale", [self.win("seven_day", 80, 10080, 900)], checked=-300)
+        self.instance("claudeAgent_b", "claudeAgent", "Other", config={"homePath": "~/.claude_b"})
+        self.instance("codex_off", "codex", "Off", enabled=False)
+        result, by_id = self.collect(probe="needed")
+        self.assertEqual(by_id["codex"]["source"], "t3-cache")  # fresh: left alone
+        self.assertEqual((by_id["codex_b"]["source"], by_id["codex_b"]["headroomPercent"]), ("codex-probe", 79))
+        self.assertEqual((by_id["codex_b"]["plan"], by_id["codex_b"]["planRank"]), ("ChatGPT Pro 100", 3))
+        self.assertEqual([w["label"] for w in by_id["codex_b"]["windows"]], ["7d"])
+        self.assertEqual((by_id["claudeAgent"]["source"], by_id["claudeAgent"]["state"]), ("claude-probe", "ok"))
+        self.assertEqual([w["id"] for w in by_id["claudeAgent"]["windows"]], ["five_hour", "seven_day", "seven_day_fable"])
+        self.assertEqual(by_id["claudeAgent"]["headroomPercent"], 56)
+        self.assertEqual(self.calls("codex"), [str(self.home / ".codex_b")])
+        self.assertEqual(sorted(self.calls("claude")), sorted(["default", str(self.home / ".claude_b")]))
+        self.assertEqual(by_id["codex_off"]["state"], "disabled")
+        # Without --probe nothing is started.
+        (self.home / "codex.calls").unlink()
+        self.collect()
+        self.assertEqual(self.calls("codex"), [])
+        self.collect(probe="all")
+        self.assertEqual(len(self.calls("codex")), 2)
+
+    def test_failed_probe_leaves_the_account_unknown_with_the_reason(self):
+        self.fake_cli("codex", "print('not json', flush=True)")
+        self.instance("codex", "codex", "A")
+        self.instance("claudeAgent", "claudeAgent", "B", config={"binaryPath": "~/no-such-claude"})
+        _, by_id = self.collect(probe="needed")
+        self.assertEqual(by_id["codex"]["state"], "unknown")
+        self.assertIn("did not answer", by_id["codex"]["note"])
+        self.assertEqual(by_id["claudeAgent"]["state"], "unknown")
+        self.assertIn("could not start", by_id["claudeAgent"]["note"])
+
     def run_cli(self, *args):
         self.write(self.t3 / "userdata" / "settings.json", {"providerInstances": self.instances})
         if self.t3_version:

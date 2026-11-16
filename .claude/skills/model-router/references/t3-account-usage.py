@@ -11,6 +11,12 @@ Usage comes from two places, and the newer reading wins:
      account by `creator_account_id`. An account that is running right now
      has newer figures there than in the cache.
 
+T3 refreshes its cache only while a T3 client window is open, so a reading can
+be old or missing. With --probe the script then asks the provider's own CLI
+for that account's limits, the same two requests T3 itself sends: Codex
+`account/rateLimits/read` on its app server, and the Claude `get_usage`
+control request. Neither sends a prompt, so neither spends model usage.
+
 It also reads the running T3 version and warns when it differs from the one
 these file formats were checked against (VERIFIED_T3_VERSION).
 
@@ -22,7 +28,11 @@ import argparse
 import glob
 import json
 import os
+import re
+import subprocess
 import sys
+import threading
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime, timezone
 
 DRIVERS = {"codex": "codex", "claudeAgent": "claude"}
@@ -36,6 +46,11 @@ VERIFIED_T3_VERSION = "0.1.9"
 PLAN_TIERS = {
     "codex": ["free", "go", "plus", "pro 100", "pro 200", "pro 500"],
     "claude": ["free", "pro", "max", "ultra"],
+}
+PROBE_TIMEOUT_S = 30
+PROBE_PLANS = {  # CLI plan codes -> the label T3 shows (CodexProvider.ts, ClaudeProvider.ts)
+    "codex": {"prolite": "Pro 100", "pro": "Pro 200", "promax": "Pro 500"},
+    "claude": {"max5": "Max", "max20": "Ultra"},
 }
 ROLLOUT_MAX_FILES = 300
 ROLLOUT_MAX_AGE_S = 8 * 24 * 3600  # older than the weekly window says nothing
@@ -334,6 +349,157 @@ def rollout_readings(homes, wanted, now):
     return found
 
 
+def instance_config(entry):
+    config = (entry or {}).get("config")
+    return config if isinstance(config, dict) else {}
+
+
+def run_cli(command, env, requests, is_answer):
+    """Send JSON lines to a provider CLI; return its JSON lines up to the one `is_answer` accepts.
+
+    Stdin stays open until the answer arrives: the Codex app server drops a
+    request that is still in flight when its input closes.
+    """
+    try:
+        proc = subprocess.Popen(command, stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                                stderr=subprocess.DEVNULL, env=env, text=True)
+    except OSError as error:
+        return None, "could not start %s: %s" % (command[0], error.strerror or error)
+    replies = []
+    found = threading.Event()
+
+    def read():
+        for line in proc.stdout:
+            try:
+                reply = json.loads(line)
+            except ValueError:
+                continue
+            if isinstance(reply, dict):
+                replies.append(reply)
+                if is_answer(reply):
+                    break
+        found.set()  # answered, or the CLI closed its output
+
+    reader = threading.Thread(target=read, daemon=True)
+    reader.start()
+    try:
+        proc.stdin.write("".join(json.dumps(r) + "\n" for r in requests))
+        proc.stdin.flush()
+    except OSError:
+        pass
+    found.wait(PROBE_TIMEOUT_S)
+    proc.kill()
+    proc.wait()
+    reader.join(2)
+    return list(replies), None
+
+
+def probe_plan(provider, code):
+    if not isinstance(code, str) or not code.strip() or code == "unknown":
+        return None
+    name = PROBE_PLANS[provider].get(code.lower(), code.replace("_", " ").title())
+    return ("ChatGPT " if provider == "codex" else "Claude ") + name
+
+
+def probe_codex(entry, cache):
+    """Ask the Codex app server for the account's limits. No prompt is sent."""
+    binary = clean_path(instance_config(entry).get("binaryPath")) or "codex"
+    env = dict(os.environ, CODEX_HOME=codex_home(entry, cache))
+    replies, error = run_cli([binary, "app-server"], env, [
+        {"id": 1, "method": "initialize", "params": {"clientInfo": {"name": "t3-account-usage", "version": "1"}}},
+        {"method": "initialized"},
+        {"id": 2, "method": "account/rateLimits/read"},
+    ], lambda reply: reply.get("id") == 2)
+    if error:
+        return {"error": error}
+    result = next((r.get("result") for r in replies if r.get("id") == 2), None)
+    if not isinstance(result, dict):
+        return {"error": "Codex did not answer the usage request"}
+    by_id = result.get("rateLimitsByLimitId")
+    limits = (by_id.get("codex") if isinstance(by_id, dict) else None) or result.get("rateLimits")
+    windows = []
+    for slot in ("primary", "secondary"):
+        raw = limits.get(slot) if isinstance(limits, dict) else None
+        if isinstance(raw, dict):
+            item = window(slot, None, raw.get("windowDurationMins"), raw.get("usedPercent"), raw.get("resetsAt"))
+            if item:
+                windows.append(item)
+    if not windows:
+        return {"error": "Codex usage answer had no usage window"}
+    return {"source": "codex-probe", "windows": windows, "plan": probe_plan("codex", limits.get("planType"))}
+
+
+def probe_claude(entry, cache):
+    """Ask Claude Code for the account's limits through a control request. No prompt is sent."""
+    config = instance_config(entry)
+    binary = clean_path(config.get("binaryPath")) or "claude"
+    # The host session's own CLAUDE* variables would point the probe at the host's account.
+    env = {k: v for k, v in os.environ.items() if not k.startswith("CLAUDE")}
+    home = clean_path(config.get("homePath"))
+    if home:
+        env["CLAUDE_CONFIG_DIR"] = home
+    replies, error = run_cli(
+        [binary, "-p", "--input-format", "stream-json", "--output-format", "stream-json", "--verbose"], env, [
+            {"type": "control_request", "request_id": "init", "request": {"subtype": "initialize"}},
+            {"type": "control_request", "request_id": "usage",
+             "request": {"subtype": "get_usage", "skip_behaviors": True}},
+        ], lambda reply: (reply.get("response") or {}).get("request_id") == "usage"
+        if isinstance(reply.get("response"), dict) else False)
+    if error:
+        return {"error": error}
+    body = None
+    for reply in replies:
+        response = reply.get("response")
+        if isinstance(response, dict) and response.get("request_id") == "usage":
+            body = response.get("response")
+    limits = body.get("rate_limits") if isinstance(body, dict) else None
+    if not isinstance(limits, dict):
+        return {"error": "Claude Code did not answer the usage request"}
+    windows = []
+    for window_id, minutes in (("five_hour", 300), ("seven_day", 10080)):
+        raw = limits.get(window_id)
+        if isinstance(raw, dict):
+            item = window(window_id, None, minutes, raw.get("utilization"), raw.get("resets_at"))
+            if item:
+                windows.append(item)
+    for raw in limits.get("model_scoped") or []:
+        if isinstance(raw, dict) and isinstance(raw.get("display_name"), str):
+            name = raw["display_name"]
+            item = window(SCOPED_PREFIX + re.sub(r"[^a-z0-9]+", "_", name.lower()), "7d " + name, 10080,
+                          raw.get("utilization"), raw.get("resets_at"))
+            if item:
+                windows.append(item)
+    if not windows:
+        return {"error": "Claude Code usage answer had no usage window"}
+    return {"source": "claude-probe", "windows": windows, "plan": probe_plan("claude", body.get("subscription_type"))}
+
+
+def run_probes(accounts, readings, now, stale_s, probe):
+    """Probe enabled accounts whose reading is missing or stale (or all of them)."""
+    def needs(a):
+        reading = readings.get(a["instanceId"])
+        usable = reading and "unavailable" not in reading
+        return a["enabled"] and (probe == "all" or not usable or now - reading["checkedAtEpoch"] > stale_s)
+
+    todo = [a for a in accounts if needs(a)]
+    if not todo:
+        return
+    with ThreadPoolExecutor(max_workers=len(todo)) as pool:
+        results = list(pool.map(
+            lambda a: (probe_codex if a["driver"] == "codex" else probe_claude)(a["_entry"], a["_cache"]), todo))
+    for account, result in zip(todo, results):
+        if "error" in result:
+            account["_probeError"] = result["error"]
+            continue
+        result["checkedAtEpoch"] = now
+        readings[account["instanceId"]] = result
+        if result.get("plan"):
+            account["plan"] = result["plan"]
+            words = " %s " % result["plan"].lower()
+            ranks = [i for i, tier in enumerate(PLAN_TIERS[account["provider"]]) if " %s " % tier in words]
+            account["planRank"] = ranks[-1] if ranks else None
+
+
 def applies(window_id, model):
     """A model-specific window counts only for a leg on that model."""
     if not model or not window_id.startswith(SCOPED_PREFIX):
@@ -346,6 +512,7 @@ def finish(account, reading, now, stale_s, model):
     account.pop("_entry", None)
     account.pop("_cache", None)
     account.pop("_shape", None)
+    probe_error = account.pop("_probeError", None)
     account.update({"state": "unknown", "source": None, "checkedAt": None, "ageMinutes": None,
                     "windows": [], "worstUsedPercent": None, "headroomPercent": None, "note": None})
     if not account["enabled"]:
@@ -356,9 +523,11 @@ def finish(account, reading, now, stale_s, model):
         account["note"] = (
             "no usage data: %s" % reading["unavailable"]
             if reading
-            else "no usage data: T3 has not probed this account yet (open its provider "
-            "status in T3 Code settings, or run one task on it)"
+            else "no usage data: T3 has not probed this account yet (run again with --probe, "
+            "or open T3 Code so it refreshes)"
         )
+        if probe_error:
+            account["note"] += "; direct probe failed: " + probe_error
         return account
     age = max(0.0, now - reading["checkedAtEpoch"])
     worst = None
@@ -380,6 +549,8 @@ def finish(account, reading, now, stale_s, model):
         account["note"] = "no usage window applies to this leg"
         return account
     account["state"] = "stale" if age > stale_s else "ok"
+    if probe_error:
+        account["note"] = "direct probe failed: " + probe_error
     account["worstUsedPercent"] = worst
     account["headroomPercent"] = 100.0 - worst
     return account
@@ -439,7 +610,8 @@ def recommend(accounts, tie_margin, low_headroom, plan_floor):
     return answer(pick, reason)
 
 
-def collect(t3_home, now, stale_minutes=30, model=None, tie_margin=5, low_headroom=10, plan_floor=25):
+def collect(t3_home, now, stale_minutes=30, model=None, tie_margin=5, low_headroom=10, plan_floor=25,
+            probe=None):
     accounts, settings_found = discover(t3_home)
     readings = {a["instanceId"]: reading_from_cache(a["_cache"]) for a in accounts}
     codex = [a for a in accounts if a["driver"] == "codex" and a["enabled"]]
@@ -453,6 +625,8 @@ def collect(t3_home, now, stale_minutes=30, model=None, tie_margin=5, low_headro
         if newer and (not current or "unavailable" in current or newer["checkedAtEpoch"] > current["checkedAtEpoch"]):
             readings[instance] = newer
     compat = compatibility(t3_home, settings_found, accounts)
+    if probe:
+        run_probes(accounts, readings, now, stale_minutes * 60, probe)
     done = [finish(a, readings.get(a["instanceId"]), now, stale_minutes * 60, model) for a in accounts]
     done.sort(key=lambda a: (a["provider"], a["instanceId"]))
     result = {
@@ -497,7 +671,7 @@ def render(result, show_all, now):
             parts.append(text)
         lines.append("%s: %s | %.0f%% left | %d min old%s, %s" % (
             head, " | ".join(parts), a["headroomPercent"], a["ageMinutes"],
-            " (STALE)" if a["state"] == "stale" else "", a["source"]))
+            " (STALE)" if a["state"] == "stale" else "", a["source"]) + ("; " + a["note"] if a["note"] else ""))
     for provider, pick in result["recommended"].items():
         lines.append("-> %s: %s" % (
             provider,
@@ -513,6 +687,9 @@ def main(argv=None):
     parser.add_argument("--json", action="store_true", help="machine-readable output")
     parser.add_argument("--all", action="store_true", help="also list disabled instances")
     parser.add_argument("--model", help="model of the leg; drops usage windows that belong to another model")
+    parser.add_argument("--probe", nargs="?", const="needed", choices=["needed", "all"],
+                        help="ask the provider CLI directly for accounts with no or stale data "
+                             "(--probe=all: every account); sends no prompt")
     parser.add_argument("--stale-minutes", type=int, default=30)
     parser.add_argument("--tie-margin", type=int, default=5, help="headroom points that count as a tie")
     parser.add_argument("--plan-floor", type=int, default=25,
@@ -522,7 +699,7 @@ def main(argv=None):
     args = parser.parse_args(argv)
     now = parse_time(args.now) if args.now else datetime.now(timezone.utc).timestamp()
     result = collect(os.path.expanduser(args.t3_home.strip()), now, args.stale_minutes, args.model,
-                     args.tie_margin, plan_floor=args.plan_floor)
+                     args.tie_margin, plan_floor=args.plan_floor, probe=args.probe)
     if args.json:
         if not args.all:
             result["accounts"] = [a for a in result["accounts"] if a["state"] != "disabled"]
