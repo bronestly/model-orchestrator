@@ -1,6 +1,7 @@
 {
   "ignore_live": [
     "gpt-6-astra",
+    "gpt-6.2-astra",
     "grok-*-relay*",
     "grok-*-build-fast",
     "grok-composer-*",
