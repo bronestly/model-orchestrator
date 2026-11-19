@@ -29,7 +29,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Bulk extraction, classification, or reconnaissance | Luna `low` | Sol `low`, then main Grok |
 | Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Main Grok (web tools) | Codex Sol with web search (read-only; registry) |
 | Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Main Grok (web tools) | Antigravity as a T3 task only as an extra lead source, never the citation source |
-| Watching a video or YouTube URL | Gemini API, Hydrogen; Argon when detail matters (`gemini-api.md`) | Captions plus a main-Grok extraction pass |
+| Watching a video or YouTube URL | Gemini API, Hydrogen, for what is shown; plus a captions leg for what is said (trial, `gemini-api.md`) | No captions: Neon video pass (trial). No API key: captions plus a main-Grok extraction pass |
 | Parallel independent legs explicitly permitted by the user/environment | Native Grok subagents | External CLIs or sequential main-context work |
 
 Do not send live-X research or a Grok engineering worker-leg to a nested Grok CLI from this host — that is the same model. Other hosts' Grok-worker steering (`references/grok-delegation.md`) applies when another host delegates *to* Grok, not to Grok-as-host.
