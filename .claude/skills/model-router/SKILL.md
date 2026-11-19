@@ -19,8 +19,8 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.53.0"
-  updated: "2026-11-18"
+  version: "0.55.0"
+  updated: "2026-11-19"
 ---
 
 # Model Router — Claude Adapter
@@ -44,7 +44,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Live-X research, review/criticism sweeps, and bounded engineering legs (4.7 active default; 4.6 for bake-offs — see grok-delegation). Live-X needs a Responses-backed model entry with a smoke-tested X-search tool (registry) | Grok 4.7 | Sonnet subagent plus web search |
 | Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Grok 4.7, or Codex Sol with web search (read-only; registry) | Sonnet subagent plus web search |
 | Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Grok 4.7 | Sonnet subagent plus web search; Antigravity as a T3 task only as an extra lead source, never the citation source |
-| Watching a video or YouTube URL (what is said and shown, with timestamps) | Gemini API, Hydrogen; Argon when detail matters (`gemini-api.md`) | Captions plus a Sonnet extraction leg |
+| Watching a video or YouTube URL (what is said and shown, with timestamps) | Gemini API, Hydrogen, for what is shown; plus a Sonnet leg on the captions for what is said (trial, `gemini-api.md`) | No captions: Neon video pass (trial). No API key: the captions leg alone |
 | Bulk classification or extraction | Luna `low` | Sol `low`, then batched Sonnet |
 | Photo or image pre-pass | Gemini 3.8 Flash (`antigravity-research.md`) | Haiku or Sonnet subagent |
 | File reconnaissance | Luna `low` or an Explore subagent | Sol `low` |

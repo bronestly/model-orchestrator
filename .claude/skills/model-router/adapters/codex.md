@@ -29,7 +29,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Live-X research or bounded engineering legs (4.7 active default — see grok-delegation) | Grok 4.7 | Web research or main Sol |
 | Web/docs research whose citations enter a deliverable: releases, comparisons, multi-source synthesis | Fresh Sol leg with web search (read-only; registry) | Grok 4.7, then web research in main Sol |
 | Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Grok 4.7 | Web research in main Sol; Antigravity as a T3 task only as an extra lead source, never the citation source |
-| Watching a video or YouTube URL | Gemini API, Hydrogen; Argon when detail matters (`gemini-api.md`) | Captions plus a Luna extraction leg |
+| Watching a video or YouTube URL | Gemini API, Hydrogen, for what is shown; plus a captions leg for what is said (trial, `gemini-api.md`) | No captions: Neon video pass (trial). No API key: captions plus a Luna extraction leg |
 | Parallel independent legs explicitly permitted by the user/environment | Native Codex subagents, explicitly selecting Luna for light work or Sol for demanding work | External CLIs or sequential main-context work |
 
 **T3 host check.** In T3 Code, read [references/t3-code.md](references/t3-code.md) before the first worker call, including a native subagent. There, external workers run through its `delegate_task` tool unless that file names a reason for a CLI. Its token-sharing compatibility rule qualifies the native route above; exposed tools alone do not establish backend support.
