@@ -5,7 +5,7 @@ description: "Routes and executes substantial multi-model work from a Sol Codex 
 
 # Model Router — Codex Adapter
 
-Keep Codex Sol high as the primary planner, executor, verifier, and integrator. Delegate only an independently bounded leg with a clear cost, speed, context, live-data, or independent-review advantage. Task length and file count alone do not justify delegation.
+Keep Codex Sol high as the primary planner, executor, verifier, and integrator. "Sol" is the registry's active Sol; a session the owner starts on Sol 6.2 is an orchestrator trial under the same high rule (registry, Sol 6.2 note), and its delegated Sol legs stay on the active Sol unless the owner names 6.2. Delegate only an independently bounded leg with a clear cost, speed, context, live-data, or independent-review advantage. Task length and file count alone do not justify delegation.
 
 The transcript is part of the price: cache-read burn compounds on long sessions and is worse after compactions. A leg that can be written as a fresh, self-contained prompt (the delegation contract below is the test) does not need the transcript — once the session has compacted, prefer a fresh `codex exec` leg for bounded work over continuing inline. Judgment, ambiguity resolution, and final integration stay in the main context regardless.
 
