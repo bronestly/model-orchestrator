@@ -40,7 +40,7 @@ SCOPED_PREFIX = "seven_day_"  # T3 names a model-specific Claude window seven_da
 # The T3 server version whose settings file, cache files and MCP tools this script
 # and t3-code.md were checked against. model-router-update raises it after
 # re-checking a new release (its sources.md, "T3 Code compatibility").
-VERIFIED_T3_VERSION = "0.1.9"
+VERIFIED_T3_VERSION = "0.1.11"
 # Subscription tiers, lowest first, matched against the plan label T3 shows.
 # Pooled plans (business, team, enterprise, edu) are left unranked on purpose.
 PLAN_TIERS = {
