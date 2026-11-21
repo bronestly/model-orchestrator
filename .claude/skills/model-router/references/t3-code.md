@@ -20,10 +20,9 @@ T3 v2 is transport, not routing: it validates the target and runs it, and every 
 - **The only reasons to use the CLI shape:**
   - Codex read-only review or research, because `delegate_task` has no unattended read-only sandbox (registry, `runtimeMode`).
   - The parent's runtime mode gives the child no usable sandbox: `approval-required` and `auto-accept-edits` stall with no one watching, and `full-access` makes a Codex write leg `danger-full-access` (registry, `runtimeMode`).
-  - A leg that needs something in the registry's "Not exposed" list, such as Codex `--search`. Antigravity is excluded: its work legs are T3 tasks only (registry, "Antigravity transport"). The exception is an Antigravity `--print-timeout` bound: on T3, run the leg with `mode: "wait"` and a `timeoutMs` at the registry's bound instead, and `task_cancel` it on timeout.
+  - A leg that needs something in the registry's "Not exposed" list, such as Codex `--search`. Antigravity is excluded: its work legs are T3 tasks only (registry, "Antigravity transport"). The exception is an Antigravity `--print-timeout` bound: on T3, run the leg async and `task_cancel` it when the registry's bound runs out, since a `wait` lasts at most 45 s.
   - A Claude review or advisor leg from a Codex or Grok host, because T3 cannot apply safe mode, the restricted tool set, or the replacement system prompt (registry).
   - Any leg in a secret-bearing repository.
-  - A scored Grok leg, or a Grok leg whose effort matters (registry).
   - A Grok read-only leg that reads a real repository, because T3 cannot pass `--sandbox` (registry).
 - **Write the brief for a last-message result.** Only the child's final assistant message comes back, so require the structured result JSON as that message, with evidence inline rather than "see above".
 - **Treat a delegated task like any other leg.** The delegation contract, completion gate, and seam review apply unchanged. Verify served model, effort, and sandbox before scoring it from provider logs, not from T3 (the registry names the files); T3 thread data carries no effort.
