@@ -44,14 +44,14 @@ These are leads for the evals, not established routing facts.
 5. **Freshness.** The knowledge cutoff is March 2026. Anything later needs a search or fetch tool, or the source supplied in the prompt.
 6. **Carried over from Flash, unverified for Argon:** documents first and the question last; no hand-written step-by-step reasoning. Google's prompt guide states both for Gemini 3 only, so each is tested once before it becomes a rule.
 7. **agy harness rules still apply:** the headless tool rule and the deliverable guard from the 3.8 section below, plus the registry's timeout bound.
-8. **Quota.** On Pro, Argon draws its own weekly bucket. Never spend it on bulk or mechanical work that Flash clears, or on re-checking Flash output.
+8. **Quota.** On Pro, Argon shared no bucket with Flash when these rules were written; since 2026-11-24 it draws the shared Gemini bucket (registry). Never spend it on bulk or mechanical work that Flash clears, or on re-checking Flash output.
 
 #### Interim role choices (owner-approved 2026-10-28, from `argon-baseline-v1` E1–E2)
 
 - **agy lead sweeps (optional since v0.51.0, T3 tasks only):** prefer Argon `medium` over Flash `high`. On the same official-docs brief it was more accurate (9/14 right vs 7/14), faster (312 s vs 509 s), and used about a quarter of the input tokens. It also got right the CLI facts Flash invented. It is still a source of leads only: it marked a fabricated Google quote and unfetched claims as "verified", and 6/17 of its links were bad. Every rule in the 3.8 trial verdict below (HTTP-check URLs, publish a REJECTED list, primary-fetch anything that enters a deliverable) applies unchanged.
 - **Supplied-context Q&A and extraction:** use Argon `low` only when the text is supplied inline or the directory is small (about 25 files), under a cite-or-`NOT FOUND` contract. It scored 45/45 across E1, E1 v2 and E1 v3 with no invented answers and 0 thinking tokens. **Never use it on a large repository:** on the growreports TypeScript tree (`--add-dir`, ~460k input) Argon `low` invented handlers, components and a function signature in 3 of 8 sampled sections under the same contract, where Sonnet invented none (event `20261028T175925Z-pop-os-argon-vs-contest-forum-plan`). That is Theo's reported failure, reproduced. On precise per-file questions over Discourse's Ruby source it tied Sonnet. Large-repo recon stays on Sonnet/Explore or Luna.
 - **Plan review:** Argon `high` is a recall add-on only. On a real frozen plan it found 3 valid defects Sol `high` missed, but it also cited plan sections and identifiers that exist nowhere. Check every Argon finding against the frozen artifact, and never use Argon as the sole reviewer. Sol `high` stays the precision reviewer.
-- **Quota:** never spend Argon on bulk work, because Pro's Argon bucket is small; an agentic Argon call cost ~2% of the weekly bucket. Bulk text itself left agy in v0.51.0 (see the role note at the top).
+- **Quota:** never spend Argon on bulk work: it draws the shared Gemini bucket by token cost (registry), and an agentic Argon call cost ~2% of its former own weekly bucket. Bulk text itself left agy in v0.51.0 (see the role note at the top).
 
 Never use Argon as the citation source of a deliverable, and never route repository writes here (agy write legs are not an established route), until events say otherwise.
 
@@ -61,7 +61,7 @@ Each task has a ground truth the orchestrator already owns. Score each with the 
 
 - false-claim rate;
 - dead or wrong link rate;
-- `thinking_tokens`, `duration_seconds`, and the drop in the Argon bucket's `remaining_fraction`. Read `/usage` before and after each batch, and allow 5–10 min of lag.
+- `thinking_tokens`, `duration_seconds`, and the drop in the Gemini bucket's `remaining_fraction`. Read `/usage` before and after each batch, and allow 5–10 min of lag.
 
 | ID | Task | Candidates | Decides |
 |---|---|---|---|
@@ -77,7 +77,7 @@ A role is promoted only after 2–3 unrelated events agree, through the approval
 
 ### Gemini 3.8 Flash (Active Baseline & Prompting Best Practice)
 
-Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) is the active default route. It features native internal reasoning controlled via the effort ladder.
+Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) is the active default route until its removal from Antigravity (date and routes: registry). It features native internal reasoning controlled via the effort ladder.
 
 #### Prompting best practices
 
@@ -127,7 +127,7 @@ These were hypotheses for 3.8. Citation drift is now confirmed on 3.8 (see the t
 |---|---|
 | Recent releases, changelogs, docs sweeps, product comparisons | Live-X discourse, sentiment, launch-day drama → Grok (`x-research.md`) |
 | Multi-source synthesis ("what changed across X, Y, Z") | Stable academic/historical knowledge (no delegation needed) |
-| Photo and image pre-pass (3.8 Flash) | Anything requiring repository write access (not an established route); video or YouTube content → `gemini-api.md` |
+| Photo and image pre-pass (3.8 Flash until its removal from Antigravity, registry; then the routing row's fallback) | Anything requiring repository write access (not an established route); video or YouTube content → `gemini-api.md` |
 | Quick factual lookups (verify any link before citing it) | Authoritative single numbers you'll act on unverified; citation sources for a deliverable |
 
 ## Reading agy's output

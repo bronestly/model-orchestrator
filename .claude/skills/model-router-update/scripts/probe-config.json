@@ -6,6 +6,8 @@
     "grok-*-build-fast",
     "grok-composer-*",
     "claude-*-4-*",
+    "gemini-4-carbon*",
+    "gemini-pro-orchestrator",
     "gemini-pro-orchestrator-*"
   ],
   "known_t3_gaps": [
