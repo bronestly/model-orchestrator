@@ -6,6 +6,7 @@
     "grok-*-build-fast",
     "grok-composer-*",
     "claude-*-4-*",
+    "gemini-4-carbon*",
     "gemini-pro-orchestrator",
     "gemini-pro-orchestrator-*"
   ],
@@ -13,8 +14,7 @@
     "gemini-4-argon-*",
     "gemini-3.8-flash-*",
     "gemini-4-hydrogen-*",
-    "gemini-4-neon-*",
-    "gemini-4-carbon-*"
+    "gemini-4-neon-*"
   ],
   "ignore_registry": [
     "grok-4.7-build",
