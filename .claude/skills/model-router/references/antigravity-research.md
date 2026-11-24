@@ -81,7 +81,7 @@ Same brief and photos on three growreports reports (505 photos), all at `medium`
 
 ### Gemini 3.8 Flash (former baseline & prompting best practice)
 
-Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) was the pre-pass default until 2026-11-24 and leaves Antigravity on the registry's removal date; nothing routes to it. It features native internal reasoning controlled via the effort ladder.
+Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) was the pre-pass default until 2026-11-24 and leaves Antigravity on the registry's removal date; no agy route uses it. It features native internal reasoning controlled via the effort ladder.
 
 #### Prompting best practices
 
