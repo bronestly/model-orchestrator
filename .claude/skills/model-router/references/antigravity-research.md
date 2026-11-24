@@ -2,7 +2,7 @@
 
 Loaded on demand from the routing table. Antigravity CLI (`agy`) is Google's successor to the retired gemini CLI.
 
-**Role since v0.51.0 (owner decision, 2026-11-14).** agy is no longer a primary route for web research or bulk text. A ledger of about 90 recorded Gemini legs (2026-07-23 → 11-12) showed web research at 2 wins, 11 useful-after-checking and 24 losses, with 4 failed runs; all three YouTube research legs lost or failed, because agy only searches about a video and never sees it; and agy legs ran 5–25 minutes with hangs and "No capacity available" failures. Photo and vision work is where it earned its place (5 wins: review recall 18 exact / 0 missed against 26 and 23 missed, and a 12-vs-2 blind pre-pass win over Haiku 5.5). So: keep 3.8 Flash for the photo pre-pass, use agy web sweeps only as an optional extra lead source, and send video to the Gemini API (`gemini-api.md`). Transport rules are in the registry ("Antigravity transport"). The sections below are the track record and prompting rules for the legs that remain. Grounding: local smoke tests on agy 1.2.11, 2026-09-26.
+**Role since v0.51.0 (owner decision, 2026-11-14).** agy is no longer a primary route for web research or bulk text. A ledger of about 90 recorded Gemini legs (2026-07-23 → 11-12) showed web research at 2 wins, 11 useful-after-checking and 24 losses, with 4 failed runs; all three YouTube research legs lost or failed, because agy only searches about a video and never sees it; and agy legs ran 5–25 minutes with hangs and "No capacity available" failures. Photo and vision work is where it earned its place (5 wins: review recall 18 exact / 0 missed against 26 and 23 missed, and a 12-vs-2 blind pre-pass win over Haiku 5.5). So: keep agy for the photo pre-pass (Gemini 4 Neon since 2026-11-24, below), use agy web sweeps only as an optional extra lead source, and send video to the Gemini API (`gemini-api.md`). Transport rules are in the registry ("Antigravity transport"). The sections below are the track record and prompting rules for the legs that remain. Grounding: local smoke tests on agy 1.2.11, 2026-09-26.
 
 Command shapes and model slugs live strictly in the capability registry (`routing-reference.md`). This reference defines prompting discipline, effort selection, and model-separated calibration.
 
@@ -75,9 +75,13 @@ A role is promoted only after 2–3 unrelated events agree, through the approval
 
 ---
 
-### Gemini 3.8 Flash (Active Baseline & Prompting Best Practice)
+### Photo pre-pass: Gemini 4 Neon (owner decision, 2026-11-24)
 
-Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) is the active default route until its removal from Antigravity (date and routes: registry). It features native internal reasoning controlled via the effort ladder.
+Same brief and photos on three growreports reports (505 photos), all at `medium`; events `20261124T110000Z` and `20261124T133000Z`. Single-seed photos found: Neon 235 of 265, Hydrogen 219, 3.8 Flash 208, Haiku 189, Sonnet 186. Wrong seed: Neon 0, Hydrogen 2 and Haiku 1 (all passing the automatic gate), Sonnet 2 (below it), Flash 0 plus one unsupported gated call. Neon uses about three Gemini quota points per report (shared bucket, registry), roughly twice Hydrogen. Fallback is Haiku, with one payload of at most 15 photos per agent. In the photo review, which stays on Sonnet, Neon also found the most (131 of 133 seed tags, Sonnet 124, 0 wrong either way), but tagged two photos a blind judge called undecidable. Confounds: three reports, keys from earlier curations, 15-photo packets for Claude against 30 for Gemini.
+
+### Gemini 3.8 Flash (former baseline & prompting best practice)
+
+Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) was the pre-pass default until 2026-11-24 and leaves Antigravity on the registry's removal date; nothing routes to it. It features native internal reasoning controlled via the effort ladder.
 
 #### Prompting best practices
 
@@ -127,7 +131,7 @@ These were hypotheses for 3.8. Citation drift is now confirmed on 3.8 (see the t
 |---|---|
 | Recent releases, changelogs, docs sweeps, product comparisons | Live-X discourse, sentiment, launch-day drama → Grok (`x-research.md`) |
 | Multi-source synthesis ("what changed across X, Y, Z") | Stable academic/historical knowledge (no delegation needed) |
-| Photo and image pre-pass (3.8 Flash until its removal from Antigravity, registry; then the routing row's fallback) | Anything requiring repository write access (not an established route); video or YouTube content → `gemini-api.md` |
+| Photo and image pre-pass (Neon `medium`) | Anything requiring repository write access (not an established route); video or YouTube content → `gemini-api.md` |
 | Quick factual lookups (verify any link before citing it) | Authoritative single numbers you'll act on unverified; citation sources for a deliverable |
 
 ## Reading agy's output
