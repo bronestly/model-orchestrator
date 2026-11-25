@@ -12,6 +12,10 @@ Learnings, failure forensics, and prompting rules are tracked independently per 
 
 ---
 
+### Gemini 4 Argon (removed 2026-11-25, history)
+
+Asked about a large repository (`--add-dir`, ~460k input), Argon `low` invented handlers, components and a function signature in 3 of 8 sampled sections under a cite-or-`NOT FOUND` contract, where Sonnet invented none (event `20261028T175925Z-pop-os-argon-vs-contest-forum-plan`). On supplied inline text it scored 45/45.
+
 ### Photo pre-pass: Gemini 4 Neon (owner decision, 2026-11-24)
 
 Same brief and photos on three growreports reports (505 photos), all at `medium`; events `20261124T110000Z` and `20261124T133000Z`. Single-seed photos found: Neon 235 of 265, Hydrogen 219, 3.8 Flash 208, Haiku 189, Sonnet 186. Wrong seed: Neon 0, Hydrogen 2 and Haiku 1 (all passing the automatic gate), Sonnet 2 (below it), Flash 0 plus one unsupported gated call. Neon uses about three Gemini quota points per report (shared bucket, registry), roughly twice Hydrogen. Fallback is Haiku, with one payload of at most 15 photos per agent. In the photo review, which stays on Sonnet, Neon also found the most (131 of 133 seed tags, Sonnet 124, 0 wrong either way), but tagged two photos a blind judge called undecidable. Confounds: three reports, keys from earlier curations, 15-photo packets for Claude against 30 for Gemini.
