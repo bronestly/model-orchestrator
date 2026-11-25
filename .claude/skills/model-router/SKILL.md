@@ -19,7 +19,7 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.57.2"
+  version: "0.59.0"
   updated: "2026-11-24"
 ---
 
@@ -46,7 +46,7 @@ User-selected reviewers override automatic routing: “review with Codex” uses
 | Research breadth: leads, entity discovery, wide sweeps whose links get checked anyway | Grok 4.7 | Sonnet subagent plus web search; Antigravity as a T3 task only as an extra lead source, never the citation source |
 | Watching a video or YouTube URL (what is said and shown, with timestamps) | Gemini API, Hydrogen, for what is shown; plus a Sonnet leg on the captions for what is said (trial, `gemini-api.md`) | No captions: Neon video pass (trial). No API key: the captions leg alone |
 | Bulk classification or extraction | Luna `low` | Sol `low`, then batched Sonnet |
-| Photo or image pre-pass | Gemini 3.8 Flash, until its Antigravity removal date in the registry (`antigravity-research.md`) | Haiku or Sonnet subagent |
+| Photo or image pre-pass | Gemini 4 Neon `medium` (`antigravity-research.md`) | Haiku subagent |
 | File reconnaissance | Luna `low` or an Explore subagent | Sol `low` |
 | Standard implementation, tests, docs, or writing | Sonnet subagent | Luna `low`/`medium` for clear scoped work; Terra 6.1 `low`/`medium` on trial for bounded, test-backed fixes |
 

@@ -7,11 +7,11 @@
     "grok-composer-*",
     "claude-*-4-*",
     "gemini-4-carbon*",
+    "gemini-4-argon*",
     "gemini-pro-orchestrator",
     "gemini-pro-orchestrator-*"
   ],
   "known_t3_gaps": [
-    "gemini-4-argon-*",
     "gemini-3.8-flash-*",
     "gemini-4-hydrogen-*",
     "gemini-4-neon-*"
@@ -19,7 +19,6 @@
   "ignore_registry": [
     "grok-4.7-build",
     "gemini-4-argon",
-    "gemini-argon-wtu-weekly",
     "claude-api",
     "gemini-4-hydrogen",
     "gemini-4-carbon",

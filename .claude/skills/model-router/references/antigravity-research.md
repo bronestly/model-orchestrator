@@ -2,86 +2,33 @@
 
 Loaded on demand from the routing table. Antigravity CLI (`agy`) is Google's successor to the retired gemini CLI.
 
-**Role since v0.51.0 (owner decision, 2026-11-14).** agy is no longer a primary route for web research or bulk text. A ledger of about 90 recorded Gemini legs (2026-07-23 → 11-12) showed web research at 2 wins, 11 useful-after-checking and 24 losses, with 4 failed runs; all three YouTube research legs lost or failed, because agy only searches about a video and never sees it; and agy legs ran 5–25 minutes with hangs and "No capacity available" failures. Photo and vision work is where it earned its place (5 wins: review recall 18 exact / 0 missed against 26 and 23 missed, and a 12-vs-2 blind pre-pass win over Haiku 5.5). So: keep 3.8 Flash for the photo pre-pass, use agy web sweeps only as an optional extra lead source, and send video to the Gemini API (`gemini-api.md`). Transport rules are in the registry ("Antigravity transport"). The sections below are the track record and prompting rules for the legs that remain. Grounding: local smoke tests on agy 1.2.11, 2026-09-26.
+**Role since v0.51.0 (owner decision, 2026-11-14).** agy is no longer a primary route for web research or bulk text. A ledger of about 90 recorded Gemini legs (2026-07-23 → 11-12) showed web research at 2 wins, 11 useful-after-checking and 24 losses, with 4 failed runs; all three YouTube research legs lost or failed, because agy only searches about a video and never sees it; and agy legs ran 5–25 minutes with hangs and "No capacity available" failures. Photo and vision work is where it earned its place (5 wins: review recall 18 exact / 0 missed against 26 and 23 missed, and a 12-vs-2 blind pre-pass win over Haiku 5.5). So: keep agy for the photo pre-pass (Gemini 4 Neon since 2026-11-24, below), use agy web sweeps only as an optional extra lead source, and send video to the Gemini API (`gemini-api.md`). Transport rules are in the registry ("Antigravity transport"). The sections below are the track record and prompting rules for the legs that remain. Grounding: local smoke tests on agy 1.2.11, 2026-09-26.
 
 Command shapes and model slugs live strictly in the capability registry (`routing-reference.md`). This reference defines prompting discipline, effort selection, and model-separated calibration.
 
 ## Model-separated track records
 
-Learnings, failure forensics, and prompting rules are tracked independently per model generation. Do **not** apply 3.7 empirical quirks as fixed assumptions for 3.8, or 3.8 Flash quirks as assumptions for Gemini 4 Argon. Each track record is built through VS mode (`vs-mode.md`).
+Learnings, failure forensics, and prompting rules are tracked independently per model generation. Do **not** apply 3.7 empirical quirks as fixed assumptions for 3.8, or 3.8 Flash quirks as assumptions for Gemini 4 models. Each track record is built through VS mode (`vs-mode.md`).
 
 ---
 
-### Gemini 4 Argon (trial, opened 2026-10-28)
+### Gemini 4 Argon (removed 2026-11-25, history)
 
-Argon is Google's flagship reasoning model, reachable through agy (registry row "Antigravity — Argon"). It is **not a default route yet**: no automatic routing-table row sends work here until the `argon-baseline-v1` evals below produce events. Use it only when the user asks for Argon, or as a candidate in a VS run. Grounding: an official-docs sweep (Codex Sol `high`, web search) and a live-X sweep (Grok 4.7 `high`, 4/4 sampled post IDs resolved), both 2026-10-28, kept in `model-router-workspace/research-2026-10-28/`.
+Asked about a large repository (`--add-dir`, ~460k input), Argon `low` invented handlers, components and a function signature in 3 of 8 sampled sections under a cite-or-`NOT FOUND` contract, where Sonnet invented none (event `20261028T175925Z-pop-os-argon-vs-contest-forum-plan`). On supplied inline text it scored 45/45.
 
-#### What the evidence says so far
+### Photo pre-pass: Gemini 4 Neon (owner decision, 2026-11-24)
 
-- **Claimed strengths:**
-  - Tool-heavy knowledge work: Artificial Analysis AutomationBench 78%, the top score.
-  - Multimodal documents and long video: Google's LVBench 91.7%.
-  - SVG and visual code: Simon Willison found it excellent at every thinking level.
-  - Price: half of Opus 5.5's until 2026-11-30.
-- **Claimed weaknesses:**
-  - It makes up how codebases work. Theo found it "outright unusable for real code work in my codebases. It aggressively hallucinates about how systems work" and reported >50% false claims on his codebase-analysis bench (2026-10-14).
-  - It trails Opus 5.5 and Astra on FrontierSWE, Terminal-Bench and the AA Index v5 (Argon `high` 50 vs Opus 5.5 max 58), including on Google's own card.
-  - It is slow, with timeouts, which Google's model card itself names.
-  - One OCR bench found it invented page content.
-- **Local probes (agy 1.4.9):**
-  - On one arithmetic check, `low` answered wrong with 0 thinking tokens and `high` answered right with ~1.1k thinking tokens in 22 s.
-  - The harness overhead is ~7.6k input tokens per call.
-  - About eight short probes used ~3% of the Pro weekly Argon bucket.
+Same brief and photos on three growreports reports (505 photos), all at `medium`; events `20261124T110000Z` and `20261124T133000Z`. Single-seed photos found: Neon 235 of 265, Hydrogen 219, 3.8 Flash 208, Haiku 189, Sonnet 186. Wrong seed: Neon 0, Hydrogen 2 and Haiku 1 (all passing the automatic gate), Sonnet 2 (below it), Flash 0 plus one unsupported gated call. Neon uses about three Gemini quota points per report (shared bucket, registry), roughly twice Hydrogen. Fallback is Haiku, with one payload of at most 15 photos per agent. In the photo review, which stays on Sonnet, Neon also found the most (131 of 133 seed tags, Sonnet 124, 0 wrong either way), but tagged two photos a blind judge called undecidable. Confounds: three reports, keys from earlier curations, 15-photo packets for Claude against 30 for Gemini.
 
-These are leads for the evals, not established routing facts.
+**Photo-review trial (owner decision, 2026-11-25).** On the next three curations Neon `medium` reviews the same batches as Sonnet, through T3. Sonnet's result is the one used; a blind judge rules the disagreements. The procedure is in the growreports curate-report skill. Moving the review is a separate owner decision.
 
-#### Baseline prompting rules (to be tested, not proven)
+### Gemini 3.8 Flash (former baseline & prompting best practice)
 
-1. **Closed spec.** State the goal, the exact inputs, the allowed tools, "done means", and the output sections. One practitioner reported that Argon needs every detail spelled out where Opus fills gaps; that report is isolated, so treat this rule as a hypothesis.
-2. **Grounded claims only.** Every claim about code, files or documents cites the file and line, or the fetched source it came from. The worker writes `NOT OBSERVED` instead of describing behaviour it did not see. This targets the codebase-hallucination failure; score it by false-claim rate, not by fluency.
-3. **No length targets.** Google states the model "does not follow token-length or word-count targets". Constrain the shape with a section list or a JSON schema instead.
-4. **Effort by evaluation.** Google's instruction is to "run your evaluations at all three levels, then pick the lowest level that meets your quality bar". Until the evals pick a level per task type, use `medium`, with `low` only for mechanical work.
-5. **Freshness.** The knowledge cutoff is March 2026. Anything later needs a search or fetch tool, or the source supplied in the prompt.
-6. **Carried over from Flash, unverified for Argon:** documents first and the question last; no hand-written step-by-step reasoning. Google's prompt guide states both for Gemini 3 only, so each is tested once before it becomes a rule.
-7. **agy harness rules still apply:** the headless tool rule and the deliverable guard from the 3.8 section below, plus the registry's timeout bound.
-8. **Quota.** On Pro, Argon shared no bucket with Flash when these rules were written; since 2026-11-24 it draws the shared Gemini bucket (registry). Never spend it on bulk or mechanical work that Flash clears, or on re-checking Flash output.
-
-#### Interim role choices (owner-approved 2026-10-28, from `argon-baseline-v1` E1–E2)
-
-- **agy lead sweeps (optional since v0.51.0, T3 tasks only):** prefer Argon `medium` over Flash `high`. On the same official-docs brief it was more accurate (9/14 right vs 7/14), faster (312 s vs 509 s), and used about a quarter of the input tokens. It also got right the CLI facts Flash invented. It is still a source of leads only: it marked a fabricated Google quote and unfetched claims as "verified", and 6/17 of its links were bad. Every rule in the 3.8 trial verdict below (HTTP-check URLs, publish a REJECTED list, primary-fetch anything that enters a deliverable) applies unchanged.
-- **Supplied-context Q&A and extraction:** use Argon `low` only when the text is supplied inline or the directory is small (about 25 files), under a cite-or-`NOT FOUND` contract. It scored 45/45 across E1, E1 v2 and E1 v3 with no invented answers and 0 thinking tokens. **Never use it on a large repository:** on the growreports TypeScript tree (`--add-dir`, ~460k input) Argon `low` invented handlers, components and a function signature in 3 of 8 sampled sections under the same contract, where Sonnet invented none (event `20261028T175925Z-pop-os-argon-vs-contest-forum-plan`). That is Theo's reported failure, reproduced. On precise per-file questions over Discourse's Ruby source it tied Sonnet. Large-repo recon stays on Sonnet/Explore or Luna.
-- **Plan review:** Argon `high` is a recall add-on only. On a real frozen plan it found 3 valid defects Sol `high` missed, but it also cited plan sections and identifiers that exist nowhere. Check every Argon finding against the frozen artifact, and never use Argon as the sole reviewer. Sol `high` stays the precision reviewer.
-- **Quota:** never spend Argon on bulk work: it draws the shared Gemini bucket by token cost (registry), and an agentic Argon call cost ~2% of its former own weekly bucket. Bulk text itself left agy in v0.51.0 (see the role note at the top).
-
-Never use Argon as the citation source of a deliverable, and never route repository writes here (agy write legs are not an established route), until events say otherwise.
-
-#### `argon-baseline-v1` evals
-
-Each task has a ground truth the orchestrator already owns. Score each with the VS scorecard (`vs-mode.md`), plus these metrics:
-
-- false-claim rate;
-- dead or wrong link rate;
-- `thinking_tokens`, `duration_seconds`, and the drop in the Gemini bucket's `remaining_fraction`. Read `/usage` before and after each batch, and allow 5–10 min of lag.
-
-| ID | Task | Candidates | Decides |
-|---|---|---|---|
-| E1 | 15 factual questions about this skill's own files, supplied inline, with a known answer key | Argon `low`/`medium`/`high`, Flash `high`, Opus 5.5 | Whether the false-claim failure appears; the lowest passing Argon effort |
-| E2 | Re-run the 2026-10-28 Argon research brief; the verified reports are the key | Argon `medium`, Flash `high` | Citation fidelity versus Flash |
-| E3 | Photo pre-pass on an existing curate-report gold set | Argon `low`/`medium`, Flash `medium` | Vision role and its quota cost |
-| E4 | Classify 20 labelled items | Argon `low`, Flash `low` | Bulk role (expected: Flash keeps it) |
-| E5 | Critique a past plan whose defects are already known | Argon `high`, Opus 5.5 `medium` | Read-only plan-review role |
-
-A role is promoted only after 2–3 unrelated events agree, through the approval-gated flow in `vs-mode.md`. Record each run as an event tagged with the Argon effort and the orchestrator model.
-
----
-
-### Gemini 3.8 Flash (Active Baseline & Prompting Best Practice)
-
-Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) is the active default route until its removal from Antigravity (date and routes: registry). It features native internal reasoning controlled via the effort ladder.
+Gemini 3.8 Flash (`gemini-3.8-flash-low|medium|high`) was the pre-pass default until 2026-11-24 and leaves Antigravity on the registry's removal date; no agy route uses it. It features native internal reasoning controlled via the effort ladder.
 
 #### Prompting best practices
 
-1. **Avoid over-prompting reasoning (unsourced, untested):** 3.8 Flash reasons internally, so this rule says not to prescribe manual "think step-by-step" or verbose reasoning scaffolds. No primary source backs it. Google's prompt-design page has no such instruction (fetched 2026-10-28), and on the same day both Flash 3.8 and Argon produced fabricated "verbatim" Google quotes saying it (`argon-baseline-v1` E2). Keep prompts lean by default, but treat this as a hypothesis to test in a prompt-variant bake-off, not as a vendor rule.
+1. **Avoid over-prompting reasoning (unsourced, untested):** 3.8 Flash reasons internally, so this rule says not to prescribe manual "think step-by-step" or verbose reasoning scaffolds. No primary source backs it. Google's prompt-design page has no such instruction (fetched 2026-10-28), and on the same day both Flash 3.8 and Argon produced fabricated "verbatim" Google quotes saying it (2026-10-28 event). Keep prompts lean by default, but treat this as a hypothesis to test in a prompt-variant bake-off, not as a vendor rule.
 2. **Long-context ordering:** Place raw context, reference documents, or data dumps **first**; place the task description, questions, output format, and constraints at the **end**.
 3. **Declarative constraints over process rules:** Clearly specify negative boundaries (what NOT to do), task scope, and stopping conditions. Refine definitions and constraints rather than explaining how to think.
 4. **Headless tool rule (critical agy gotcha):** Headless `agy -p` attempts unapproved terminal commands if unconstrained, which get soft-denied to stderr and result in empty stdout, or since agy 1.5.7's Auto default may simply run (registry, Permissions). Always prepend an explicit tool rule:
@@ -123,11 +70,13 @@ These were hypotheses for 3.8. Citation drift is now confirmed on 3.8 (see the t
 
 ## When to route here
 
+Lead sweeps have no measured agy model left: Argon was removed on 2026-11-25 and 3.8 Flash leaves Antigravity on 2026-11-30. Hydrogen `medium` is the unmeasured option.
+
 | Optional extra lead source (never first) | Do NOT send here |
 |---|---|
 | Recent releases, changelogs, docs sweeps, product comparisons | Live-X discourse, sentiment, launch-day drama → Grok (`x-research.md`) |
 | Multi-source synthesis ("what changed across X, Y, Z") | Stable academic/historical knowledge (no delegation needed) |
-| Photo and image pre-pass (3.8 Flash until its removal from Antigravity, registry; then the routing row's fallback) | Anything requiring repository write access (not an established route); video or YouTube content → `gemini-api.md` |
+| Photo and image pre-pass (Neon `medium`) | Anything requiring repository write access (not an established route); video or YouTube content → `gemini-api.md` |
 | Quick factual lookups (verify any link before citing it) | Authoritative single numbers you'll act on unverified; citation sources for a deliverable |
 
 ## Reading agy's output
