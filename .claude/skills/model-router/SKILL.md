@@ -19,8 +19,8 @@ allowed-tools:
   - PowerShell(agy models*)
   - PowerShell(claude -p *)
 metadata:
-  version: "0.59.1"
-  updated: "2026-11-25"
+  version: "0.59.2"
+  updated: "2026-11-26"
 ---
 
 # Model Router — Claude Adapter
